@@ -6,8 +6,10 @@ at the application layer from the receiver log, and at the transport layer
 (L3/L4 + raw ClientHello) from tcpdump captures taken on this host.
 
 Status: **LIVE** (2026-08-30). HTTPS works end-to-end through Cloudflare.
-Direct-to-origin (byte-truth) mode needs one Cloudflare toggle — see
-"Remaining steps".
+The DNS record `test.auto-gram.ru A 95.165.165.65` was created **DNS-only**
+(no CF proxy) via BrowserOS dashboard automation, but direct-to-origin
+byte-truth is still gated: inbound :443 from the internet is not forwarded
+to this host yet — see "Remaining steps".
 
 ## Architecture
 
@@ -48,11 +50,11 @@ client ──► Cloudflare edge (orange, TLS #1) ──► router :443 DNAT
 
 ## Remaining steps to full byte-truth
 
-1. **Direct-to-origin path.** With the orange cloud on, the client's TLS
-   and TCP layers terminate at Cloudflare (origin sees CF's bytes). Flip
-   `test.auto-gram.ru` to **DNS only** in the Cloudflare dashboard (or give
-   a CF API token to automate). DNS is on Cloudflare NS
-   (`carrera.ns.cloudflare.com`); reg.ru only registers the domain.
+1. ~~Direct-to-origin path~~ **DONE**: `test.auto-gram.ru A 95.165.165.65`
+   created DNS-only via BrowserOS dashboard automation (the zone's NS is
+   Cloudflare; reg.ru is only the registrar — its API cannot edit this
+   zone). The `*.auto-gram.ru` wildcard stays proxied for the other
+   subdomains.
 2. **Inbound reachability without CF.** A 4G client hitting
    `95.165.165.65:443` currently times out — the router does not forward
    :443 to this host for arbitrary internet sources (only CF's path works).
@@ -60,7 +62,9 @@ client ──► Cloudflare edge (orange, TLS #1) ──► router :443 DNAT
    or, as a LAN fallback: enable Wi-Fi on the phone temporarily
    (`svc wifi enable`, restore `svc wifi disable` after) — the phone's
    TCP/IP stack (TTL/TCP options) is identical on Wi-Fi, only the radio path
-   differs.
+   differs. Then point Chrome at `https://192.168.2.100/capture` (the
+   handshake completes on the default cert; the SYN/TCP layer is what we
+   capture).
 3. **Capture (sudo, while the client runs):**
    ```sh
    sudo tcpdump -i enp28s0f2np2 'tcp dst port 443 and tcp[tcpflags] & tcp-syn != 0' -w wan.pcap
