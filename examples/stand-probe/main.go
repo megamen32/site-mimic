@@ -5,9 +5,15 @@
 // Usage (matches the stand's --role-args convention):
 //
 //	stand-probe <url> [count] [profile.json]
+//
+// The stand runs the probe inside its container, where host paths do not
+// exist: without a readable profile file it falls back to the embedded
+// vk.ru desktop-Chrome profile.
 package main
 
 import (
+	"embed"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -15,6 +21,24 @@ import (
 
 	"github.com/megamen32/site-mimic/mimic"
 )
+
+//go:embed profile.json
+var embeddedProfile embed.FS
+
+func loadProfile(path string) mimic.Profile {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		raw, err = embeddedProfile.ReadFile("profile.json")
+		if err != nil {
+			log.Fatalf("stand-probe: profile %q unreadable and embedded fallback failed: %v", path, err)
+		}
+	}
+	var p mimic.Profile
+	if err := json.Unmarshal(raw, &p); err != nil {
+		log.Fatalf("stand-probe: parse profile: %v", err)
+	}
+	return p
+}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -29,11 +53,11 @@ func main() {
 		}
 		count = n
 	}
-	profilePath := "profile.json"
+	profilePath := ""
 	if len(os.Args) > 3 {
 		profilePath = os.Args[3]
 	}
-	profile := mimic.MustLoadProfile(profilePath)
+	profile := loadProfile(profilePath)
 	client, err := mimic.New(profile)
 	if err != nil {
 		log.Fatal(err)

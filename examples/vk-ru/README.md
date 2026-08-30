@@ -2,6 +2,11 @@
 
 Desktop-Chrome navigation to `https://vk.ru/` from a Go client.
 
+- **Profile:** `tls_client_hello: "chrome_exact"` — the TLS/HTTP2 layers are
+  delegated to [kulikov0/headless-client](https://github.com/kulikov0/headless-client),
+  whose ClientHello matches the current Chrome byte-for-byte (JA4-verified
+  on its capture stand). Switch to `chrome_auto` for a pure-uTLS
+  (near-match) transport.
 - **Capture source:** real desktop Chrome navigation to `https://vk.ru/`
   (document request, 2026-08-30). Header values in `profile.json` are that
   capture; refresh from your own browser per `skill/SKILL.md` when you need a

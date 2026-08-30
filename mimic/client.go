@@ -88,6 +88,13 @@ func New(p Profile, opts ...Option) (*http.Client, error) {
 	for _, opt := range opts {
 		opt(&o)
 	}
+	if p.TLSClientHello == "chrome_exact" {
+		rt, err := newExactRoundTripper(o, p)
+		if err != nil {
+			return nil, err
+		}
+		return &http.Client{Transport: rt, Jar: p.CookieJar}, nil
+	}
 	helloID, err := ParseClientHelloID(p.TLSClientHello)
 	if err != nil {
 		return nil, err

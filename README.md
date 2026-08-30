@@ -1,27 +1,46 @@
 # site-mimic
 
-Make a Go HTTP client present the same wire-level identity a target site
-expects from a real browser — TLS ClientHello (JA3/JA4 shape), ALPN,
-HTTP/2 and the captured header set. Stock Go TLS is trivially
-distinguishable and is increasingly what DPI middleboxes and anti-bot
-layers flag first.
+[Русский](docs/README.ru.md) · [中文](docs/README.zh-CN.md) · [HANDOFF](HANDOFF.md)
 
-site-mimic packages the uTLS-based transport we run in production, plus the
-methodology that makes it repeatable: an AI-agent skill that walks a new
-site from capture to verified request, and two fully worked examples.
+> Make a Go HTTP client present the same wire-level identity a target site
+> expects from a real browser — TLS ClientHello (JA3/JA4), ALPN, HTTP/2 and
+> the captured header set. Stock Go TLS is trivially distinguishable, and
+> ClientHello-level signatures are exactly what DPI middleboxes block first.
 
-## What you get
+site-mimic packages a production-proven uTLS transport plus the methodology
+that makes browser-fitting repeatable: an AI-agent skill that walks a new
+site from capture to verified request, capture/verification tooling, and two
+fully worked examples.
 
-- `mimic` Go package — uTLS handshake (`chrome_auto` by default), HTTP/2 via
-  ALPN with per-host HTTP/1.1 fallback, CONNECT-proxy support (explicit or
-  `HTTPS_PROXY`), profile-driven headers, ClientHello self-dump.
-- [`skill/SKILL.md`](skill/SKILL.md) — the fit-a-site sequence for AI agents:
-  capture → profile → wire → verify fingerprint → verify business path.
-- `examples/vk-ru` — verified: HTTP 200 over HTTP/2 from `vk.ru`
-  (`server: kittenx`).
-- `examples/stream-wb-ru` — verified: reaches Wildberries' `wbaas` anti-bot
-  challenge exactly as a fresh real browser does (HTTP 498 first load), with
-  an honest layer-by-layer verdict.
+## Verified (2026-08-30, against vk.ru)
+
+| Client | JA4 (stand, pinned Chromium) | Result |
+|---|---|---|
+| uTLS `chrome_auto` | `t13d1516h2_8daaf6152771_d8a2da3f94cd` | 200 OK over HTTP/2; near-match (extension set differs) |
+| `chrome_exact` (delegates TLS to [headless-client](https://github.com/kulikov0/headless-client)) | `t13d1516h2_8daaf6152771_806a8c22fdea` | **byte-exact JA4 match with the browser** |
+| Real phone (Samsung S21 Ultra, Android Chrome 149, 4G) | same fingerprint class: TLS 1.3, 16 ciphers incl. GREASE, ALPN h2, per-connection extension shuffling | confirms the desktop reference |
+
+Also verified: `stream.wb.ru` returns the same 498 `wbaas` anti-bot
+challenge a fresh real browser gets — transport parity is correct, the JS
+challenge is app-layer (see `examples/stream-wb-ru`).
+
+## Credits: headless-client is the more accurate transport
+
+**[kulikov0/headless-client](https://github.com/kulikov0/headless-client) is
+better at the transport layer, and site-mimic builds on it.** Its
+ClientHello is hand-measured against the current stable Chrome (including
+post-quantum signature algorithms), which is why it matches the browser
+byte-for-byte, while the off-the-shelf uTLS `chrome_auto` profile lags
+slightly behind. Its HTTP part additionally covers header order, HTTP/2
+SETTINGS framing and connection reuse, and its capture stand
+(`stand/`) diffs your binary against a real Chromium on the wire —
+the verification loop we now recommend everywhere.
+
+site-mimic's own value is the layer around the transport: the fit-a-site
+skill for AI agents, capture→profile→verify tooling, site profiles and
+worked examples. `tls_client_hello: "chrome_exact"` delegates the TLS/HTTP2
+layers to headless-client (MIT, thank you), `chrome_auto` and friends stay
+available as pure-uTLS fallbacks.
 
 ## Install
 
@@ -37,22 +56,22 @@ go run . -dump ch.json
 python3 ../../tools/parse_clienthello.py ch.json   # JA3/JA4 of our ClientHello
 ```
 
-Expect `status: 200 OK`, `proto: HTTP/2.0` and a Chrome-shaped fingerprint.
-Then fit a new site with [skill/SKILL.md](skill/SKILL.md).
+Expect `status: 200 OK`, `proto: HTTP/2.0` (`server: kittenx`). Then fit a
+new site with [skill/SKILL.md](skill/SKILL.md).
 
 ## Learn more
 
-- [Fit-a-site methodology (for AI agents)](skill/SKILL.md)
-- [How it works, limits and roadmap](docs/methodology.md)
-- [vk.ru example](examples/vk-ru/) · [stream.wb.ru example](examples/stream-wb-ru/)
-- [Русское резюме](docs/README.ru.md)
+- [Fit-a-site methodology (AI-agent skill)](skill/SKILL.md)
+- [How it works, limits, roadmap](docs/methodology.md)
+- [HANDOFF — verified state and remaining work](HANDOFF.md)
+- [vk.ru example](examples/vk-ru/) · [stream.wb.ru example](examples/stream-wb-ru/) · [stand probe](examples/stand-probe/)
 
 ## Honest limits
 
-Header values and the TLS layer are exact; wire header order and the HTTP/2
-SETTINGS frame shape are Go's defaults — see
-[docs/methodology.md](docs/methodology.md) before claiming full
-fingerprint parity. Anti-bot JavaScript challenges (the stream.wb.ru layer)
+With `chrome_exact` the TLS layer is byte-exact; with uTLS profiles it is a
+near-match. Header values and sets are exact, wire header order and HTTP/2
+SETTINGS framing are Go defaults; QUIC/DTLS are not covered — details in
+[docs/methodology.md](docs/methodology.md). Anti-bot JavaScript challenges
 are out of scope by design.
 
 MIT licensed. Not affiliated with VK or Wildberries.

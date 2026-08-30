@@ -14,8 +14,12 @@ import (
 // them next to your code — see examples/ for two worked sites.
 type Profile struct {
 	Name string `json:"name"`
-	// TLSClientHello selects the uTLS ClientHello shape:
-	// chrome_auto (default), firefox_auto, ios_auto, random, random_alpn.
+	// TLSClientHello selects the ClientHello shape:
+	// "chrome_exact" (recommended — delegates the transport to
+	// github.com/kulikov0/headless-client, whose ClientHello is measured
+	// against the current Chrome and matches it byte-for-byte), or a uTLS
+	// profile name: chrome_auto (default), firefox_auto, ios_auto, random,
+	// random_alpn.
 	TLSClientHello string `json:"tls_client_hello"`
 	UserAgent      string `json:"user_agent"`
 	// HeaderOrder lists the header names in the order the real browser sends
