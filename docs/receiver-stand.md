@@ -33,6 +33,17 @@ client ──► Cloudflare edge (orange, TLS #1) ──► router :443 DNAT
 
 ## What is already measured (receiver-side, 2026-08-30)
 
+- **ClientHello capture works end-to-end**: our `chrome_exact` client hit
+  the target and the haproxy→nginx passthrough delivered its original
+  ClientHello — captured on `lo:8444` and parsed independently:
+  `sni=test.auto-gram.ru ja3=6ce3dda888fd1f4f ja4=5108ac8881770d5b
+  ciphers=16 exts=18 alpn=[h2, http/1.1]`. The ja4 hash matches the
+  client-side self-dump of the same profile (pipeline consistency).
+- External reachability: check-host.net nodes (DE/IR/RU) all got HTTP 200
+  from `https://test.auto-gram.ru/capture` direct to `95.165.165.65` after
+  the DNS-only flip. The router DNAT `wan:443 → 192.168.2.100:443` was
+  verified live on OpenWRT (`root@192.168.2.1`, uci firewall) — no router
+  changes were needed.
 - TLS/h2 through Cloudflare: peet.ws view of our `chrome_exact` client shows
   the Go `x/net/http2` SETTINGS fingerprint
   (`1:65536;2:0;4:6291456;6:262144|15663105|0|m,a,s,p`) — the documented h2
@@ -42,11 +53,16 @@ client ──► Cloudflare edge (orange, TLS #1) ──► router :443 DNAT
   (`ttl=64 win=64240 MSS=1460 SACKok TS NOP WS=7`); the Android phone stack
   differs (`win=65535 WS=10`), and through a VPN/tun capture its MSS is
   distorted (`9960` tun artifact) — receiver-side capture is the only truth.
-- nginx 8444 (nginx 1.18) serves HTTP/1.1 only on that listener: the
-  `chrome_exact` transport (h2-first) fails against it with
-  `PROTOCOL_ERROR`. curl/h1 and the uTLS-h1 path work. Fix (infra todo):
-  dedicated `listen 127.0.0.1:8445 ssl http2` vhost + haproxy SNI ACL for
-  `test.auto-gram.ru`, or verify whether `http2` can be enabled fleet-wide.
+- Known quirk: nginx 8444 (nginx 1.18) serves HTTP/1.1 only on that
+  listener: the `chrome_exact` transport (h2-first) completes the TLS
+  handshake but fails after with `PROTOCOL_ERROR`. h1 clients (curl) and
+  the uTLS path work. Fix (infra todo): dedicated
+  `listen 127.0.0.1:8445 ssl http2` vhost + haproxy SNI ACL for
+  `test.auto-gram.ru`.
+- Phone note: an Android device on cellular reaching the target does NOT
+  need adb at all — Chrome on the phone hits the public URL directly. The
+  adb/USB issues seen earlier only affected driving the phone and the
+  `:3126` phone-proxy leg.
 
 ## Remaining steps to full byte-truth
 
