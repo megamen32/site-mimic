@@ -105,6 +105,24 @@ ja4_from_pcap tool):
 | BrowserOS (Chromium **148**, the OS default browser) | `t13d1813h1_85036bcba153_d339722ba4af` (dominant, ×1546) | **nothing like real Chrome**: no h2 ALPN (h1 only), 18 ciphers (different set), 13 extensions, no ECH/ALPS/post-quantum; also downgraded to a TLS-1.2 hello (`t13d1812h1`) once. Trivially distinguishable from Chrome by any JA4 gate |
 | (host background traffic during the capture) | `t13d1516h2_8daaf6152771_d8a2da3f94cd` ×10 | our own Go clients on the machine — their `chrome_exact`/`chrome_auto` hellos match the 149-class references |
 
+## Windows on the LAN (2026-08-31, Win11 23H2 `BeyondInfinity.lan` 192.168.2.190)
+
+Captured passively on the wire while driving requests over SSH:
+
+| Client from Windows | JA4 | L3/L4 (SYN) |
+|---|---|---|
+| Chrome 151 headless → local TLS | `t13i1515h2_8daaf6152771_806a8c22fdea` (+ per-connection 16-ext variant `…a87ad97598a9`) | **ttl 128**, win 64240, `mss 1460,nop,wscale 8,nop,nop,sackOK` (no TS) |
+| curl 8.13 (Schannel) → local TLS | `t13i2511h1_f5a23f7cfd7b_36bf25f296df` (25 ciphers, 11 exts, h1) | same as above |
+| Linux/Go client (reference) | — | **ttl 64**, win 64240, `mss 1460,sackOK,TS,nop,wscale 7` |
+
+Windows Chrome 151 keeps the `806a8c22fdea` extension hash of the stand's
+Chromium class — the post-quantum + `0xCA24` shift arrives with the 152
+line. The L3/L4 layer separates OS families cleanly: **TTL 128 (Windows)
+vs 64 (Linux/Android)** plus the TCP-options layout (no timestamps on this
+Windows box, wscale 8 vs 7). TTL is set by the kernel — site-mimic does not
+forge it today; a `Control`-based `IP_TTL` override is the straightforward
+addition if a deployment ever needs it (see docs/methodology.md, TCP layer).
+
 Conclusion: headless mode does not change Chrome's transport fingerprint —
 captures made headless are valid for TLS/JA4 and (on this build) for the
 navigation header set; only the UA token differs. A Chromium-based OS
