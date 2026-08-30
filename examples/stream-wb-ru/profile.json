@@ -1,0 +1,23 @@
+{
+  "name": "wb-stream-desktop-chrome",
+  "tls_client_hello": "chrome_auto",
+  "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+  "header_order": [
+    "upgrade-insecure-requests",
+    "user-agent",
+    "accept",
+    "accept-language",
+    "cache-control",
+    "sec-fetch-dest",
+    "sec-fetch-mode",
+    "sec-fetch-site"
+  ],
+  "headers": {
+    "upgrade-insecure-requests": "1",
+    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+    "accept-language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+    "sec-fetch-dest": "document",
+    "sec-fetch-mode": "navigate",
+    "sec-fetch-site": "none"
+  }
+}
