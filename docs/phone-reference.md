@@ -93,9 +93,24 @@ python3 tools/ja4_from_pcap.py \
   /home/roomhacker/PycharmProjects/video_watching/.tmpbin/captures/phone-vk.pcap
 ```
 
+## Headed vs headless vs OS browser (2026-08-31, this workstation)
+
+Captured live on Xvfb (real windowed Chrome, tcpdump on the wire, our
+ja4_from_pcap tool):
+
+| Browser | JA4 | Notes |
+|---|---|---|
+| Chrome 152, **headed** on Xvfb, vk.ru | `t13d1517h2_8daaf6152771_cb7bf5808d99` | **identical** to the headless measurement; UA sends `Chrome/152.0.0.0` (headless sends `HeadlessChrome/…`) |
+| Chrome 152, headless (2026-08-30, peet.ws) | `t13d1517h2_8daaf6152771_cb7bf5808d99` | same |
+| BrowserOS (Chromium **148**, the OS default browser) | `t13d1813h1_85036bcba153_d339722ba4af` (dominant, ×1546) | **nothing like real Chrome**: no h2 ALPN (h1 only), 18 ciphers (different set), 13 extensions, no ECH/ALPS/post-quantum; also downgraded to a TLS-1.2 hello (`t13d1812h1`) once. Trivially distinguishable from Chrome by any JA4 gate |
+| (host background traffic during the capture) | `t13d1516h2_8daaf6152771_d8a2da3f94cd` ×10 | our own Go clients on the machine — their `chrome_exact`/`chrome_auto` hellos match the 149-class references |
+
+Conclusion: headless mode does not change Chrome's transport fingerprint —
+captures made headless are valid for TLS/JA4 and (on this build) for the
+navigation header set; only the UA token differs. A Chromium-based OS
+browser (BrowserOS 148) is NOT a Chrome substitute for fingerprint work.
+
 Caveats, stated plainly: the phone pcap contains PCAPdroid tag segments that
 corrupt naive TCP reassembly (the tool filters them and cross-checks with
-per-segment and per-start extraction); a QUIC Initial with SNI inside
-`userapi.com`/google CDNs decrypted fully, and no m.vk.ru QUIC Initial was
-captured completely — the m.vk.ru reference above comes from TCP, which is
-also the transport site-mimic speaks.
+per-segment and per-start extraction); TLS ClientHellos over QUIC need
+Initial decryption (tools/quic_initial.py, `cryptography` required).

@@ -74,6 +74,10 @@ def _parse_link(linktype: int, frame: bytes):
         if len(frame) < 16:
             return None
         return struct.unpack_from(">H", frame, 14)[0], frame[16:]
+    if linktype == 276:  # Linux cooked v2 (SLL2, tcpdump -i any)
+        if len(frame) < 20:
+            return None
+        return struct.unpack_from(">H", frame, 0)[0], frame[20:]
     if linktype == 101:  # raw IP
         if not frame:
             return None
