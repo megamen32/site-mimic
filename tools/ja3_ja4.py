@@ -1,12 +1,31 @@
 """JA3 / JA4 computation from parsed ClientHello fields.
 
-Standard library only. Implements the parts of the JA3 / JA4 spec that the
-comparison core actually consumes: a deterministic string and an MD5 hash,
-with GREASE values stripped before hashing (per FoxIO spec).
+Standard library only.
+
+JA3 follows the classic salesforce/ja3 spec: a deterministic "-"-joined
+string and an MD5 hash, GREASE stripped before hashing.
+
+JA4 follows the FoxIO spec (FoxIO-LLC/ja4, technical_details/JA4.md):
+JA4 = JA4_a + "_" + JA4_b + "_" + JA4_c where JA4_a is the visible shape
+(protocol, TLS version, SNI presence, cipher/extension counts, first ALPN),
+JA4_b hashes the GREASE-free cipher list sorted in hex order, and JA4_c
+hashes the GREASE-free extension list (SNI 0x0000 and ALPN 0x0010 removed)
+sorted in hex order, followed by "_" and the signature algorithms in wire
+order. Sorting the lists makes JA4 stable across Chrome's per-connection
+extension shuffling.
 """
 from __future__ import annotations
 import hashlib
 from typing import Optional, Tuple
+
+_GREASE_TLS_VERSIONS = {0x0A0A, 0x1A1A, 0x2A2A, 0x3A3A, 0x4A4A, 0x5A5A,
+                        0x6A6A, 0x7A7A, 0x8A8A, 0x9A9A, 0xAAAA, 0xBABA,
+                        0xCACA, 0xDADA, 0xEAEA, 0xFAFA}
+_TLS_VERSION_TOKENS = {
+    0x0304: "13", 0x0303: "12", 0x0302: "11", 0x0301: "10",
+    0x0300: "s3", 0x0002: "s2",
+    0xFEFF: "d1", 0xFEFD: "d2", 0xFEFC: "d3",
+}
 
 
 def _is_grease(value: int) -> bool:
@@ -16,6 +35,10 @@ def _is_grease(value: int) -> bool:
 
 def _strip_grease(values: list[int]) -> list[int]:
     return [v for v in values if not _is_grease(v)]
+
+
+def _hex4(values: list[int]) -> list[str]:
+    return [f"{v:04x}" for v in values]
 
 
 def compute_ja3(trace: dict) -> Tuple[str, str]:
@@ -40,51 +63,84 @@ def compute_ja3(trace: dict) -> Tuple[str, str]:
     return ja3_str, ja3_hash
 
 
-def compute_ja4(trace: dict) -> Tuple[str, str]:
-    """Compute (ja4_string, ja4_sha256_hex_truncated) from a ConnectionTrace-like dict.
-
-    Implements only the JA4_a (ClientHello) shape we need:
-    JA4_a = {protocol}{version}{SNI}{cipher_count}{ext_count}{ALPN}
-    followed by an underscore-separated suffix of sorted cipher hashes.
-
-    This is a SIMPLIFIED JA4 sufficient for fingerprint comparison; not for
-    full FoxIO spec compliance. The exact field set is locked by the test.
-    """
-    version_hex = trace["tls_version_offered"]
-    # JA4 uses the wire version number: TLS 1.2 = "12", TLS 1.3 = "13"
-    if version_hex == 0x0304:
-        ver_token = "13"
-    elif version_hex == 0x0303:
-        ver_token = "12"
+def _ja4_version_token(trace: dict) -> str:
+    """Highest supported_versions value (GREASE ignored), else legacy version."""
+    supported = [v for v in trace.get("supported_versions", []) if v not in _GREASE_TLS_VERSIONS]
+    if supported:
+        best = max(supported)
     else:
-        ver_token = f"{version_hex & 0xFFFF:02x}"
-    sni = trace.get("sni") or ""
-    # Try to parse as IP; if it does, token "i", else "d"
-    import ipaddress
-    try:
-        ipaddress.ip_address(sni)
-        sni_token = "i"
-    except (ValueError, TypeError):
-        sni_token = "d" if sni else "x"
-    ciphers = _strip_grease(trace["cipher_suites"])
-    extensions = _strip_grease(trace["extensions"])
-    alpn_list = trace.get("alpn", [])
-    alpn_token = alpn_list[0].replace("/", "") if alpn_list else "x"
-    ja4_a = f"t{ver_token}{sni_token}{len(ciphers):02d}{len(extensions):02d}{alpn_token}"
-    # Simplified suffix: sorted cipher hashes joined by ","
-    ciph_suffix = ",".join(
-        hashlib.sha256(str(c).encode()).hexdigest()[:4] for c in sorted(ciphers)
-    ) or "_"
-    ja4_str = f"{ja4_a}_{ciph_suffix}"
-    ja4_hash = hashlib.sha256(ja4_str.encode("ascii")).hexdigest()[:32]
-    return ja4_str, ja4_hash
+        best = trace["tls_version_offered"]
+    return _TLS_VERSION_TOKENS.get(best, "00")
+
+
+def _ja4_alpn_token(trace: dict) -> str:
+    """First and last characters of the first ALPN value; FoxIO edge rules."""
+    alpn_list = trace.get("alpn") or []
+    if not alpn_list:
+        return "00"
+    value = alpn_list[0]
+    if not value:
+        return "00"
+    raw = value.encode("latin-1", "replace")
+    first, last = raw[0], raw[-1]
+    if len(raw) == 1:
+        return chr(first) * 2
+    def alnum(b: int) -> bool:
+        return 0x30 <= b <= 0x39 or 0x41 <= b <= 0x5A or 0x61 <= b <= 0x7A
+    if alnum(first) and alnum(last):
+        return chr(first) + chr(last)
+    return f"{first:02x}{last:02x}"
+
+
+def _ja4_b(trace: dict) -> str:
+    ciphers = _hex4(_strip_grease(trace["cipher_suites"]))
+    if not ciphers:
+        return "0" * 12
+    return hashlib.sha256(",".join(sorted(ciphers)).encode("ascii")).hexdigest()[:12]
+
+
+def _ja4_c(trace: dict) -> str:
+    extensions = [
+        e for e in _strip_grease(trace["extensions"])
+        if e not in (0x0000, 0x0010)  # SNI and ALPN live in JA4_a
+    ]
+    ext_hex = sorted(_hex4(extensions))
+    if not ext_hex:
+        return "0" * 12
+    payload = ",".join(ext_hex)
+    sig_algs = _hex4(trace.get("signature_algorithms", []))
+    if sig_algs:
+        payload += "_" + ",".join(sig_algs)  # wire order, not sorted
+    return hashlib.sha256(payload.encode("ascii")).hexdigest()[:12]
+
+
+def compute_ja4(trace: dict, protocol: str = "t") -> Tuple[str, str]:
+    """Compute (ja4_string, ja4_sha256_full_hex) per the FoxIO spec.
+
+    Implements technical_details/JA4.md exactly: counts ignore GREASE
+    (SCSV/experimental values still count), SNI contributes "d" when the
+    extension is present ("i" when absent), the ALPN token is the first and
+    last alphanumeric of the first protocol, and the hashes cover the
+    hex-sorted cipher list and the hex-sorted extension list (minus SNI and
+    ALPN) followed by the signature algorithms in wire order.
+    protocol is "t" (TLS over TCP), "q" (QUIC) or "d" (DTLS).
+    """
+    sni_token = "d" if trace.get("sni") else "i"
+    cipher_count = min(len(_strip_grease(trace["cipher_suites"])), 99)
+    ext_count = min(len(_strip_grease(trace["extensions"])), 99)
+    ja4_a = (
+        f"{protocol}{_ja4_version_token(trace)}{sni_token}"
+        f"{cipher_count:02d}{ext_count:02d}{_ja4_alpn_token(trace)}"
+    )
+    ja4_str = f"{ja4_a}_{_ja4_b(trace)}_{_ja4_c(trace)}"
+    return ja4_str, hashlib.sha256(ja4_str.encode("ascii")).hexdigest()
 
 
 def compute(trace: dict) -> Tuple[Optional[str], Optional[str]]:
-    """Convenience: return (ja3_hash, ja4_hash) for the comparison core."""
+    """Convenience: return (ja3_hash, ja4_string) for the comparison core."""
     try:
         _, ja3 = compute_ja3(trace)
-        _, ja4 = compute_ja4(trace)
-        return ja3, ja4
+        ja4_str, _ = compute_ja4(trace)
+        return ja3, ja4_str
     except (KeyError, TypeError):
         return None, None

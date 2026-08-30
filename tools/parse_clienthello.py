@@ -28,6 +28,8 @@ _EXTENSION_SNI = 0x0000
 _EXTENSION_GROUPS = 0x000A
 _EXTENSION_POINT_FORMATS = 0x000B
 _EXTENSION_ALPN = 0x0010
+_EXTENSION_SIG_ALGS = 0x000D
+_EXTENSION_SUPPORTED_VERSIONS = 0x002B
 
 
 def parse_clienthello(record: bytes) -> dict:
@@ -59,8 +61,10 @@ def parse_clienthello(record: bytes) -> dict:
     groups: list[int] = []
     point_formats: list[int] = []
     alpn: list[str] = []
+    signature_algorithms: list[int] = []
+    supported_versions: list[int] = []
     sni = ""
-    end = pos + ext_total
+    end = min(pos + ext_total, len(record))
     while pos + 4 <= end:
         ext_type, ext_len = struct.unpack_from(">HH", record, pos)
         pos += 4
@@ -83,6 +87,12 @@ def parse_clienthello(record: bytes) -> dict:
                 plen = data[off]
                 alpn.append(data[off + 1 : off + 1 + plen].decode("ascii", "replace"))
                 off += 1 + plen
+        elif ext_type == _EXTENSION_SIG_ALGS and len(data) >= 2:
+            (n,) = struct.unpack_from(">H", data, 0)
+            signature_algorithms = list(struct.unpack_from(f">{n // 2}H", data, 2))
+        elif ext_type == _EXTENSION_SUPPORTED_VERSIONS and len(data) >= 1:
+            n = data[0]
+            supported_versions = list(struct.unpack_from(f">{n // 2}H", data, 1))
 
     return {
         "tls_version_offered": legacy_version,
@@ -91,6 +101,8 @@ def parse_clienthello(record: bytes) -> dict:
         "supported_groups": groups,
         "ec_point_formats": point_formats,
         "alpn": alpn,
+        "signature_algorithms": signature_algorithms,
+        "supported_versions": supported_versions,
         "sni": sni,
     }
 
@@ -115,7 +127,7 @@ def main() -> int:
 
     trace = parse_clienthello(record)
     ja3_str, ja3_hash = compute_ja3(trace)
-    ja4_str, ja4_hash = compute_ja4(trace)
+    ja4_str, _ = compute_ja4(trace)
     print(f"target:          {target}")
     print(f"tls version:     0x{trace['tls_version_offered']:04x}")
     print(f"ciphers:         {len(trace['cipher_suites'])}")
@@ -124,8 +136,7 @@ def main() -> int:
     print(f"sni:             {trace['sni']}")
     print(f"ja3_string:      {ja3_str}")
     print(f"ja3_hash:        {ja3_hash}")
-    print(f"ja4_string:      {ja4_str}")
-    print(f"ja4_hash:        {ja4_hash}")
+    print(f"ja4_foxio:       {ja4_str}")
     return 0
 
 

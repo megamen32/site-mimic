@@ -60,6 +60,7 @@ type transportOptions struct {
 	proxyURL    string
 	insecureTLS bool
 	dialTimeout time.Duration
+	serverName  string
 }
 
 // WithProxy routes traffic through an HTTP CONNECT proxy
@@ -77,6 +78,13 @@ func WithInsecureTLS() Option {
 // WithDialTimeout bounds the TCP dial + CONNECT + TLS handshake window.
 func WithDialTimeout(d time.Duration) Option {
 	return func(o *transportOptions) { o.dialTimeout = d }
+}
+
+// WithServerName overrides the TLS SNI / certificate name while keeping the
+// dial address (connect to an IP, present a hostname). Useful for hitting a
+// capture receiver by origin IP before its DNS is public.
+func WithServerName(name string) Option {
+	return func(o *transportOptions) { o.serverName = name }
 }
 
 // New builds an *http.Client whose TLS handshakes are performed by uTLS with
@@ -110,7 +118,11 @@ func New(p Profile, opts ...Option) (*http.Client, error) {
 		if err != nil {
 			return nil, err
 		}
-		cfg := &utls.Config{ServerName: host, InsecureSkipVerify: o.insecureTLS}
+		sni := host
+		if o.serverName != "" {
+			sni = o.serverName
+		}
+		cfg := &utls.Config{ServerName: sni, InsecureSkipVerify: o.insecureTLS}
 		uConn := utls.UClient(rawConn, cfg, helloID)
 		_ = rawConn.SetDeadline(time.Now().Add(o.dialTimeout))
 		if err := uConn.HandshakeContext(ctx); err != nil {

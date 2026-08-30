@@ -22,6 +22,7 @@ func newExactRoundTripper(o transportOptions, p Profile) (http.RoundTripper, err
 	tlsRT := headless.ChromeWindows.Transport(headless.TLSOptions{
 		DialContext:        dialContext,
 		InsecureSkipVerify: o.insecureTLS,
+		ServerName:         o.serverName,
 	})
 	h1 := &http.Transport{
 		DialContext:         dialContext,

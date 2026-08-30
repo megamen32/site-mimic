@@ -7,12 +7,18 @@
 // the transport layer reaches the site with a byte-faithful Chrome
 // ClientHello and header set; the challenge layer (browser-check.js,
 // behavior-tracker, create-token) is application logic outside the scope of
-// transport mimicry — see docs/methodology.md for the layer cake.
+// transport mimicry — see docs/methodology.md for the layer cake, and
+// docs/anti-bot.md for the boundary and the cookie harvest-and-replay
+// runbook.
 //
 // Usage:
 //
 //	go run . -dump ch.json
 //	python3 ../../tools/parse_clienthello.py ch.json
+//
+// Replay cookies harvested from a real browser (see docs/anti-bot.md):
+//
+//	go run . -cookies harvested.json
 package main
 
 import (
@@ -31,9 +37,18 @@ func main() {
 	target := flag.String("url", "https://stream.wb.ru/", "target URL")
 	dump := flag.String("dump", "", "write the raw ClientHello record JSON to this path")
 	timeout := flag.Duration("timeout", 30*time.Second, "request timeout")
+	cookiesPath := flag.String("cookies", "", "optional path to a JSON cookie file to load into Profile.CookieJar before mimic.New (see mimic/cookiejar.go and docs/anti-bot.md)")
 	flag.Parse()
 
 	profile := mimic.MustLoadProfile("profile.json")
+	if *cookiesPath != "" {
+		jar, err := mimic.LoadCookieJarFile(*cookiesPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		profile.CookieJar = jar
+		fmt.Printf("cookies: loaded %s into Profile.CookieJar\n", *cookiesPath)
+	}
 	client, err := mimic.New(profile)
 	if err != nil {
 		log.Fatal(err)

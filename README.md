@@ -65,6 +65,7 @@ new site with [skill/SKILL.md](skill/SKILL.md).
 - [How it works, limits, roadmap](docs/methodology.md)
 - [HANDOFF — verified state and remaining work](HANDOFF.md)
 - [vk.ru example](examples/vk-ru/) · [stream.wb.ru example](examples/stream-wb-ru/) · [stand probe](examples/stand-probe/)
+- [Public capture receiver: test.auto-gram.ru](docs/receiver-stand.md)
 
 ## Honest limits
 
