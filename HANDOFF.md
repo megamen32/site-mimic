@@ -32,6 +32,34 @@ against `kulikov0/headless-client`.
     legitimate modern-Chrome fingerprint at the JA4 level.
 - Connection reuse works (2 TCP flows for 3 requests on one client).
 
+## L3/L4 (TCP/IP) layer — first data (2026-08-30 evening)
+
+SYN fingerprints extracted from the same pcaps (`.tmpbin/tcp_fp.py` pattern):
+
+| Stack | TTL | Window | SYN options |
+|---|---|---|---|
+| Phone (Android, via PcapDroid tun) | 64 | 65535 | `MSS=9960, SACKok, TS, NOP, WS=10` |
+| Chromium in stand container | 64 | 64240 | `MSS=1460, SACKok, TS, NOP, WS=7` |
+| **Our probe (chrome_exact, Go, same container)** | 64 | 64240 | `MSS=1460, SACKok, TS, NOP, WS=7` — **identical to Chromium** |
+
+Findings:
+- At L3/L4 a Go client on Linux is already kernel-identical to Chrome on
+  Linux (SYN comes from the kernel, not the app). TTL 64 = Linux/Android
+  class; a Windows-origin client (128) is what TTL exposes.
+- The PcapDroid tun-side view DISTORTS L4 (`MSS=9960` is a tun-MTU artifact;
+  a native 4G SYN carries ~1340-1420, and TTL crosses the radio leg
+  decremented). Only a receiver-side capture shows the true bytes.
+- Phone-as-proxy leg is live: `com.gptadmin.cellularproxy` on the phone
+  (HTTP CONNECT on :3126, reached via `adb forward tcp:3126 tcp:3126`;
+  NOTE the service needs a UI launch — the exported-intent start is
+  blocked, `am start-foreground-service` fails with not-exported). Our
+  chrome_exact client through the phone reached vk.ru with 200 OK over
+  HTTP/2, and tls.peet.ws confirmed the egress IP is the phone's carrier
+  (178.176.77.182), not the host's.
+- Still missing: receiver-side TTL/TCP-options truth for the full chain
+  (our client → phone proxy → a byte-capturing endpoint). Needs a public
+  byte-capturing target address (peet.ws shows TLS/h2 but not TTL).
+
 ## Remaining work, ranked
 
 1. **Header sequence on the wire.** Our profiles carry captured header
