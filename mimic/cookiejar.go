@@ -68,11 +68,11 @@ func LoadCookieJarFile(path string) (http.CookieJar, error) {
 			return nil, fmt.Errorf("mimic: cookies %s entry %d: invalid domain %q", path, i, e.Domain)
 		}
 
-		path := e.Path
-		if path == "" {
-			path = "/"
+		cookiePath := e.Path
+		if cookiePath == "" {
+			cookiePath = "/"
 		}
-		u, err := url.Parse("https://" + domain + path)
+		u, err := url.Parse("https://" + domain + cookiePath)
 		if err != nil {
 			return nil, fmt.Errorf("mimic: cookies %s entry %d: build url: %w", path, i, err)
 		}
@@ -80,7 +80,7 @@ func LoadCookieJarFile(path string) (http.CookieJar, error) {
 		c := &http.Cookie{
 			Name:     e.Name,
 			Value:    e.Value,
-			Path:     path,
+			Path:     cookiePath,
 			Secure:   e.Secure,
 			HttpOnly: e.HTTPOnly,
 		}

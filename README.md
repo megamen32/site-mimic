@@ -18,7 +18,7 @@ fully worked examples.
 |---|---|---|
 | uTLS `chrome_auto` | `t13d1516h2_8daaf6152771_d8a2da3f94cd` | 200 OK over HTTP/2; near-match (extension set differs) |
 | `chrome_exact` (delegates TLS to [headless-client](https://github.com/kulikov0/headless-client)) | `t13d1516h2_8daaf6152771_806a8c22fdea` | **byte-exact JA4 match with the browser** |
-| Real phone (Samsung S21 Ultra, Android Chrome 149, 4G) | same fingerprint class: TLS 1.3, 16 ciphers incl. GREASE, ALPN h2, per-connection extension shuffling | confirms the desktop reference |
+| Real phone (Samsung S21 Ultra, Android Chrome 149, 4G) | `t13d1516h2_8daaf6152771_d8a2da3f94cd` — same fingerprint class ([phone reference](docs/phone-reference.md)) | confirms the desktop reference |
 
 Also verified: `stream.wb.ru` returns the same 498 `wbaas` anti-bot
 challenge a fresh real browser gets — transport parity is correct, the JS
@@ -64,15 +64,17 @@ new site with [skill/SKILL.md](skill/SKILL.md).
 - [Fit-a-site methodology (AI-agent skill)](skill/SKILL.md)
 - [How it works, limits, roadmap](docs/methodology.md)
 - [HANDOFF — verified state and remaining work](HANDOFF.md)
-- [vk.ru example](examples/vk-ru/) · [stream.wb.ru example](examples/stream-wb-ru/) · [stand probe](examples/stand-probe/)
+- [vk.ru example](examples/vk-ru/) · [m.vk.ru mobile example](examples/vk-ru-mobile/) · [stream.wb.ru example](examples/stream-wb-ru/) · [stand probe](examples/stand-probe/)
+- [Anti-bot boundary & cookie replay](docs/anti-bot.md) · [Desktop/phone JA4 references](docs/phone-reference.md)
 - [Public capture receiver: test.auto-gram.ru](docs/receiver-stand.md)
 
 ## Honest limits
 
-With `chrome_exact` the TLS layer is byte-exact; with uTLS profiles it is a
-near-match. Header values and sets are exact, wire header order and HTTP/2
-SETTINGS framing are Go defaults; QUIC/DTLS are not covered — details in
-[docs/methodology.md](docs/methodology.md). Anti-bot JavaScript challenges
-are out of scope by design.
+With `chrome_exact` the TLS layer is byte-exact, and the header wire order
+plus Chrome-shaped HTTP/2 framing come from headless-client too (see
+[docs/methodology.md](docs/methodology.md) for what is closed vs still
+Go-shaped on the uTLS-only path). QUIC/DTLS are not covered. Anti-bot
+JavaScript challenges are out of scope by design — replay support for
+browser-harvested cookies is in [docs/anti-bot.md](docs/anti-bot.md).
 
 MIT licensed. Not affiliated with VK or Wildberries.

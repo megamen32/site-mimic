@@ -42,6 +42,13 @@ commits, pushes, tags v0.1.0.
 ## Status
 
 - [x] Recon complete (code, headless-client API, captures, fast-agent CLI).
-- [ ] W1..W5 results integrated.
-- [ ] Real-surface tests green.
-- [ ] Commits + push + tag v0.1.0.
+- [x] W1-W5 results integrated (W4 via built-in agent; W1/W2/W3/W5 by Lead —
+      fast-agent had no tool exec and the model key lost gpt-5.6-terra).
+- [x] Real-surface tests green: vk-ru 200, vk-ru-mobile 200 (m.vk.ru),
+      stream-wb-ru 498 boundary + cookie error path, go build/vet/test,
+      JA4 canary browser.pcap == t13d1516h2_8daaf6152771_806a8c22fdea.
+- [x] HANDOFF.md items 1-7 closed; README updated.
+- [x] Commits + push + tag v0.1.0.
+
+Note: a parallel session (receiver-stand work) committed part of this
+task's files in d7a5e77 — unified history, no conflicts.

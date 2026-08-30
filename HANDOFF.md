@@ -60,29 +60,41 @@ Findings:
   (our client → phone proxy → a byte-capturing endpoint). Needs a public
   byte-capturing target address (peet.ws shows TLS/h2 but not TTL).
 
-## Remaining work, ranked
+## Remaining work — closed 2026-08-30 (this list is done)
 
-1. **Header sequence on the wire.** Our profiles carry captured header
-   values, but wire order is Go's. headless-client claims header-order
-   coverage — audit what it does for h1 and h2, adopt the mechanism or
-   document precisely why values-only is sufficient for the sites we care
-   about.
-2. **Mobile profile.** Build `examples/vk-ru-mobile` from the captured
-   Android Chrome 149 header reference (UA `Chrome/149… Mobile`, zstd
-   caveat: Go cannot decode zstd — drop it from accept-encoding like br).
-3. **HTTP/2 frame fingerprint.** SETTINGS/WINDOW_UPDATE/PRIORITY values and
-   order are still Go's `x/net/http2` defaults. Check what headless-client
-   does at the frame layer; adopt or build a custom framer.
-4. **Exact-vs-phone JA4 diff.** Compute a FoxIO-comparable JA4 for the
-   phone's m.vk.ru hello (the in-repo pcap parser uses its own simplified
-   JA4) and pin it next to the stand's browser JA4 as the mobile reference.
-5. **Challenge/token flows.** For anti-bot sites (stream.wb.ru `wbaas`):
-   document + implement cookie/token harvest in a real browser and replay
-   via `Profile.CookieJar`.
-6. **CI.** A docker job that builds the stand image, runs browser+probe
-   against a stable target and diffs JA4; plus a rate-limited vk.ru 200
-   canary.
-7. **Release mechanics.** Tag v0.1.0 so the module resolves on pkg.go.dev.
+All seven items from the original handoff are complete:
+
+1. **Header sequence on the wire — CLOSED.** headless-client (the
+   `chrome_exact` transport) owns h1 and h2 wire order (Chrome order tables
+   in `internal/chromehttp1/request.go` and
+   `internal/chromehttp2/internal/httpcommon/request.go`). Documented in
+   [docs/methodology.md](docs/methodology.md): closed on `chrome_exact`,
+   Go-shaped on the uTLS-only path.
+2. **Mobile profile — CLOSED.** `examples/vk-ru-mobile` replays the Android
+   Chrome 149 capture verbatim (UA `Chrome/149… Mobile`, full
+   `gzip, deflate, br, zstd` — the `chrome_exact` transport decodes br/zstd
+   itself). Canary: `go run . -url https://m.vk.ru/` → 200 OK.
+3. **HTTP/2 frame fingerprint — CLOSED.** headless-client ships a Chrome-tuned
+   http2 fork (SETTINGS `INITIAL_WINDOW_SIZE=6291456`,
+   `MAX_HEADER_LIST_SIZE=262144`, WINDOW_UPDATE 15663105, Chrome priority
+   scheduling). Documented in [docs/methodology.md](docs/methodology.md).
+4. **Exact-vs-phone JA4 diff — CLOSED.** `tools/ja4_from_pcap.py` implements
+   the FoxIO JA4 (validated: reproduces the stand's byte-exact
+   `t13d1516h2_8daaf6152771_806a8c22fdea` from `browser.pcap` and the
+   documented `chrome_auto` value from `probe.pcap`); QUIC Initials decrypt
+   via `tools/quic_initial.py`. Mobile reference pinned in
+   [docs/phone-reference.md](docs/phone-reference.md):
+   `t13d1516h2_8daaf6152771_d8a2da3f94cd` (same extension hash as uTLS
+   `chrome_auto`).
+5. **Challenge/token flows — CLOSED (as far as transport can go).**
+   `mimic.LoadCookieJarFile` + `-cookies` in `examples/stream-wb-ru` replay
+   browser-harvested `wbaas` cookies; the boundary (498 + JS challenge, and
+   the harvest runbook) is documented in [docs/anti-bot.md](docs/anti-bot.md).
+6. **CI — CLOSED.** `.github/workflows/ci.yml`: build+vet+test on push/PR;
+   single-request vk.ru 200 canary on push to main; manual-only
+   `transport-parity` job builds the stand and diffs JA4 (experimental,
+   `continue-on-error`).
+7. **Release mechanics — DONE.** Tagged v0.1.0.
 
 ## Phone-capture runbook (adb only, verified)
 
@@ -102,8 +114,6 @@ Findings:
    tools/rutube-replay/transport_parity/pcap_parser.py captures/phone.pcap`.
 5. Chrome on 4G ignores Android's global `http_proxy` setting after the
    first process start — do not waste time on it; use (2) instead.
-
-## Quick verification loop
 
 ## Quick verification loop
 

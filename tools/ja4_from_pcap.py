@@ -251,44 +251,46 @@ def main() -> int:
                 print(f"{path} {src}:{sport} > {dst}:{dport} sni={sni or '-'} ja4={ja4}")
                 printed_for_file += 1
 
-        for trace in _clienthellos(_reassemble(segments)):
-            ja4, _ = compute_ja4(trace)
-            sni = trace.get("sni") or ""
-            if args.sni and args.sni.lower() not in sni.lower():
-                continue
-            seen.add(ja4)
-            emit(ja4, sni)
-        # Fallback 1: lift whole hellos out of individual segments
-        # (deduplicated per flow by JA4).
-        for _seq, data in segments:
-            trace = _complete_hello_in_segment(data)
-            if trace is None:
-                continue
-            ja4, _ = compute_ja4(trace)
-            if ja4 in seen:
-                continue
-            sni = trace.get("sni") or ""
-            if args.sni and args.sni.lower() not in sni.lower():
-                continue
-            seen.add(ja4)
-            emit(ja4, sni)
-        # Fallback 2: PCAPdroid-style captures carry synthetic metadata
-        # segments whose sequence numbers overlap the real data and corrupt
-        # strict reassembly. Rebuild the stream starting at each segment
-        # that itself begins a ClientHello and re-scan from there.
-        for start, data in segments:
-            if not data[:1] == b"\x16" or len(data) < 6 or data[5:6] != b"\x01":
-                continue
-            tail = [s for s in segments if s[0] >= start]
-            for trace in _clienthellos(_reassemble(tail)):
+            def pass_filter(sni: str) -> bool:
+                return not args.sni or args.sni.lower() in sni.lower()
+
+            for trace in _clienthellos(_reassemble(segments)):
+                ja4, _ = compute_ja4(trace)
+                sni = trace.get("sni") or ""
+                if not pass_filter(sni):
+                    continue
+                seen.add(ja4)
+                emit(ja4, sni)
+            # Fallback 1: lift whole hellos out of individual segments
+            # (deduplicated per flow by JA4).
+            for _seq, data in segments:
+                trace = _complete_hello_in_segment(data)
+                if trace is None:
+                    continue
                 ja4, _ = compute_ja4(trace)
                 if ja4 in seen:
                     continue
                 sni = trace.get("sni") or ""
-                if args.sni and args.sni.lower() not in sni.lower():
+                if not pass_filter(sni):
                     continue
                 seen.add(ja4)
                 emit(ja4, sni)
+            # Fallback 2: reassembly can still miss when a tag segment shares
+            # the ClientHello's own sequence number; rebuild the stream from
+            # every segment that itself begins a hello and re-scan.
+            for start, _data in segments:
+                tail = [s for s in segments if s[0] >= start]
+                if len(tail) == len(segments) and start == segments[0][0]:
+                    continue  # already covered by the strict pass
+                for trace in _clienthellos(_reassemble(tail)):
+                    ja4, _ = compute_ja4(trace)
+                    if ja4 in seen:
+                        continue
+                    sni = trace.get("sni") or ""
+                    if not pass_filter(sni):
+                        continue
+                    seen.add(ja4)
+                    emit(ja4, sni)
         for flow, datagrams in udp_flows.items():
             if 443 not in (flow[1], flow[3]):
                 continue
