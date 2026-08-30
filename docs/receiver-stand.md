@@ -53,6 +53,18 @@ client ──► Cloudflare edge (orange, TLS #1) ──► router :443 DNAT
   (`ttl=64 win=64240 MSS=1460 SACKok TS NOP WS=7`); the Android phone stack
   differs (`win=65535 WS=10`), and through a VPN/tun capture its MSS is
   distorted (`9960` tun artifact) — receiver-side capture is the only truth.
+- **Receiver-side truth for the real phone (4G → origin direct, after the
+  DNS-only flip):** 116 SYNs from the phone's carrier IP
+  (`178.176.72.138`): `ttl=49 id=0 df=0 win=65535
+  [MSS=1300, NOP, WS=6, NOP, NOP, TS, SACKok, EOL]`. Compare with what the
+  PcapDroid tun-side capture showed (`ttl=64 df=1 MSS=9960
+  [MSS,SACKok,TS,NOP,WS=10]`): the carrier path rewrites id/df/mss and the
+  option ORDER differs from desktop Linux — so a desktop-origin client can
+  be told apart from a true Android one at L4 even before TLS. Also visible
+  in the same window: Cloudflare-edge SYNs (`104.22.x/172.69.x/172.71.x`,
+  `ttl=43-45 win=65535 WS=13`) for the still-proxied sibling subdomains —
+  the receiver cleanly separates CF-origin traffic from direct clients by
+  source TTL/options.
 - Known quirk: nginx 8444 (nginx 1.18) serves HTTP/1.1 only on that
   listener: the `chrome_exact` transport (h2-first) completes the TLS
   handshake but fails after with `PROTOCOL_ERROR`. h1 clients (curl) and
