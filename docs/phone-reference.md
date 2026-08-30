@@ -45,13 +45,44 @@ Android Chrome 149 (mobile): t13d1516h2_8daaf6152771_d8a2da3f94cd
 Desktop stand Chromium:      t13d1516h2_8daaf6152771_806a8c22fdea
 ```
 
+## Desktop Chrome 152 stable — what changed after 149
+
+Measured 2026-08-30 on this workstation (Google Chrome 152.0.7977.64,
+headless, hello captured via https://tls.peet.ws/api/all — our FoxIO JA4
+implementation reproduces peet.ws's value exactly):
+
+```text
+Chrome 152: t13d1517h2_8daaf6152771_cb7bf5808d99
+```
+
+Differences vs Chrome 149 (the whole extension set is otherwise identical):
+
+- **Post-quantum signature algorithms** `0x0904/0x0905/0x0906` (ML-DSA-44/65/87)
+  appear in signature_algorithms; the 149 hello still offered the classic
+  RSA/ECDSA/Ed25519 set only. This is the fingerprint-visible TLS novelty of
+  the 150 line.
+- A new **unregistered extension `0xCA24` (51764)** carrying a structured
+  multi-record payload (no public documentation found; IANA lists nothing) —
+  it pushes the extension count 16 → 17 and changes the JA4 third segment.
+- Over HTTP the `sec-ch-ua` brand list is now shuffled per request
+  (`"Chromium";v="152", "Not?A_Brand";v="24", "Google Chrome";v="152"`)
+  where 149 sent a fixed order — headers, not TLS.
+
+So "149" in this file and in the mobile profile is the capture-day version
+(the phone's auto-update lagged); the current stable is 152 and its JA4 is
+the one to diff future `chrome_exact` stand runs against until the pinned
+stand Chromium is bumped. `examples/vk-ru/profile.json` now carries the
+Chrome 152 header capture (headed-browser UA form: the raw capture said
+`HeadlessChrome/152.0.0.0`; headed Chrome sends `Chrome/152.0.0.0`).
+
 Both share the cipher hash `8daaf6152771`; they differ in the extension-set
-hash: the phone's modern Chrome 149 carries a different extension/signature
-set (including post-quantum signature algorithms) from the stand's older
-pinned Chromium. Notably the phone's extension hash equals the uTLS
-`chrome_auto` value (`d8a2da3f94cd`) — for this mobile target uTLS
+hash: the stand's pinned Chromium and the phone's Android Chrome 149 ship
+different extension sets (and the phone's extension hash equals the uTLS
+`chrome_auto` value `d8a2da3f94cd`) — for this mobile target uTLS
 `chrome_auto` already JA4-matches the real device, while `chrome_exact`
-matches the desktop stand byte-for-byte.
+matches the desktop stand byte-for-byte. Note that none of the 149 hellos
+offer the post-quantum signature algorithms — that starts with the 150 line
+(see the Chrome 152 section above).
 
 Over QUIC the same phone offers `q13d0311h3_55b375c5d22e_653d80c3fe9d`
 (QUIC hellos are TLS 1.3-only: 3 cipher suites, ALPN h3 — a different

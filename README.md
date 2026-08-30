@@ -19,6 +19,7 @@ fully worked examples.
 | uTLS `chrome_auto` | `t13d1516h2_8daaf6152771_d8a2da3f94cd` | 200 OK over HTTP/2; near-match (extension set differs) |
 | `chrome_exact` (delegates TLS to [headless-client](https://github.com/kulikov0/headless-client)) | `t13d1516h2_8daaf6152771_806a8c22fdea` | **byte-exact JA4 match with the browser** |
 | Real phone (Samsung S21 Ultra, Android Chrome 149, 4G) | `t13d1516h2_8daaf6152771_d8a2da3f94cd` — same fingerprint class ([phone reference](docs/phone-reference.md)) | confirms the desktop reference |
+| Desktop Chrome 152 stable | `t13d1517h2_8daaf6152771_cb7bf5808d99` — adds ML-DSA (post-quantum) signature algorithms + unregistered ext `0xCA24` | next target for the stand diff ([what changed](docs/phone-reference.md)) |
 
 Also verified: `stream.wb.ru` returns the same 498 `wbaas` anti-bot
 challenge a fresh real browser gets — transport parity is correct, the JS

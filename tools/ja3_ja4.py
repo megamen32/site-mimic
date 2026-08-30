@@ -108,7 +108,8 @@ def _ja4_c(trace: dict) -> str:
     if not ext_hex:
         return "0" * 12
     payload = ",".join(ext_hex)
-    sig_algs = _hex4(trace.get("signature_algorithms", []))
+    # GREASE is ignored anywhere it appears (FoxIO spec), signature list included
+    sig_algs = _hex4(_strip_grease(trace.get("signature_algorithms", [])))
     if sig_algs:
         payload += "_" + ",".join(sig_algs)  # wire order, not sorted
     return hashlib.sha256(payload.encode("ascii")).hexdigest()[:12]
