@@ -133,6 +133,25 @@ option and ttl 64 without it; `examples/vk-ru -ttl 128` reproduces). TCP
 option-layout quirks (timestamps off, wscale 8) remain kernel-owned and are
 not forged.
 
+**Headed Windows Chrome 151, full navigation (2026-09-01).** Driven through
+the interactive session (scheduled task `/it`) to the trusted public
+receiver `https://test.auto-gram.ru/` (Chrome mapped it to our nginx via
+`--host-resolver-rules`; the receiver logged the application view, tcpdump
+caught the ClientHello):
+
+- JA4: `t13d1516h2_8daaf6152771_806a8c22fdea` (per-connection 17-ext variant
+  `t13d1517h2_8daaf6152771_a87ad97598a9`), TTL 128 on the wire — same class
+  as the stand Chromium, confirming platform-independence of the hello.
+- Headers (application view): UA `Mozilla/5.0 (Windows NT 10.0; Win64; x64)
+  … Chrome/151.0.0.0 Safari/537.36`, `sec-ch-ua: "Not=A?Brand";v="99",
+  "Google Chrome";v="151", "Chromium";v="151"`, `sec-ch-ua-platform:
+  "Windows"`, full `Accept-Encoding: gzip, deflate, br, zstd`, and a
+  `Priority: u=0, i` header. Note: over plain http (insecure context) the
+  same browser sends NO client hints and only `gzip, deflate` — captures
+  must go over HTTPS to reflect real-site behaviour.
+- Packaged as `examples/vk-ru-windows/` (profile carries `ip_ttl: 128`);
+  canary vk.ru 200 OK.
+
 Conclusion: headless mode does not change Chrome's transport fingerprint —
 captures made headless are valid for TLS/JA4 and (on this build) for the
 navigation header set; only the UA token differs. A Chromium-based OS
