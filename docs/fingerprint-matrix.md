@@ -16,7 +16,7 @@ Mimic profiles map to these references 1:1.
 | 5 | Windows 11 23H2 | Chrome | 151.0.7922.174 | headless | same class (measured via IP: `t13i1515h2_8daaf6152771_806a8c22fdea`) | 128 | insecure-context caveat: over http no client hints, only `gzip, deflate` |
 | 6 | Windows 11 23H2 | curl (Schannel) | 8.13.0 | native Windows TLS | `t13i2511h1_f5a23f7cfd7b_36bf25f296df` (25 ciphers, 11 exts, h1) | 128 | what "native Windows app" looks like vs Windows Chrome |
 | 7 | Linux x64 | BrowserOS (Chromium) | 148 | OS-default browser, live instance | `t13d1813h1_85036bcba153_d339722ba4af` (dominant) | 64 | **not a Chrome substitute**: h1-only ALPN, 18-cipher set, 13 extensions, no ECH/ALPS/PQ; headers `sec-ch-ua: "Not/A)Brand";v="99", "Chromium";v="148"` |
-| 8 | — | AdGuard OFF comparison (Windows) | — | **pending**: AdGuard self-protection blocks remote stop; user must exit it from the tray, then we re-capture row 4 | — | — | with AdGuard ON the TLS ClientHello was untouched (WFP mode, no TLS MITM); header-level influence possible |
+| 8 | — | AdGuard OFF comparison (Windows) | — | AdGuard was disabled (2026-09-01 evening, user-confirmed); remote re-capture attempt blocked: interactive-session Chrome launch stopped responding (screen locked?) — **pending one manual navigation** to https://test.auto-gram.ru/ from that machine, receiver + wire capture pick it up automatically | — | — | with AdGuard ON the TLS ClientHello was untouched (WFP mode, no TLS MITM): JA4 stayed genuine-Chrome; header-level influence still to be A/B'd |
 
 ## Mimic profile mapping
 
