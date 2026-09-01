@@ -37,6 +37,13 @@ extensions (one extra extension appears on some connections):
 - m.vk.ru, second connection:
   `t13d1517h2_8daaf6152771_b6f405a00624` (one extension more)
 
+Re-verified 2026-09-01 with a fresh PCAPdroid capture on the same device
+(Chrome still 149.0.7827.200): m.vk.ru again
+`t13d1516h2_8daaf6152771_d8a2da3f94cd`, identical on every vk.ru flow —
+the mobile reference is stable across days and connections. The navigation
+header capture also reproduced the existing
+`examples/vk-ru-mobile/profile.json` byte-for-byte.
+
 Across the capture's Chrome flows the 16-extension value dominates
 (39 vs 5), so the mobile reference is:
 
