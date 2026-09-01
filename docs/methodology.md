@@ -10,7 +10,7 @@ layers. Each is a separate gate a defender can close.
 
 | Layer | What it exposes | site-mimic status |
 |---|---|---|
-| TCP | MSS/TTL/window quirks of Go's stack | not addressed (rarely gated) |
+| TCP | MSS/TTL/window quirks of Go's stack | **TTL stamped per connection** (`mimic.WithTTL` / profile `ip_ttl`, e.g. 128 = Windows; kernel default otherwise — 64 on Linux/Android); other TCP-options quirks not addressed (rarely gated) |
 | TLS ClientHello | cipher/extension/group sets and order → JA3/JA4 | **matched** via uTLS `chrome_auto` |
 | TLS handshake completion | record sizes, key-share behaviour | uTLS Chrome spec |
 | ALPN | h2 offer | matched |

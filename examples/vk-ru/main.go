@@ -28,10 +28,15 @@ func main() {
 	target := flag.String("url", "https://vk.ru/", "target URL")
 	dump := flag.String("dump", "", "write the raw ClientHello record JSON to this path")
 	timeout := flag.Duration("timeout", 30*time.Second, "request timeout")
+	ttl := flag.Int("ttl", 0, "override IP TTL (e.g. 128 to present as Windows; 0 = profile/kernel default)")
 	flag.Parse()
 
 	profile := mimic.MustLoadProfile("profile.json")
-	client, err := mimic.New(profile)
+	opts := []mimic.Option{}
+	if *ttl != 0 {
+		opts = append(opts, mimic.WithTTL(*ttl))
+	}
+	client, err := mimic.New(profile, opts...)
 	if err != nil {
 		log.Fatal(err)
 	}

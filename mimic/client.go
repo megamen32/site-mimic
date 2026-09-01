@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
+	"syscall"
 	"time"
 
 	utls "github.com/refraction-networking/utls"
@@ -61,6 +62,7 @@ type transportOptions struct {
 	insecureTLS bool
 	dialTimeout time.Duration
 	serverName  string
+	ttl         int
 }
 
 // WithProxy routes traffic through an HTTP CONNECT proxy
@@ -87,6 +89,48 @@ func WithServerName(name string) Option {
 	return func(o *transportOptions) { o.serverName = name }
 }
 
+// WithTTL stamps the IP TTL ("time to live") on every outgoing connection.
+// The kernel otherwise uses its default — 64 on Linux/Android, 128 on
+// Windows — which alone reveals the OS family to the remote end. Pass 128
+// to present as a Windows-origin client on the wire. 0 (default) keeps the
+// kernel value. A Profile's ip_ttl field does the same per profile; the
+// option takes precedence.
+func WithTTL(ttl int) Option {
+	return func(o *transportOptions) { o.ttl = ttl }
+}
+
+// effectiveTTL resolves the TTL for a transport: the explicit option wins,
+// then the profile field, then the kernel default (0 = no override).
+func effectiveTTL(o transportOptions, p Profile) int {
+	if o.ttl != 0 {
+		return o.ttl
+	}
+	return p.IPTTL
+}
+
+// applyTTL returns d with a Control hook stamping the TTL on each socket
+// (IP_TTL for IPv4, IPV6_UNICAST_HOPS for IPv6). ttl <= 0 is a no-op.
+func applyTTL(d *net.Dialer, ttl int) *net.Dialer {
+	if ttl <= 0 {
+		return d
+	}
+	d.Control = func(network, address string, c syscall.RawConn) error {
+		var ctlErr error
+		ctrlErr := c.Control(func(fd uintptr) {
+			if network == "tcp6" || network == "udp6" {
+				ctlErr = syscall.SetsockoptInt(int(fd), syscall.IPPROTO_IPV6, syscall.IPV6_UNICAST_HOPS, ttl)
+			} else {
+				ctlErr = syscall.SetsockoptInt(int(fd), syscall.IPPROTO_IP, syscall.IP_TTL, ttl)
+			}
+		})
+		if ctrlErr != nil {
+			return ctrlErr
+		}
+		return ctlErr
+	}
+	return d
+}
+
 // New builds an *http.Client whose TLS handshakes are performed by uTLS with
 // the profile's ClientHelloID. HTTPS requests negotiate HTTP/2 via ALPN and
 // fall back to HTTP/1.1 per host when a server does not offer h2. Pass a
@@ -108,7 +152,7 @@ func New(p Profile, opts ...Option) (*http.Client, error) {
 		return nil, err
 	}
 
-	dialer := &net.Dialer{Timeout: o.dialTimeout, KeepAlive: 30 * time.Second}
+	dialer := applyTTL(&net.Dialer{Timeout: o.dialTimeout, KeepAlive: 30 * time.Second}, effectiveTTL(o, p))
 	dial := func(ctx context.Context, network, addr string, requireH2 bool) (net.Conn, error) {
 		host, _, err := net.SplitHostPort(addr)
 		if err != nil {

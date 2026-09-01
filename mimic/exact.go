@@ -15,7 +15,7 @@ import (
 // measured against the current stable Chrome (JA4-verified with its capture
 // stand); proxy support comes from our CONNECT dialer passed as DialContext.
 func newExactRoundTripper(o transportOptions, p Profile) (http.RoundTripper, error) {
-	dialer := &net.Dialer{Timeout: o.dialTimeout, KeepAlive: 30 * time.Second}
+	dialer := applyTTL(&net.Dialer{Timeout: o.dialTimeout, KeepAlive: 30 * time.Second}, effectiveTTL(o, p))
 	dialContext := func(ctx context.Context, network, addr string) (net.Conn, error) {
 		return dialUnderProxy(ctx, dialer, o.proxyURL, network, addr)
 	}

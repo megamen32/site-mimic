@@ -119,9 +119,12 @@ Windows Chrome 151 keeps the `806a8c22fdea` extension hash of the stand's
 Chromium class — the post-quantum + `0xCA24` shift arrives with the 152
 line. The L3/L4 layer separates OS families cleanly: **TTL 128 (Windows)
 vs 64 (Linux/Android)** plus the TCP-options layout (no timestamps on this
-Windows box, wscale 8 vs 7). TTL is set by the kernel — site-mimic does not
-forge it today; a `Control`-based `IP_TTL` override is the straightforward
-addition if a deployment ever needs it (see docs/methodology.md, TCP layer).
+Windows box, wscale 8 vs 7). TTL is set by the kernel — site-mimic now
+forged it: `mimic.WithTTL(128)` or a profile `"ip_ttl": 128` stamps every
+connection (verified on the wire: the client's SYN carries ttl 128 with the
+option and ttl 64 without it; `examples/vk-ru -ttl 128` reproduces). TCP
+option-layout quirks (timestamps off, wscale 8) remain kernel-owned and are
+not forged.
 
 Conclusion: headless mode does not change Chrome's transport fingerprint —
 captures made headless are valid for TLS/JA4 and (on this build) for the

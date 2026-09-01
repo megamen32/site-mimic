@@ -30,6 +30,11 @@ type Profile struct {
 	Headers     map[string]string `json:"headers"`
 	// CookieJar persists site cookies across requests.
 	CookieJar http.CookieJar `json:"-"`
+	// IPTTL stamps every outgoing connection with this IP TTL (see
+	// mimic.WithTTL). Set 128 to present as a Windows-origin client on the
+	// wire: the kernel default (64 on Linux/Android, 128 on Windows) alone
+	// reveals the OS family. 0 = kernel default.
+	IPTTL int `json:"ip_ttl"`
 }
 
 // LoadProfile reads a profile JSON file from disk.
