@@ -38,11 +38,20 @@ extensions (one extra extension appears on some connections):
   `t13d1517h2_8daaf6152771_b6f405a00624` (one extension more)
 
 Re-verified 2026-09-01 with a fresh PCAPdroid capture on the same device
-(Chrome still 149.0.7827.200): m.vk.ru again
+(Chrome still 149.0.7827.200 at that moment): m.vk.ru again
 `t13d1516h2_8daaf6152771_d8a2da3f94cd`, identical on every vk.ru flow —
-the mobile reference is stable across days and connections. The navigation
-header capture also reproduced the existing
+the 149 reference was stable across days and connections, and the
+navigation header capture reproduced the existing
 `examples/vk-ru-mobile/profile.json` byte-for-byte.
+
+**Chrome updated on the device to 152.0.7977.64 (2026-09-01) and
+re-captured**: m.vk.ru now
+`t13d1518h2_8daaf6152771_e2d80978ab2e` — 18 extensions (mobile set is
+wider than desktop's 17), **with** the post-quantum signature algorithms
+and 0xCA24. Headers: sec-ch-ua `"Chromium";v="152", "Not?A_Brand";v="24",
+"Google Chrome";v="152"`, UA `Chrome/152.0.0.0 Mobile Safari/537.36`.
+The full cross-platform reference table lives in
+[fingerprint-matrix.md](fingerprint-matrix.md).
 
 **Field-level equivalence, wire-verified 2026-09-01**: a field-by-field diff
 of the phone hello against our transports shows the phone's ClientHello
