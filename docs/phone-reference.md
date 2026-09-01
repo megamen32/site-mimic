@@ -44,6 +44,21 @@ the mobile reference is stable across days and connections. The navigation
 header capture also reproduced the existing
 `examples/vk-ru-mobile/profile.json` byte-for-byte.
 
+**Field-level equivalence, wire-verified 2026-09-01**: a field-by-field diff
+of the phone hello against our transports shows the phone's ClientHello
+equals uTLS `HelloChrome_Auto` exactly — same cipher list (with GREASE),
+same extension set (incl. ALPS 17613, ECH 65037), same signature algorithms
+(classic set, **no** post-quantum entries at 149), same groups (incl.
+X25519MLKEM768), same supported_versions — with per-connection extension
+shuffling on both sides and per-connection GREASE values on both sides. The
+`chrome_exact` path, by contrast, adds the post-quantum signature algorithms
+0x0904-0906 (headless-client patches them in for current desktop Chrome).
+Profiles can therefore target the phone explicitly with
+`tls_client_hello: "android_149"` (alias of chrome_auto) — live captures of
+our client reproduce the phone JA4 `t13d1516h2_8daaf6152771_d8a2da3f94cd`
+with a different JA3 every connection, exactly like the device.
+`examples/vk-ru-mobile` uses it (canary m.vk.ru 200 OK).
+
 Across the capture's Chrome flows the 16-extension value dominates
 (39 vs 5), so the mobile reference is:
 

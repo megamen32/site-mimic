@@ -1,9 +1,10 @@
 // Command vk-ru-mobile fetches https://m.vk.ru/ the way a mobile Chrome
-// browser does: the chrome_exact transport (byte-exact ClientHello plus
-// Chrome's header-order and HTTP/2 frame layers via headless-client) and the
-// header set captured from a real Android Chrome 149 navigation on a phone
-// (Samsung S21 Ultra, mobile 4G). Expected result: HTTP 200 with the mobile
-// welcome HTML.
+// browser does: the android_149 ClientHello (uTLS Chrome spec wire-verified
+// field-for-field against a real Android Chrome 149 — identical JA4
+// t13d1516h2_8daaf6152771_d8a2da3f94cd and per-connection extension
+// shuffling, see docs/phone-reference.md) and the header set captured from
+// a real Android Chrome 149 navigation on a phone (Samsung S21 Ultra,
+// mobile 4G). Expected result: HTTP 200 with the mobile welcome HTML.
 //
 // Unlike the desktop profiles, this one carries the browser's full
 // accept-encoding ("gzip, deflate, br, zstd", zstd included — a Chrome 149

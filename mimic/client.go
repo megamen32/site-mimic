@@ -35,11 +35,15 @@ var errNoH2 = errors.New("mimic: server did not negotiate h2 via ALPN")
 // ParseClientHelloID maps a profile name to a uTLS ClientHelloID.
 //
 // Recognized names: "" / "chrome_auto" (default — tracks the latest Chrome
-// spec bundled with uTLS and is the right choice for most sites), "firefox_auto",
+// spec bundled with uTLS and is the right choice for most sites),
+// "android_149" (explicit alias of chrome_auto, wire-verified field-for-field
+// against a real Android Chrome 149 — Samsung S21 Ultra, m.vk.ru capture:
+// identical JA4 t13d1516h2_8daaf6152771_d8a2da3f94cd and per-connection
+// extension shuffling; see docs/phone-reference.md), "firefox_auto",
 // "ios_auto", "random", "random_alpn".
 func ParseClientHelloID(name string) (utls.ClientHelloID, error) {
 	switch name {
-	case "", "chrome_auto":
+	case "", "chrome_auto", "android_149":
 		return utls.HelloChrome_Auto, nil
 	case "firefox_auto":
 		return utls.HelloFirefox_Auto, nil
