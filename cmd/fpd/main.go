@@ -87,7 +87,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/" || r.URL.Path == "/fp" {
+		if r.URL.Path == "/" || r.URL.Path == "/fp" || r.URL.Path == "/fp/recent" {
 			rep.serve(w, r, sn)
 			return
 		}

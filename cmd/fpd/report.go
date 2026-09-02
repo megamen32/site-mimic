@@ -9,14 +9,39 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
 type reportBuilder struct {
 	upstream string
+
+	mu     sync.Mutex
+	recent []report // newest first, capped
 }
 
 func newReportBuilder(upstream string) *reportBuilder { return &reportBuilder{upstream: upstream} }
+
+// remember keeps the last 50 reports for /fp/recent — the stand's quick
+// A/B surface: real browsers are driven at the site, then their reports
+// are read back here without any on-screen inspection.
+func (rb *reportBuilder) remember(rep report) {
+	rb.mu.Lock()
+	rb.recent = append([]report{rep}, rb.recent...)
+	if len(rb.recent) > 50 {
+		rb.recent = rb.recent[:50]
+	}
+	rb.mu.Unlock()
+}
+
+func (rb *reportBuilder) last(n int) []report {
+	rb.mu.Lock()
+	defer rb.mu.Unlock()
+	if n > len(rb.recent) {
+		n = len(rb.recent)
+	}
+	return rb.recent[:n]
+}
 
 type extOut struct {
 	ID   string `json:"id"`
@@ -184,12 +209,42 @@ func (rb *reportBuilder) build(r *http.Request, m connMeta, sn *sniffer) report 
 	return rep
 }
 
+func (rb *reportBuilder) serveRecent(w http.ResponseWriter, r *http.Request) {
+	n := 10
+	if v, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && v > 0 && v <= 50 {
+		n = v
+	}
+	only := r.URL.Query().Get("path") // e.g. "/fp" filters by requested path
+	var out []report
+	for _, rep := range rb.last(50) {
+		if only != "" && rep.HTTP.Path != only {
+			continue
+		}
+		out = append(out, rep)
+		if len(out) >= n {
+			break
+		}
+	}
+	if out == nil {
+		out = []report{}
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	enc.Encode(out)
+}
+
 type tmplData struct {
 	UA, JA4, JA3Hash, IPP, TTL, JSON string
 }
 
 func (rb *reportBuilder) serve(w http.ResponseWriter, r *http.Request, sn *sniffer) {
+	if strings.HasSuffix(r.URL.Path, "/recent") {
+		rb.serveRecent(w, r)
+		return
+	}
 	rep := rb.build(r, metaFrom(r), sn)
+	rb.remember(rep)
 	forceJSON := r.URL.Query().Get("format") == "json" || r.URL.Query().Get("fmt") == "json"
 	wantsHTML := !forceJSON && strings.Contains(r.Header.Get("Accept"), "text/html")
 

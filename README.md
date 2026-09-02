@@ -69,6 +69,7 @@ new site with [skill/SKILL.md](skill/SKILL.md).
 ## Learn more
 
 - [Исследование простыми словами (RU)](docs/RESEARCH.ru.md)
+- [Статус мимикрии: что совпадает байт-в-байт, что нет (RU, 2026-09-02)](docs/RESEARCH-STATUS.ru.md)
 - [Fit-a-site methodology (AI-agent skill)](skill/SKILL.md)
 - [How it works, limits, roadmap](docs/methodology.md)
 - [HANDOFF — verified state and remaining work](HANDOFF.md)

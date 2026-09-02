@@ -13,7 +13,8 @@
     "sec-fetch-mode",
     "sec-fetch-dest",
     "accept-encoding",
-    "accept-language"
+    "accept-language",
+    "priority"
   ],
   "headers": {
     "sec-ch-ua": "\"Google Chrome\";v=\"149\", \"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
@@ -25,6 +26,7 @@
     "sec-fetch-mode": "navigate",
     "sec-fetch-dest": "document",
     "accept-encoding": "gzip, deflate, br, zstd",
-    "accept-language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7"
+    "accept-language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+    "priority": "u=0, i"
   }
 }
