@@ -16,12 +16,38 @@ to this host yet — see "Remaining steps".
 ```
 client ──► Cloudflare edge (orange, TLS #1) ──► router :443 DNAT
         ──► haproxy 192.168.2.100:443 (TCP, SNI router, PASSTHROUGH)
-        ──► nginx 127.0.0.1:8444 ssl (TLS #2, LE cert test.auto-gram.ru)
-        ──► receiver (Go, systemd --user site-receiver.service, 127.0.0.1:8477)
+        ├─ sni test.auto-gram.ru ──► fpd (Go, systemd fpd.service, 127.0.0.1:8478,
+        │                               send-proxy-v2, TLS #2 = Go crypto/tls, h2)
+        │                               └─ every path except /fp proxied to receiver
+        └─ everything else ──► nginx 127.0.0.1:8444 ssl (TLS #2, LE cert)
+                                ──► receiver (Go, systemd --user site-receiver.service,
+                                    127.0.0.1:8477)
 ```
 
 - `mimic/cmd/receiver` — the Go receiver: JSONL log (remote IP, XFF chain,
   method, path, proto, header names/values) + echo JSON response.
+- `cmd/fpd` — the live full-fingerprint display (2026-09-02): open
+  `https://test.auto-gram.ru/fp` (browsers get HTML with a copy button,
+  everything else JSON) and read back the visitor's complete fingerprint:
+  UA + all headers, JA3/JA4 (`ja4`, `ja4_r`, `ja4_sha256`, full
+  `client_hello_hex` + decoded extensions) computed from the raw
+  ClientHello fpd peeks before crypto/tls takes over, the real client
+  IP:port from the haproxy `send-proxy-v2` header, and IP TTL / SYN TCP
+  options from fpd's built-in AF_PACKET sniffer on `enp28s0f2np2`
+  (BPF `tcp dst port 443`, per-flow cache keyed by client ip:port).
+  TLS session keys append to `/var/lib/fpd/sslkeylog.txt` (`FPD_KEYLOG`)
+  for post-hoc h2 frame decryption. Redeploy:
+  `go build -o /usr/local/bin/fpd ./cmd/fpd && sudo systemctl restart fpd`.
+  haproxy routes by an ACL block added to `/etc/haproxy/haproxy.cfg`
+  (`sni_test_fpd` → `backend be_fpd_test`, backup at
+  `haproxy.cfg.bak-fpd`). NOT shown live: header order and h2
+  SETTINGS/Akamai fingerprint (Go's h2 server does not expose them — use
+  the keylog + tshark). Because TLS now terminates at fpd, the old
+  nginx-8444 h1-only quirk no longer applies to this hostname: h2
+  clients complete requests (wire-verified with the chrome_exact probe,
+  which saw its own `t13d1516h2_8daaf6152771_806a8c22fdea` in the
+  report). tcpdump note: ClientHellos for this SNI no longer appear on
+  `lo:8444` — capture the WAN leg or read `/fp` / the keylog instead.
 - nginx vhost: `nginx-dev/state/files/sites-available/test.auto-gram.ru`
   (LE cert `/etc/letsencrypt/live/test.auto-gram.ru/`, ACME webroot
   `/var/www/letsencrypt`).
