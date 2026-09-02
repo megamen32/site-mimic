@@ -41,6 +41,13 @@ type Profile struct {
 	// touching the header tables (Chrome ships the visitor's OS languages,
 	// e.g. "ru,en-US;q=0.9,en;q=0.8,zh-CN;q=0.7,zh;q=0.6,de;q=0.5,pt;q=0.4").
 	AcceptLanguage string `json:"accept_language"`
+
+	// ResourcePlan makes the client behave like a browser session instead of
+	// a single hit: a navigation followed by its subresources (favicon,
+	// XHR, static), each with the per-resource-type Sec-Fetch/Accept shape,
+	// referer chains and human-ish delays. Executed by Profile.RunPlan;
+	// stand-probe runs it automatically when present.
+	ResourcePlan []ResourceStep `json:"resource_plan"`
 }
 
 // LoadProfile reads a profile JSON file from disk.
