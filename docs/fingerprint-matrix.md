@@ -35,7 +35,14 @@ Mimic profiles map to these references 1:1.
 ## Facts that hold across the matrix
 
 - **TTL is the cheapest OS tell**: Windows 128, Linux/Android 64 — and
-  site-mimic forges it (`WithTTL` / `ip_ttl`).
+  site-mimic forges it (`WithTTL` / `ip_ttl`). Fleet-level (2026-09-02,
+  по запросу): хосты 192.168.2.100 и 192.168.2.5 (server44) закреплены
+  на Windows L3/L4 нативно — `/etc/sysctl.d/60-win-tcp-mimic.conf`
+  (TTL 128, no-TS, wscale 8), на проводе TTL 127 после hairpin-хопа
+  без всяких оверрайдов (tools/win-tcp-preset.sh apply). Mac mini
+  оставлен нативным (macOS TTL 64, BSD-опции) по решению владельца;
+  server88 (192.168.2.75) недоступен для настройки — нет SSH
+  (открыты только 3128/80/443).
 - **Headed vs headless**: no TLS difference, no header-set difference on
   secure contexts; only the UA token differs.
 - **Insecure context (http)**: Chrome sends no client hints and no br/zstd —

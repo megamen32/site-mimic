@@ -24,6 +24,7 @@ apply() {
   cat > "$PRESET_FILE" <<'EOF'
 # site-mimic: Windows-like TCP presentation (see tools/win-tcp-preset.sh)
 # no TCP timestamps in SYN (Windows 11 reference: no TS option)
+net.ipv4.ip_default_ttl = 128
 net.ipv4.tcp_timestamps = 0
 # smaller max receive buffer -> kernel advertises window scale 8 (Windows: 8;
 # stock Ubuntu with 6 MB max advertises 7). Empirically 8 MiB max -> wscale 8.
@@ -36,6 +37,7 @@ EOF
 
 revert() {
   rm -f "$PRESET_FILE"
+  sysctl -w net.ipv4.ip_default_ttl=64
   sysctl -w net.ipv4.tcp_timestamps=1
   sysctl -w net.ipv4.tcp_rmem="4096 131072 6291456"
   sysctl -w net.ipv4.tcp_wmem="4096 16384 4194304"
@@ -43,7 +45,7 @@ revert() {
 }
 
 status() {
-  sysctl net.ipv4.tcp_timestamps net.ipv4.tcp_rmem net.ipv4.tcp_wmem
+  sysctl net.ipv4.ip_default_ttl net.ipv4.tcp_timestamps net.ipv4.tcp_rmem net.ipv4.tcp_wmem
 }
 
 case "${1:-status}" in
