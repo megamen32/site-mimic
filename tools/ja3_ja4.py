@@ -89,7 +89,9 @@ def _ja4_alpn_token(trace: dict) -> str:
         return 0x30 <= b <= 0x39 or 0x41 <= b <= 0x5A or 0x61 <= b <= 0x7A
     if alnum(first) and alnum(last):
         return chr(first) + chr(last)
-    return f"{first:02x}{last:02x}"
+    # FoxIO: first and last characters of the hex representation.
+    hx = raw.hex()
+    return hx[0] + hx[-1]
 
 
 def _ja4_b(trace: dict) -> str:

@@ -47,15 +47,16 @@ def _read_pcap(path: str):
         _vmaj, _vmin, _tz, _sig, _snap, linktype = struct.unpack(
             endian + "HHiIII", global_header[4:24]
         )
+        nsec = magic in (_MAGIC_LE_NSEC, _MAGIC_BE_NSEC)
         while True:
             packet_header = fh.read(16)
             if len(packet_header) < 16:
                 return
-            _ts, _tus, incl_len, _orig = struct.unpack(endian + "IIII", packet_header)
+            ts_sec, ts_frac, incl_len, _orig = struct.unpack(endian + "IIII", packet_header)
             data = fh.read(incl_len)
             if len(data) < incl_len:
                 return
-            yield linktype, data
+            yield linktype, data, ts_sec + ts_frac / (1e9 if nsec else 1e6)
 
 
 def _parse_link(linktype: int, frame: bytes):
@@ -226,9 +227,10 @@ def main() -> int:
     exit_code = 0
     for path in args.pcaps:
         flows: dict[tuple, list[tuple[int, bytes]]] = {}
+        flow_ts: dict[tuple, float] = {}
         udp_flows: dict[tuple, list[bytes]] = {}
         trace_dump: list[dict] = []
-        for linktype, frame in _read_pcap(path):
+        for linktype, frame, pkt_ts in _read_pcap(path):
             link = _parse_link(linktype, frame)
             if link is None:
                 continue
@@ -242,6 +244,7 @@ def main() -> int:
                     continue
                 sport, dport, seq, data = tcp
                 flows.setdefault((src, sport, dst, dport), []).append((seq, data))
+                flow_ts.setdefault((src, sport, dst, dport), pkt_ts)
             elif proto == 17 and quic_clienthellos is not None:  # UDP (QUIC)
                 udp = _parse_udp(payload)
                 if udp is None or not udp[2]:
@@ -267,6 +270,7 @@ def main() -> int:
                     ja4, _ = compute_ja4(trace)
                     sni = trace.get("sni") or ""
                     trace_dump.append({"flow": list(flow), "sni": sni, "ja4": ja4,
+                                       "ts": flow_ts,
                                        "trace": {k: v for k, v in trace.items()}})
                     if not pass_filter(sni):
                         continue
