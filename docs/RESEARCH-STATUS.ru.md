@@ -69,9 +69,13 @@ Windows и Android. Google выключил Finch-флаг за ночь. Выв
    `mss,sackOK,wscale`. Множество то же, порядок — Linux. Лечится
    отдельным netns с raw-SYN (или eBPF) на профиль.
 2. **QUIC/HTTP3, транспортные параметры**: TLS-поля QUIC-hello
-   доведены до 152 (`examples/uquic-probe`, проверено tshark'ом),
-   QUIC transport parameters остались от пресета 115 — нужен свежий
-   capture реального Chrome-QUIC и перенос параметров.
+   доведены до 152 (`examples/uquic-probe`, форма `q13d0311h3_…7ae7f4a1bb73`
+   — проверено tshark'ом). Реальные transport parameters Chrome
+   (94 байта, ext 0x0039) извлечены из capture'а телефонного QUIC и
+   реплеятся флагом `-realtp`; нюанс: uQUIC поверх реальных байт
+   добавляет свои параметры (JA4-форма уезжает в `q13d0314h3`), поэтому
+   по умолчанию используется пресетная форма. Точная подмена требует
+   маппинга значений в структуру `TransportParameters` uQUIC.
 3. **TLS session resumption**: Chrome возвращает session tickets и
    сокращает рукопожатия; наш клиент делает полный handshake каждый
    раз. Антибот видит «все соединения — новые».
