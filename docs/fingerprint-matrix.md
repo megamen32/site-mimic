@@ -25,8 +25,9 @@ Mimic profiles map to these references 1:1.
 |---|---|---|---|
 | Desktop Linux Chrome 152 | `examples/vk-ru/profile.json` | `chrome_exact` (byte-exact TLS+h2+header-order via headless-client) | — (64) |
 | Android Chrome 149 | `examples/vk-ru-mobile/profile.json` | `android_149` (field-identical to the device: same ciphers/exts/classic sig algs/groups incl. X25519MLKEM768, per-connection shuffling) | — |
-| Android Chrome 152 | reference only (row 2) — profile pending: needs PQ sig algs + 0xCA24 in a custom spec | — | — |
+| Android/Windows Chrome 152 | built-in | `chrome_152` (custom spec: PQ sig algs 0x0904-0906 + GREASE, 0xCA34, pre_shared_key; JA4 `t13d1518h2_8daaf6152771_e2d80978ab2e` wire-verified) | — |
 | Windows Chrome 151 | `examples/vk-ru-windows/profile.json` | `chrome_exact` | 128 |
+| QUIC/h3 (Chrome-QUIC class) | prototype in `.tmp/uquic-probe/` (uQUIC + Chrome 115 QUIC preset) | wire-verified `q13d0310h3_55b375c5d22e_cd85d2d88918`; exact-152 QUIC preset pending | — |
 
 ## Facts that hold across the matrix
 

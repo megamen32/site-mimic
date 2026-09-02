@@ -29,9 +29,13 @@ func main() {
 	dump := flag.String("dump", "", "write the raw ClientHello record JSON to this path")
 	timeout := flag.Duration("timeout", 30*time.Second, "request timeout")
 	ttl := flag.Int("ttl", 0, "override IP TTL (e.g. 128 to present as Windows; 0 = profile/kernel default)")
+	hello := flag.String("hello", "", "override tls_client_hello (e.g. chrome_152; empty = profile)")
 	flag.Parse()
 
 	profile := mimic.MustLoadProfile("profile.json")
+	if *hello != "" {
+		profile.TLSClientHello = *hello
+	}
 	opts := []mimic.Option{}
 	if *ttl != 0 {
 		opts = append(opts, mimic.WithTTL(*ttl))

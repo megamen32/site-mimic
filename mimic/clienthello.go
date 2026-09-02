@@ -25,8 +25,7 @@ import (
 // tools/parse_clienthello.py to obtain JA3/JA4 — the same artifact a packet
 // capture of a real browser produces.
 func ClientHelloCapture(ctx context.Context, host, helloIDName string) ([]byte, error) {
-	helloID, err := ParseClientHelloID(helloIDName)
-	if err != nil {
+	if _, err := ParseClientHelloID(helloIDName); err != nil {
 		return nil, err
 	}
 	if !strings.Contains(host, ":") {
@@ -41,7 +40,11 @@ func ClientHelloCapture(ctx context.Context, host, helloIDName string) ([]byte, 
 		return nil, fmt.Errorf("mimic: dial %s: %w", host, err)
 	}
 	capturer := &clientHelloCapturer{Conn: conn}
-	uConn := utls.UClient(capturer, &utls.Config{ServerName: serverName}, helloID)
+	uConn, err := newUConn(capturer, &utls.Config{ServerName: serverName}, helloIDName)
+	if err != nil {
+		_ = conn.Close()
+		return nil, fmt.Errorf("mimic: utls client %s: %w", helloIDName, err)
+	}
 	_ = conn.SetDeadline(time.Now().Add(15 * time.Second))
 	if err := uConn.HandshakeContext(ctx); err != nil {
 		_ = conn.Close()

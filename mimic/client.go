@@ -39,11 +39,14 @@ var errNoH2 = errors.New("mimic: server did not negotiate h2 via ALPN")
 // "android_149" (explicit alias of chrome_auto, wire-verified field-for-field
 // against a real Android Chrome 149 — Samsung S21 Ultra, m.vk.ru capture:
 // identical JA4 t13d1516h2_8daaf6152771_d8a2da3f94cd and per-connection
-// extension shuffling; see docs/phone-reference.md), "firefox_auto",
-// "ios_auto", "random", "random_alpn".
+// extension shuffling; see docs/phone-reference.md), "chrome_152" (custom
+// spec for current stable Chrome 152: post-quantum signature algorithms +
+// extension 0xCA24 — wire reference t13d1517h2_8daaf6152771_cb7bf5808d99;
+// resolved through newUConn, the returned ID is only the spec base),
+// "firefox_auto", "ios_auto", "random", "random_alpn".
 func ParseClientHelloID(name string) (utls.ClientHelloID, error) {
 	switch name {
-	case "", "chrome_auto", "android_149":
+	case "", "chrome_auto", "android_149", "chrome_152":
 		return utls.HelloChrome_Auto, nil
 	case "firefox_auto":
 		return utls.HelloFirefox_Auto, nil
@@ -155,6 +158,7 @@ func New(p Profile, opts ...Option) (*http.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	_ = helloID // only a validity check; newUConn resolves the actual client
 
 	dialer := applyTTL(&net.Dialer{Timeout: o.dialTimeout, KeepAlive: 30 * time.Second}, effectiveTTL(o, p))
 	dial := func(ctx context.Context, network, addr string, requireH2 bool) (net.Conn, error) {
@@ -171,7 +175,11 @@ func New(p Profile, opts ...Option) (*http.Client, error) {
 			sni = o.serverName
 		}
 		cfg := &utls.Config{ServerName: sni, InsecureSkipVerify: o.insecureTLS}
-		uConn := utls.UClient(rawConn, cfg, helloID)
+		uConn, err := newUConn(rawConn, cfg, p.TLSClientHello)
+		if err != nil {
+			_ = rawConn.Close()
+			return nil, fmt.Errorf("mimic: utls client for %s: %w", p.TLSClientHello, err)
+		}
 		_ = rawConn.SetDeadline(time.Now().Add(o.dialTimeout))
 		if err := uConn.HandshakeContext(ctx); err != nil {
 			_ = rawConn.Close()

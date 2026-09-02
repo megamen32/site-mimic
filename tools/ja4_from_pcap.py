@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import ipaddress
+import json
 import struct
 import sys
 from collections import Counter
@@ -137,8 +138,9 @@ def _clienthellos(stream: bytes):
             pos += 1
             continue
         record_len = struct.unpack_from(">H", stream, pos + 3)[0]
-        if pos + 5 + record_len > len(stream):
-            return  # truncated tail
+        if record_len < 4 or pos + 5 + record_len > len(stream):
+            pos += 1
+            continue  # degenerate/truncated record: resync
         record = stream[pos : pos + 5 + record_len]
         pos += 5 + record_len
         if record[5] != 0x01:  # not a ClientHello
@@ -170,7 +172,7 @@ def _complete_hello_in_segment(segment: bytes):
             continue
         try:
             return parse_clienthello(segment[pos:end])
-        except ValueError:
+        except (ValueError, struct.error):
             continue
     return None
 
@@ -213,6 +215,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("pcaps", nargs="+", help="pcap files to scan")
     ap.add_argument("--sni", help="only print hellos whose SNI contains this substring")
+    ap.add_argument("--dump-trace", help="write all parsed hello traces as JSON to this file")
     args = ap.parse_args()
 
     try:
@@ -224,6 +227,7 @@ def main() -> int:
     for path in args.pcaps:
         flows: dict[tuple, list[tuple[int, bytes]]] = {}
         udp_flows: dict[tuple, list[bytes]] = {}
+        trace_dump: list[dict] = []
         for linktype, frame in _read_pcap(path):
             link = _parse_link(linktype, frame)
             if link is None:
@@ -247,46 +251,33 @@ def main() -> int:
         flows = _drop_tag_segments(flows)
         printed_for_file = 0
         for flow, segments in flows.items():
-            seen: set[str] = set()
-            src, sport, dst, dport = flow
+            try:
+                seen: set[str] = set()
+                src, sport, dst, dport = flow
 
-            def emit(ja4: str, sni: str) -> None:
-                nonlocal printed_for_file
-                print(f"{path} {src}:{sport} > {dst}:{dport} sni={sni or '-'} ja4={ja4}")
-                printed_for_file += 1
+                def emit(ja4: str, sni: str) -> None:
+                    nonlocal printed_for_file
+                    print(f"{path} {src}:{sport} > {dst}:{dport} sni={sni or '-'} ja4={ja4}")
+                    printed_for_file += 1
 
-            def pass_filter(sni: str) -> bool:
-                return not args.sni or args.sni.lower() in sni.lower()
+                def pass_filter(sni: str) -> bool:
+                    return not args.sni or args.sni.lower() in sni.lower()
 
-            for trace in _clienthellos(_reassemble(segments)):
-                ja4, _ = compute_ja4(trace)
-                sni = trace.get("sni") or ""
-                if not pass_filter(sni):
-                    continue
-                seen.add(ja4)
-                emit(ja4, sni)
-            # Fallback 1: lift whole hellos out of individual segments
-            # (deduplicated per flow by JA4).
-            for _seq, data in segments:
-                trace = _complete_hello_in_segment(data)
-                if trace is None:
-                    continue
-                ja4, _ = compute_ja4(trace)
-                if ja4 in seen:
-                    continue
-                sni = trace.get("sni") or ""
-                if not pass_filter(sni):
-                    continue
-                seen.add(ja4)
-                emit(ja4, sni)
-            # Fallback 2: reassembly can still miss when a tag segment shares
-            # the ClientHello's own sequence number; rebuild the stream from
-            # every segment that itself begins a hello and re-scan.
-            for start, _data in segments:
-                tail = [s for s in segments if s[0] >= start]
-                if len(tail) == len(segments) and start == segments[0][0]:
-                    continue  # already covered by the strict pass
-                for trace in _clienthellos(_reassemble(tail)):
+                for trace in _clienthellos(_reassemble(segments)):
+                    ja4, _ = compute_ja4(trace)
+                    sni = trace.get("sni") or ""
+                    trace_dump.append({"flow": list(flow), "sni": sni, "ja4": ja4,
+                                       "trace": {k: v for k, v in trace.items()}})
+                    if not pass_filter(sni):
+                        continue
+                    seen.add(ja4)
+                    emit(ja4, sni)
+                # Fallback 1: lift whole hellos out of individual segments
+                # (deduplicated per flow by JA4).
+                for _seq, data in segments:
+                    trace = _complete_hello_in_segment(data)
+                    if trace is None:
+                        continue
                     ja4, _ = compute_ja4(trace)
                     if ja4 in seen:
                         continue
@@ -295,21 +286,46 @@ def main() -> int:
                         continue
                     seen.add(ja4)
                     emit(ja4, sni)
+                # Fallback 2: reassembly can still miss when a tag segment shares
+                # the ClientHello's own sequence number; rebuild the stream from
+                # every segment that itself begins a hello and re-scan.
+                for start, _data in segments:
+                    tail = [s for s in segments if s[0] >= start]
+                    if len(tail) == len(segments) and start == segments[0][0]:
+                        continue  # already covered by the strict pass
+                    for trace in _clienthellos(_reassemble(tail)):
+                        ja4, _ = compute_ja4(trace)
+                        if ja4 in seen:
+                            continue
+                        sni = trace.get("sni") or ""
+                        if not pass_filter(sni):
+                            continue
+                        seen.add(ja4)
+                        emit(ja4, sni)
+            except (IndexError, struct.error, ValueError) as exc:
+                print(f"{path}: flow {flow} skipped ({exc})", file=sys.stderr)
+        if args.dump_trace and trace_dump:
+            with open(args.dump_trace, "w", encoding="utf-8") as fh:
+                json.dump(trace_dump, fh, indent=1, ensure_ascii=False)
+            print(f"traces dumped: {len(trace_dump)} -> {args.dump_trace}", file=sys.stderr)
         for flow, datagrams in udp_flows.items():
             if 443 not in (flow[1], flow[3]):
                 continue
             src, sport, dst, dport = flow
             seen: set[str] = set()
-            for trace in quic_clienthellos(datagrams):
-                ja4, _ = compute_ja4(trace, protocol="q")
-                if ja4 in seen:
-                    continue
-                seen.add(ja4)
-                sni = trace.get("sni") or ""
-                if args.sni and args.sni.lower() not in sni.lower():
-                    continue
-                print(f"{path} {src}:{sport} > {dst}:{dport} sni={sni or '-'} ja4={ja4}")
-                printed_for_file += 1
+            try:
+                for trace in quic_clienthellos(datagrams):
+                    ja4, _ = compute_ja4(trace, protocol="q")
+                    if ja4 in seen:
+                        continue
+                    seen.add(ja4)
+                    sni = trace.get("sni") or ""
+                    if args.sni and args.sni.lower() not in sni.lower():
+                        continue
+                    print(f"{path} {src}:{sport} > {dst}:{dport} sni={sni or '-'} ja4={ja4}")
+                    printed_for_file += 1
+            except (IndexError, struct.error, ValueError) as exc:
+                print(f"{path}: quic flow {flow} skipped ({exc})", file=sys.stderr)
         if printed_for_file == 0:
             print(f"{path}: no ClientHello found", file=sys.stderr)
             exit_code = 1

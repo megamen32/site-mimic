@@ -58,6 +58,7 @@ def parse_clienthello(record: bytes) -> dict:
     pos += 2
 
     extensions: list[int] = []
+    extension_data: dict[str, str] = {}
     groups: list[int] = []
     point_formats: list[int] = []
     alpn: list[str] = []
@@ -71,6 +72,7 @@ def parse_clienthello(record: bytes) -> dict:
         data = record[pos : pos + ext_len]
         pos += ext_len
         extensions.append(ext_type)
+        extension_data[f"{ext_type:#06x}"] = data.hex()
         if ext_type == _EXTENSION_SNI and len(data) >= 5:
             name_len = struct.unpack_from(">H", data, 3)[0]
             sni = data[5 : 5 + name_len].decode("utf-8", "replace")
@@ -103,6 +105,7 @@ def parse_clienthello(record: bytes) -> dict:
         "alpn": alpn,
         "signature_algorithms": signature_algorithms,
         "supported_versions": supported_versions,
+        "extension_data": extension_data,
         "sni": sni,
     }
 
