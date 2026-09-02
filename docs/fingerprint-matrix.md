@@ -41,8 +41,8 @@ Mimic profiles map to these references 1:1.
   (TTL 128, no-TS, wscale 8), на проводе TTL 127 после hairpin-хопа
   без всяких оверрайдов (tools/win-tcp-preset.sh apply). Mac mini
   оставлен нативным (macOS TTL 64, BSD-опции) по решению владельца;
-  server88 (192.168.2.75) недоступен для настройки — нет SSH
-  (открыты только 3128/80/443).
+  server88 (192.168.2.75) настроен так же после включения машинки
+  (TTL 127 на проводе, wire-verified).
 - **Headed vs headless**: no TLS difference, no header-set difference on
   secure contexts; only the UA token differs.
 - **Insecure context (http)**: Chrome sends no client hints and no br/zstd —
