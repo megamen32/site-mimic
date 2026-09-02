@@ -44,11 +44,28 @@ down)
     need_root
     ip netns del "$NS" 2>/dev/null || true
     ;;
+rawsyn)
+    # Rebuild the SYN option ORDER to Windows (mss,wscale,sack) on the fly:
+    # NFQUEUE grabs outgoing SYNs, tools/rawsyn rewrites them, everything
+    # else passes through (--queue-bypass keeps traffic alive if it dies).
+    need_root
+    ip netns exec "$NS" iptables -A OUTPUT -p tcp --dport 443 --syn \
+        -j NFQUEUE --queue-num 100 --queue-bypass
+    echo "rawsyn armed; starting rewriter (Ctrl-C to stop, then: $0 rawsyn-off)"
+    ( cd "$(dirname "$0")/rawsyn" && go build -o /tmp/rawsyn . )
+    ip netns exec "$NS" /tmp/rawsyn -queue 100
+    ;;
+rawsyn-off)
+    need_root
+    ip netns exec "$NS" iptables -D OUTPUT -p tcp --dport 443 --syn \
+        -j NFQUEUE --queue-num 100 --queue-bypass 2>/dev/null || true
+    echo "rawsyn disarmed"
+    ;;
 status)
     ip netns list | grep "$NS" || echo "no $NS"
     ip netns exec "$NS" sysctl net.ipv4.tcp_timestamps net.ipv4.ip_default_ttl 2>/dev/null || true
     ;;
 *)
-    echo "usage: $0 {up|down|status}"; exit 1
+    echo "usage: $0 {up|down|rawsyn|rawsyn-off|status}"; exit 1
     ;;
 esac

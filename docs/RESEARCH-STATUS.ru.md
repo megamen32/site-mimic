@@ -55,7 +55,7 @@ Windows и Android. Google выключил Finch-флаг за ночь. Выв
 | Пересобрать chrome_152 | спека под текущий доминантный вариант (17 exts, без PSK) + отдельный `chrome_152_psk` (18 exts) | оба варианта wire-verified на стенде |
 | «Живые» эталоны | `tools/canary.sh` — суточный канарей: триггерит реальный Chrome на Windows-машине, гоняет наши 3 варианта через стенд, сравнивает МНОЖЕСТВО JA4-вариантов реального браузера за день; расписание — ежедневно 12:00 (отчёт в Telegram) | первый же прогон поймал переключение варианта реального Chrome |
 | Session resumption | общий `utls.ClientSessionCache` + `OmitEmptyPsk` + `UtlsPreSharedKeyExtension`; chrome_exact возобновляет через upstream sessionCache | первое соединение — полный handshake (17 exts), второе — resumption с 0x0029 на проводе |
-| TCP SYN per-profile | `tools/win-netns.sh` — изолированный netns (macvlan, свой LAN IP, без TCP timestamps, wscale 8, TTL 128) без изменения хостовых sysctl | проба из netns ходит на стенд, TTL 127 на проводе |
+| TCP SYN per-profile | `tools/win-netns.sh` + `tools/rawsyn`: изолированный netns (macvlan, свой LAN IP, без TCP timestamps, wscale 8, TTL 128) без изменения хостовых sysctl; NFQUEUE-демон `rawsyn` переставляет опции исходящего SYN в Windows-порядок с пересчётом контрольных сумм | на проводе SYN = `mss 1460,wscale 8,sackOK` — байт-в-байт как у реального Windows Chrome (стенд, 2026-09-02) |
 | QUIC 152 | `examples/uquic-probe` — uQUIC-пресет 115, обновлённый до 152-поля (PQ-подписи + 0xCA34) | tshark с провода: JA4 `q13d0311h3_55b375c5d22e_7ae7f4a1bb73`, в hello `ca34` + `0x0904-0906` + ECH |
 | accept-language | поле `accept_language` в профиле — подмена значения без правки таблиц заголовков | go test |
 
