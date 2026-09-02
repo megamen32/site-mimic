@@ -28,6 +28,11 @@ import (
 	"golang.org/x/net/http2"
 )
 
+// clientSessionCache lets the uTLS transports resume TLS 1.3 sessions like
+// a real browser does: a fresh full handshake only on first contact with a
+// host, then ticket-based resumption (the hello then carries 0x0029).
+var clientSessionCache utls.ClientSessionCache = utls.NewLRUClientSessionCache(64)
+
 // errNoH2 is returned by the dialer when the server did not negotiate h2 via
 // ALPN; the round tripper then retries the request over HTTP/1.1.
 var errNoH2 = errors.New("mimic: server did not negotiate h2 via ALPN")
@@ -46,7 +51,7 @@ var errNoH2 = errors.New("mimic: server did not negotiate h2 via ALPN")
 // "firefox_auto", "ios_auto", "random", "random_alpn".
 func ParseClientHelloID(name string) (utls.ClientHelloID, error) {
 	switch name {
-	case "", "chrome_auto", "android_149", "chrome_152":
+	case "", "chrome_auto", "android_149", "chrome_152", "chrome_152_psk":
 		return utls.HelloChrome_Auto, nil
 	case "firefox_auto":
 		return utls.HelloFirefox_Auto, nil
@@ -174,7 +179,7 @@ func New(p Profile, opts ...Option) (*http.Client, error) {
 		if o.serverName != "" {
 			sni = o.serverName
 		}
-		cfg := &utls.Config{ServerName: sni, InsecureSkipVerify: o.insecureTLS}
+		cfg := &utls.Config{ServerName: sni, InsecureSkipVerify: o.insecureTLS, ClientSessionCache: clientSessionCache, OmitEmptyPsk: true}
 		uConn, err := newUConn(rawConn, cfg, p.TLSClientHello)
 		if err != nil {
 			_ = rawConn.Close()

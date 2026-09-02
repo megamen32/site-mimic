@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"time"
 
-	headless "github.com/kulikov0/headless-client"
+	headless "github.com/megamen32/headless-client"
 )
 
 // newExactRoundTripper builds the round tripper for profiles with
 // tls_client_hello: "chrome_exact". The TLS, HTTP/2 and header-order layers
-// are delegated to github.com/kulikov0/headless-client, whose ClientHello is
+// are delegated to github.com/megamen32/headless-client, whose ClientHello is
 // measured against the current stable Chrome (JA4-verified with its capture
 // stand); proxy support comes from our CONNECT dialer passed as DialContext.
 func newExactRoundTripper(o transportOptions, p Profile) (http.RoundTripper, error) {

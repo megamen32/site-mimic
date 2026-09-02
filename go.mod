@@ -3,9 +3,10 @@ module github.com/megamen32/site-mimic
 go 1.26.1
 
 require (
-	github.com/kulikov0/headless-client v0.0.0-20260830084403-7c3ece7749ec
+	github.com/megamen32/headless-client v0.0.0-20260902120803-9d1cd5515e96
 	github.com/refraction-networking/utls v1.8.2
 	golang.org/x/net v0.57.0
+	golang.org/x/sys v0.47.0
 )
 
 require (
@@ -28,7 +29,6 @@ require (
 	github.com/pion/turn/v4 v4.1.4 // indirect
 	github.com/wlynxg/anet v0.0.5 // indirect
 	golang.org/x/crypto v0.54.0 // indirect
-	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.40.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 )
