@@ -47,6 +47,20 @@ Windows и Android. Google выключил Finch-флаг за ночь. Выв
   PCAPdroid-MITM (аддон сам перешифровывает TLS своим клиентом).
   Реальный end-to-end телефонный Chrome 152 = десктопный набор.
 
+## Прогресс 2026-09-02 (вечер) — что уже закрыто из «НЕ мимикрим»
+
+| Пункт | Что сделано | Проверка |
+|---|---|---|
+| Обновить chrome_exact до 152 | форк `megamen32/headless-client` (9d1cd55): добавлен 0xCA34 рядом с ECH GREASE | на проводе JA4 = `t13d1517h2_8daaf6152771_cb7bf5808d99` == реальный Chrome 152 |
+| Пересобрать chrome_152 | спека под текущий доминантный вариант (17 exts, без PSK) + отдельный `chrome_152_psk` (18 exts) | оба варианта wire-verified на стенде |
+| «Живые» эталоны | `tools/canary.sh` — суточный канарей: триггерит реальный Chrome на Windows-машине, гоняет наши 3 варианта через стенд, сравнивает МНОЖЕСТВО JA4-вариантов реального браузера за день; расписание — ежедневно 12:00 (отчёт в Telegram) | первый же прогон поймал переключение варианта реального Chrome |
+| Session resumption | общий `utls.ClientSessionCache` + `OmitEmptyPsk` + `UtlsPreSharedKeyExtension`; chrome_exact возобновляет через upstream sessionCache | первое соединение — полный handshake (17 exts), второе — resumption с 0x0029 на проводе |
+| TCP SYN per-profile | `tools/win-netns.sh` — изолированный netns (macvlan, свой LAN IP, без TCP timestamps, wscale 8, TTL 128) без изменения хостовых sysctl | проба из netns ходит на стенд, TTL 127 на проводе |
+| QUIC 152 | `examples/uquic-probe` — uQUIC-пресет 115, обновлённый до 152-поля (PQ-подписи + 0xCA34) | tshark с провода: JA4 `q13d0311h3_55b375c5d22e_7ae7f4a1bb73`, в hello `ca34` + `0x0904-0906` + ECH |
+| accept-language | поле `accept_language` в профиле — подмена значения без правки таблиц заголовков | go test |
+
+Уточнение механики «живых» фингерпринтов: чередование `t13d1517h2_cb7bf5808d99` (свежий полный handshake) и `t13d1518h2_e2d80978ab2e` (resumption-форма с pre_shared_key) — это не Finch-флаги, а полная/возобновлённая форма hello реального Chrome. Наша мимикрия теперь покрывает обе формы: свежую (chrome_exact / chrome_152) и resumption (cache + chrome_152_psk).
+
 ## Что пока НЕ мимикрим (честный список)
 
 1. **TCP SYN, per-connection**: порядок TCP-опций и наличие
@@ -54,9 +68,10 @@ Windows и Android. Google выключил Finch-флаг за ночь. Выв
    Видно на стенде: Windows шлёт `mss,wscale,sackOK`, наш Linux —
    `mss,sackOK,wscale`. Множество то же, порядок — Linux. Лечится
    отдельным netns с raw-SYN (или eBPF) на профиль.
-2. **QUIC/HTTP3**: есть прототип (uQUIC, Chrome-115 пресет, наш JA4
-   `q13d0310h3_…` проверен на проводе). До «идеала»: 152-exact QUIC
-   пресет + поведение Alt-Svc/h3-fallback.
+2. **QUIC/HTTP3, транспортные параметры**: TLS-поля QUIC-hello
+   доведены до 152 (`examples/uquic-probe`, проверено tshark'ом),
+   QUIC transport parameters остались от пресета 115 — нужен свежий
+   capture реального Chrome-QUIC и перенос параметров.
 3. **TLS session resumption**: Chrome возвращает session tickets и
    сокращает рукопожатия; наш клиент делает полный handshake каждый
    раз. Антибот видит «все соединения — новые».

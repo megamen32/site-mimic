@@ -35,6 +35,12 @@ type Profile struct {
 	// wire: the kernel default (64 on Linux/Android, 128 on Windows) alone
 	// reveals the OS family. 0 = kernel default.
 	IPTTL int `json:"ip_ttl"`
+
+	// AcceptLanguage, when non-empty, overrides the accept-language header
+	// after the profile merge — per-target-user parameterization without
+	// touching the header tables (Chrome ships the visitor's OS languages,
+	// e.g. "ru,en-US;q=0.9,en;q=0.8,zh-CN;q=0.7,zh;q=0.6,de;q=0.5,pt;q=0.4").
+	AcceptLanguage string `json:"accept_language"`
 }
 
 // LoadProfile reads a profile JSON file from disk.
@@ -86,6 +92,9 @@ func (p Profile) Request(method, urlStr string, body io.Reader) (*http.Request, 
 		if !seen[name] {
 			req.Header.Set(name, v)
 		}
+	}
+	if p.AcceptLanguage != "" {
+		req.Header.Set("Accept-Language", p.AcceptLanguage)
 	}
 	return req, nil
 }
