@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -29,18 +28,12 @@ func main() {
 	// and the unregistered 0xCA34 extension (same payloads as the TCP spec,
 	// wire format identical). QUIC transport parameters remain the 115 preset
 	// pending a fresh real-152 QUIC capture.
-	realTP := flag.Bool("realtp", false,
-		"replay the real Chrome transport-parameters bytes (0x0039) captured from a real Android Chrome QUIC hello; NOTE: uQUIC appends its own parameters on top, which perturbs the JA4 shape to q13d0314h3")
-	flag.Parse()
-
 	quicSpec, err := quic.QUICID2Spec(quic.QUICChrome_115)
 	if err != nil {
 		log.Fatal(err)
 	}
 	patchToChrome152(quicSpec.ClientHelloSpec)
-	if *realTP {
-		patchRealTransportParams(quicSpec.ClientHelloSpec)
-	}
+	patchRealTransportParams(quicSpec.ClientHelloSpec)
 
 	uRoundTripper := http3.GetURoundTripper(roundTripper, &quicSpec, nil)
 	defer uRoundTripper.Close()
@@ -61,26 +54,58 @@ func main() {
 	fmt.Println("body head:", body.String()[:min(600, body.Len())])
 }
 
-// realChromeTransportParametersHex is the raw quic_transport_parameters
-// extension (0x0039) captured from a real Android Chrome QUIC ClientHello
-// (phone-vk.pcap, full handshake — no resumption). Replayed verbatim so the
-// advertised parameters are browser-exact instead of the 115-preset values.
-const realChromeTransportParametersHex = "030245c00f000902406707048060000005048060000001048000753071280c4f5249474543435049573258f8dad5379e8f247b067063534da94220048001000008024064060480600000040480f00000110c0000000100000001dada2a0a"
-
-// patchRealTransportParams swaps the preset QUICTransportParametersExtension
-// for a raw 0x0039 carrying the captured browser parameters.
+// realChromeTPFields mirrors the transport parameters captured from a real
+// Android Chrome QUIC ClientHello (phone-vk.pcap, full handshake, 2026-08-30;
+// values decoded from the 94 raw bytes of extension 0x0039). The typed utls
+// parameter classes marshal browser-exact values while keeping the
+// 11-extension q13d0311h3 shape; the GREASE entry randomizes its ID per
+// connection exactly like the real browser.
 func patchRealTransportParams(spec *tls.ClientHelloSpec) {
-	data, err := hex.DecodeString(realChromeTransportParametersHex)
+	for i, ext := range spec.Extensions {
+		qtp, ok := ext.(*tls.QUICTransportParametersExtension)
+		if !ok {
+			continue
+		}
+		qtp.TransportParameters = tls.TransportParameters{
+			tls.MaxUDPPayloadSize(1472),                                           // 0x03, IPv4 MTU-sized
+			tls.InitialSourceConnectionID{},                                       // 0x0f, empty: uQUIC injects the real CID
+			tls.InitialMaxStreamsUni(103),                                         // 0x09
+			tls.InitialMaxStreamDataUni(6291456),                                  // 0x07, 6 MiB
+			tls.InitialMaxStreamDataBidiLocal(6291456),                            // 0x05, 6 MiB
+			tls.MaxIdleTimeout(30000),                                             // 0x01, ms
+			&tls.GREASETransportParameter{ValueOverride: mustHex("7063534da942")}, // randomized ID, 6-byte value
+			tls.MaxDatagramFrameSize(65536),                                       // 0x20, RFC 9221
+			tls.InitialMaxStreamsBidi(100),                                        // 0x08
+			tls.InitialMaxStreamDataBidiRemote(6291456),                           // 0x06, 6 MiB
+			tls.InitialMaxData(15728640),                                          // 0x04, 15 MiB
+			&tls.VersionInformation{ // 0x11, RFC 9368
+				ChoosenVersion:    1,
+				AvailableVersions: []uint32{1, 0xdada2a0a},
+			},
+			rawParam{0x3128, []byte("ORIGECCPIW2X")}, // google_connection_options
+		}
+		spec.Extensions[i] = qtp
+		return
+	}
+	log.Fatal("preset spec has no QUIC transport parameters extension")
+}
+
+// rawParam passes an unrecognized transport parameter through verbatim
+// (utls has no typed class for google_connection_options).
+type rawParam struct {
+	id  uint64
+	val []byte
+}
+
+func (p rawParam) ID() uint64    { return p.id }
+func (p rawParam) Value() []byte { return p.val }
+
+func mustHex(s string) []byte {
+	b, err := hex.DecodeString(s)
 	if err != nil {
 		log.Fatal(err)
 	}
-	for i, ext := range spec.Extensions {
-		if _, ok := ext.(*tls.QUICTransportParametersExtension); ok {
-			spec.Extensions[i] = &tls.GenericExtension{Id: 0x0039, Data: data}
-			return
-		}
-	}
-	log.Fatal("preset spec has no QUIC transport parameters extension")
+	return b
 }
 
 // patchToChrome152 upgrades a QUIC TLS spec in place: PQ signature
