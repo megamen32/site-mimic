@@ -30,7 +30,7 @@ const chrome152PSKPayloadHex = "00260020469f3e3d562016e08e28c5c53829047bf8871baf
 // shape today carries no PSK on a fresh full handshake — chrome_152_psk
 // keeps the 18-extension variant for when it returns.
 func chrome152Spec() (*utls.ClientHelloSpec, error) {
-	spec, err := chrome152BaseSpec()
+	spec, err := chrome152BaseSpec(true)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func chrome152Spec() (*utls.ClientHelloSpec, error) {
 // (t13d1518h2_8daaf6152771_e2d80978ab2e) observed 2026-09-01 and still
 // served to some connections on 2026-09-02.
 func chrome152PSKSpec() (*utls.ClientHelloSpec, error) {
-	spec, err := chrome152BaseSpec()
+	spec, err := chrome152BaseSpec(false)
 	if err != nil {
 		return nil, err
 	}
@@ -49,11 +49,16 @@ func chrome152PSKSpec() (*utls.ClientHelloSpec, error) {
 	if err != nil {
 		return nil, fmt.Errorf("mimic: chrome_152 psk payload: %w", err)
 	}
+	// Must stay last AND must be the only PSK-class extension: utls asserts
+	// PreSharedKeyExtension is the final extension of the hello.
 	spec.Extensions = append(spec.Extensions, &utls.GenericExtension{Id: 0x0029, Data: psk})
 	return &spec, nil
 }
 
-func chrome152BaseSpec() (utls.ClientHelloSpec, error) {
+// chrome152BaseSpec builds the common 17-extension layout; withFakePSK adds
+// the utls-managed resumption placeholder (used by the fresh-handshake
+// variant, where real sessions make utls fill it).
+func chrome152BaseSpec(withFakePSK bool) (utls.ClientHelloSpec, error) {
 	spec, err := utls.UTLSIdToSpec(utls.HelloChrome_Auto)
 	if err != nil {
 		return spec, fmt.Errorf("mimic: chrome_152 base spec: %w", err)
@@ -80,14 +85,13 @@ func chrome152BaseSpec() (utls.ClientHelloSpec, error) {
 	if err != nil {
 		return spec, fmt.Errorf("mimic: chrome_152 0xCA34 payload: %w", err)
 	}
-	spec.Extensions = append(spec.Extensions,
-		&utls.GenericExtension{Id: 0xCA34, Data: ca34},
-		// Placeholder for TLS 1.3 resumption: utls fills UtlsPreSharedKeyExtension
-		// from the session cache when one exists; on full handshakes
-		// OmitEmptyPsk conceals the empty extension, so the on-wire shape
-		// stays the dominant 17-extension variant.
-		&utls.UtlsPreSharedKeyExtension{},
-	)
+	spec.Extensions = append(spec.Extensions, &utls.GenericExtension{Id: 0xCA34, Data: ca34})
+	if withFakePSK {
+		// Resumption placeholder: utls fills it from the session cache when
+		// one exists; OmitEmptyPsk conceals it on full handshakes. Must be
+		// the only PSK-class extension and stay last (utls asserts both).
+		spec.Extensions = append(spec.Extensions, &utls.UtlsPreSharedKeyExtension{})
+	}
 	return spec, nil
 }
 
