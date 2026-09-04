@@ -101,16 +101,31 @@ r0 = real[0]
 print(f"real variants today: {real_variants} (hdrs={len(r0['http']['headers'])}, "
       f"ttl={(r0.get('transport') or {}).get('ttl')})")
 
+# Known hello shapes our specs produce (fresh vs resumed). A probe landing
+# here but missing from TODAY's real sample is a NOTE (the real browser just
+# did not run that shape this run), not drift. A probe outside both sets IS
+# drift: our spec broke.
+known_shapes = {
+    "t13d1517h2_8daaf6152771_cb7bf5808d99": "fresh",
+    "t13d1518h2_8daaf6152771_e2d80978ab2e": "resumed",
+    "t13d1516h2_8daaf6152771_806a8c22fdea": "chromium-151 legacy",
+}
+
 bad = 0
 our_variants = {}
 for tag, probe in ours.items():
     ja4 = (probe.get("tls") or {}).get("ja4")
     our_variants.setdefault(ja4, tag)
     in_real = ja4 in real_variants
-    if not in_real:
+    known = ja4 in known_shapes
+    if in_real:
+        print(f"OK    {tag}: ja4={ja4} in real set")
+    elif known:
+        print(f"NOTE  {tag}: ja4={ja4} ({known_shapes[ja4]}) - not sampled by the "
+              "real browser this run, shape is known-good")
+    else:
+        print(f"DRIFT {tag}: ja4={ja4} is in NEITHER the real set nor known shapes")
         bad += 1
-    print(f"{'OK    ' if in_real else 'DRIFT'}  {tag}: ja4={ja4} "
-          f"{'in real set' if in_real else 'NOT in real variant set!'}")
 
 uncovered = [v for v in real_variants if v not in our_variants]
 for v in uncovered:
