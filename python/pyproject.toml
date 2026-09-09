@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=69.0.2", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "site-mimic"
+version = "0.1.0"
+description = "Python drop-in client for the site-mimic fetchd daemon (uTLS browser-fingerprint HTTP)"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.setuptools]
+packages = ["site_mimic_client"]

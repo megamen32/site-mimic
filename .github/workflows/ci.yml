@@ -1,0 +1,88 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go build ./...
+      - run: go vet ./...
+      - run: go test ./...
+
+  # Real-site canary: exactly ONE request to vk.ru per push to main
+  # (rate-limited by design — no loops, no retries). May flake if vk.ru is
+  # down; that is intended signal, not noise to paper over.
+  canary-vk:
+    needs: build-test
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: timeout 60s go run ./examples/vk-ru
+
+  # Live transport-parity gate: builds the kulikov0/headless-client capture
+  # stand (pinned Chromium browser + stand-probe side by side), runs both
+  # against vk.ru and diffs JA4. Experimental: docker-in-CI plus a live
+  # site, so it is manual-only (workflow_dispatch) and must not block
+  # merges (continue-on-error) — it surfaces regressions on demand.
+  # The stand needs a privileged container on hosts where seccomp blocks
+  # `mount` (plain --cap-add is not enough for `ip netns add`).
+  transport-parity:
+    needs: build-test
+    if: github.event_name == 'workflow_dispatch'
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Check out the capture stand
+        uses: actions/checkout@v4
+        with:
+          repository: kulikov0/headless-client
+          path: headless-client
+      - name: Build stand-probe
+        run: CGO_ENABLED=0 GOOS=linux go build -o /tmp/stand-probe ./examples/stand-probe
+      - name: Build the stand image
+        working-directory: headless-client/stand
+        run: ./stand.sh build
+      - name: Run browser + probe, capture pcaps
+        working-directory: headless-client/stand
+        run: |
+          # stand.sh drives docker directly; GitHub hosted runners allow
+          # privileged containers. If stand.sh ever grows a flag for extra
+          # docker args, pass --privileged here — grep to detect it.
+          if grep -q -- "--privileged" stand.sh; then
+            echo "stand.sh handles privileged mode itself"
+          else
+            echo "WARNING: seccomp-blocked hosts need --privileged for 'ip netns add'" >&2
+          fi
+          ./stand.sh run --secs 30 --url https://vk.ru/ \
+            --role probe:/tmp/stand-probe \
+            --role-args probe:"https://vk.ru/ 3" \
+            --out ./captures/vk
+      - name: Diff JA4 (browser vs probe)
+        working-directory: headless-client/stand
+        run: ./stand.sh diff ./captures/vk
+      - name: Upload capture artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vk-stand-captures
+          path: headless-client/stand/captures/vk
+          if-no-files-found: warn

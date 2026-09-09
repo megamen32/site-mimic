@@ -1,0 +1,7 @@
+# local run artifacts
+examples/*/ch.json
+__pycache__/
+*.pyc
+*.test
+.fast-agent/
+.tmp/

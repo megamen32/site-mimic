@@ -1,0 +1,48 @@
+{
+  "name": "android-chrome152",
+  "tls_client_hello": "chrome_152",
+  "user_agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Mobile Safari/537.36",
+  "header_order": [
+    "Sec-Ch-Ua-Mobile",
+    "Sec-Ch-Ua-Platform",
+    "Upgrade-Insecure-Requests",
+    "User-Agent",
+    "Accept",
+    "Sec-Fetch-Site",
+    "Sec-Fetch-Dest",
+    "Accept-Language",
+    "Sec-Ch-Ua",
+    "Sec-Fetch-Mode",
+    "Accept-Encoding",
+    "Priority"
+  ],
+  "headers": {
+    "Sec-Ch-Ua-Mobile": "?1",
+    "Sec-Ch-Ua-Platform": "\"Android\"",
+    "Upgrade-Insecure-Requests": "1",
+    "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Mobile Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+    "Sec-Fetch-Site": "cross-site",
+    "Sec-Fetch-Dest": "document",
+    "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Sec-Ch-Ua": "\"Chromium\";v=\"152\", \"Not?A_Brand\";v=\"24\", \"Google Chrome\";v=\"152\"",
+    "Sec-Fetch-Mode": "navigate",
+    "Accept-Encoding": "gzip, deflate, br, zstd",
+    "Priority": "u=0, i"
+  },
+  "ip_ttl": 64,
+  "resource_plan": [
+    {
+      "path": "/fp",
+      "resource_type": "document",
+      "delay_min_ms": 0
+    },
+    {
+      "path": "/favicon.ico",
+      "resource_type": "image",
+      "referer": "/fp",
+      "delay_min_ms": 150,
+      "delay_max_ms": 800
+    }
+  ]
+}
