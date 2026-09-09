@@ -1,0 +1,4025 @@
+[
+  {
+    "time": "2026-09-09T23:24:45.241373483Z",
+    "client": {
+      "ip": "192.168.2.1",
+      "port": 56140,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/fp",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15",
+      "headers": [
+        {
+          "name": "Sec-Fetch-Site",
+          "value": "none"
+        },
+        {
+          "name": "Sec-Fetch-Mode",
+          "value": "navigate"
+        },
+        {
+          "name": "Accept-Language",
+          "value": "ru"
+        },
+        {
+          "name": "Priority",
+          "value": "u=0, i"
+        },
+        {
+          "name": "Accept-Encoding",
+          "value": "gzip, deflate, br"
+        },
+        {
+          "name": "Sec-Fetch-Dest",
+          "value": "document"
+        },
+        {
+          "name": "User-Agent",
+          "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15"
+        },
+        {
+          "name": "Accept",
+          "value": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4865,4866,4867,49196,49195,52393,49200,49199,52392,49162,49161,49172,49171,157,156,53,47,49160,49170,10-0,23,65281,10,11,16,5,13,18,51,45,43,27,21-29,23,24,25-0",
+      "ja3_hash": "dab37c84ba3313a8df8498ba9942ba8a",
+      "ja4": "t13d2014h2_a09f3c656075_e42f34c56612",
+      "ja4_r": "t13d2014h2_1301,1302,1303,c02c,c02b,cca9,c030,c02f,cca8,c00a,c009,c014,c013,009d,009c,0035,002f,c008,c012,000a_0000,0017,ff01,000a,000b,0010,0005,000d,0012,0033,002d,002b,001b,0015_0403,0804,0401,0503,0805,0805,0501,0806,0601,0201",
+      "ja4_sha256": "2e0994d655a1b42795db0acbdec5b79cf3290a61593b98d835a0ad9f57da73ee",
+      "client_version": "0303",
+      "supported_versions": "[fafa, 0304, 0303, 0302, 0301]",
+      "cipher_suites": "[baba, 1301, 1302, 1303, c02c, c02b, cca9, c030, c02f, cca8, c00a, c009, c014, c013, 009d, 009c, 0035, 002f, c008, c012, 000a]",
+      "signature_algorithms": "[0403, 0804, 0401, 0503, 0805, 0805, 0501, 0806, 0601, 0201]",
+      "supported_groups": "[1a1a, 001d, 0017, 0018, 0019]",
+      "ec_point_formats": "[0000]",
+      "extensions": [
+        {
+          "id": "eaea",
+          "len": 0
+        },
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "ff01",
+          "name": "renegotiation_info",
+          "len": 1,
+          "data_hex": "00"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 12,
+          "data_hex": "000a1a1a001d001700180019"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 2,
+          "data_hex": "0100"
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0005",
+          "name": "status_request",
+          "len": 5,
+          "data_hex": "0100000000"
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 22,
+          "data_hex": "00140403080404010503080508050501080606010201"
+        },
+        {
+          "id": "0012",
+          "name": "signed_certificate_timestamp",
+          "len": 0
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 43,
+          "data_hex": "00291a1a000100001d00204a8789bb7d1eb6633585260c092a659517753f3aed9fde866d62ae392dba6567"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 11,
+          "data_hex": "0afafa0304030303020301"
+        },
+        {
+          "id": "001b",
+          "name": "compress_certificate",
+          "len": 3,
+          "data_hex": "020001"
+        },
+        {
+          "id": "0a0a",
+          "len": 1,
+          "data_hex": "00"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 191
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc030381bd6566ae598342dcd3f587a02c67d29d79829f95681db1ff7de8cfe980967620f4d349fbeb0cc6e33eea48485dce7538f53f8d4c0ce9cc7a2e3e75fdd0092392002ababa130113021303c02cc02bcca9c030c02fcca8c00ac009c014c013009d009c0035002fc008c012000a01000189eaea0000000000160014000011746573742e6175746f2d6772616d2e727500170000ff01000100000a000c000a1a1a001d001700180019000b000201000010000e000c02683208687474702f312e31000500050100000000000d001600140403080404010503080508050501080606010201001200000033002b00291a1a000100001d00204a8789bb7d1eb6633585260c092a659517753f3aed9fde866d62ae392dba6567002d00020101002b000b0afafa0304030303020301001b00030200010a0a000100001500bf0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T22:56:20.41501125Z",
+    "client": {
+      "ip": "185.240.120.152",
+      "port": 16478,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "curl/7.81.0",
+      "headers": [
+        {
+          "name": "User-Agent",
+          "value": "curl/7.81.0"
+        },
+        {
+          "name": "Accept",
+          "value": "*/*"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4866,4867,4865,49196,49200,159,52393,52392,52394,49195,49199,158,49188,49192,107,49187,49191,103,49162,49172,57,49161,49171,51,157,156,61,60,53,47,255-0,11,10,13172,16,22,23,49,13,43,45,51,21-29,23,30,25,24,256,257,258,259,260-0,1,2",
+      "ja3_hash": "c89cb1537b1054f5b39cefca36745277",
+      "ja4": "t13d3113h2_e8f1e7e78f70_ce5650b735ce",
+      "ja4_r": "t13d3113h2_1302,1303,1301,c02c,c030,009f,cca9,cca8,ccaa,c02b,c02f,009e,c024,c028,006b,c023,c027,0067,c00a,c014,0039,c009,c013,0033,009d,009c,003d,003c,0035,002f,00ff_0000,000b,000a,3374,0010,0016,0017,0031,000d,002b,002d,0033,0015_0403,0503,0603,0807,0808,0809,080a,080b,0804,0805,0806,0401,0501,0601,0303,0301,0302,0402,0502,0602",
+      "ja4_sha256": "9ec2f664bd5580e40eeeeac41d2aeacb78d52e3b13e3fa1d5dfb2dfa03d3ddd7",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303]",
+      "cipher_suites": "[1302, 1303, 1301, c02c, c030, 009f, cca9, cca8, ccaa, c02b, c02f, 009e, c024, c028, 006b, c023, c027, 0067, c00a, c014, 0039, c009, c013, 0033, 009d, 009c, 003d, 003c, 0035, 002f, 00ff]",
+      "signature_algorithms": "[0403, 0503, 0603, 0807, 0808, 0809, 080a, 080b, 0804, 0805, 0806, 0401, 0501, 0601, 0303, 0301, 0302, 0402, 0502, 0602]",
+      "supported_groups": "[001d, 0017, 001e, 0019, 0018, 0100, 0101, 0102, 0103, 0104]",
+      "ec_point_formats": "[0000, 0001, 0002]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 4,
+          "data_hex": "03000102"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 22,
+          "data_hex": "0014001d0017001e0019001801000101010201030104"
+        },
+        {
+          "id": "3374",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0016",
+          "name": "encrypt_then_mac",
+          "len": 0
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0031",
+          "name": "certificate_authorities",
+          "len": 0
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 42,
+          "data_hex": "0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 5,
+          "data_hex": "0403040303"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d0020f5fc073a39f474531d982ac92e5a87cd08201d5cb28b84e0296b4a4e12f60a10"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 172
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc03035d475e9bb47d8b9f17123242eb4d4b42bc181fe2effdc808d10d4fdd8dfd081420b42be21aede17ff21d4b7402ab70020de2cfd72b0ea5a7d058d6acfcccececf8003e130213031301c02cc030009fcca9cca8ccaac02bc02f009ec024c028006bc023c0270067c00ac0140039c009c0130033009d009c003d003c0035002f00ff01000175000000160014000011746573742e6175746f2d6772616d2e7275000b000403000102000a00160014001d0017001e0019001801000101010201030104337400000010000e000c02683208687474702f312e31001600000017000000310000000d002a0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602002b00050403040303002d00020101003300260024001d0020f5fc073a39f474531d982ac92e5a87cd08201d5cb28b84e0296b4a4e12f60a10001500ac00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T21:54:14.584320615Z",
+    "client": {
+      "ip": "185.240.120.152",
+      "port": 58328,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "curl/7.81.0",
+      "headers": [
+        {
+          "name": "User-Agent",
+          "value": "curl/7.81.0"
+        },
+        {
+          "name": "Accept",
+          "value": "*/*"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4866,4867,4865,49196,49200,159,52393,52392,52394,49195,49199,158,49188,49192,107,49187,49191,103,49162,49172,57,49161,49171,51,157,156,61,60,53,47,255-0,11,10,13172,16,22,23,49,13,43,45,51,21-29,23,30,25,24,256,257,258,259,260-0,1,2",
+      "ja3_hash": "c89cb1537b1054f5b39cefca36745277",
+      "ja4": "t13d3113h2_e8f1e7e78f70_ce5650b735ce",
+      "ja4_r": "t13d3113h2_1302,1303,1301,c02c,c030,009f,cca9,cca8,ccaa,c02b,c02f,009e,c024,c028,006b,c023,c027,0067,c00a,c014,0039,c009,c013,0033,009d,009c,003d,003c,0035,002f,00ff_0000,000b,000a,3374,0010,0016,0017,0031,000d,002b,002d,0033,0015_0403,0503,0603,0807,0808,0809,080a,080b,0804,0805,0806,0401,0501,0601,0303,0301,0302,0402,0502,0602",
+      "ja4_sha256": "9ec2f664bd5580e40eeeeac41d2aeacb78d52e3b13e3fa1d5dfb2dfa03d3ddd7",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303]",
+      "cipher_suites": "[1302, 1303, 1301, c02c, c030, 009f, cca9, cca8, ccaa, c02b, c02f, 009e, c024, c028, 006b, c023, c027, 0067, c00a, c014, 0039, c009, c013, 0033, 009d, 009c, 003d, 003c, 0035, 002f, 00ff]",
+      "signature_algorithms": "[0403, 0503, 0603, 0807, 0808, 0809, 080a, 080b, 0804, 0805, 0806, 0401, 0501, 0601, 0303, 0301, 0302, 0402, 0502, 0602]",
+      "supported_groups": "[001d, 0017, 001e, 0019, 0018, 0100, 0101, 0102, 0103, 0104]",
+      "ec_point_formats": "[0000, 0001, 0002]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 4,
+          "data_hex": "03000102"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 22,
+          "data_hex": "0014001d0017001e0019001801000101010201030104"
+        },
+        {
+          "id": "3374",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0016",
+          "name": "encrypt_then_mac",
+          "len": 0
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0031",
+          "name": "certificate_authorities",
+          "len": 0
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 42,
+          "data_hex": "0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 5,
+          "data_hex": "0403040303"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d0020c9261ce10cf8f5497ceb8303b71388a622c07c3dc99af218636cee6592f05724"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 172
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc0303c7d26d659da9bb62409191633de939add621c77083e21e497f4e824864a16933204616671e0e8f2880345868a0c2da5b3e9602d46ea3e1e467ed29523c989640f2003e130213031301c02cc030009fcca9cca8ccaac02bc02f009ec024c028006bc023c0270067c00ac0140039c009c0130033009d009c003d003c0035002f00ff01000175000000160014000011746573742e6175746f2d6772616d2e7275000b000403000102000a00160014001d0017001e0019001801000101010201030104337400000010000e000c02683208687474702f312e31001600000017000000310000000d002a0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602002b00050403040303002d00020101003300260024001d0020c9261ce10cf8f5497ceb8303b71388a622c07c3dc99af218636cee6592f05724001500ac00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T20:51:42.997655072Z",
+    "client": {
+      "ip": "185.240.120.152",
+      "port": 32324,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "curl/7.81.0",
+      "headers": [
+        {
+          "name": "User-Agent",
+          "value": "curl/7.81.0"
+        },
+        {
+          "name": "Accept",
+          "value": "*/*"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4866,4867,4865,49196,49200,159,52393,52392,52394,49195,49199,158,49188,49192,107,49187,49191,103,49162,49172,57,49161,49171,51,157,156,61,60,53,47,255-0,11,10,13172,16,22,23,49,13,43,45,51,21-29,23,30,25,24,256,257,258,259,260-0,1,2",
+      "ja3_hash": "c89cb1537b1054f5b39cefca36745277",
+      "ja4": "t13d3113h2_e8f1e7e78f70_ce5650b735ce",
+      "ja4_r": "t13d3113h2_1302,1303,1301,c02c,c030,009f,cca9,cca8,ccaa,c02b,c02f,009e,c024,c028,006b,c023,c027,0067,c00a,c014,0039,c009,c013,0033,009d,009c,003d,003c,0035,002f,00ff_0000,000b,000a,3374,0010,0016,0017,0031,000d,002b,002d,0033,0015_0403,0503,0603,0807,0808,0809,080a,080b,0804,0805,0806,0401,0501,0601,0303,0301,0302,0402,0502,0602",
+      "ja4_sha256": "9ec2f664bd5580e40eeeeac41d2aeacb78d52e3b13e3fa1d5dfb2dfa03d3ddd7",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303]",
+      "cipher_suites": "[1302, 1303, 1301, c02c, c030, 009f, cca9, cca8, ccaa, c02b, c02f, 009e, c024, c028, 006b, c023, c027, 0067, c00a, c014, 0039, c009, c013, 0033, 009d, 009c, 003d, 003c, 0035, 002f, 00ff]",
+      "signature_algorithms": "[0403, 0503, 0603, 0807, 0808, 0809, 080a, 080b, 0804, 0805, 0806, 0401, 0501, 0601, 0303, 0301, 0302, 0402, 0502, 0602]",
+      "supported_groups": "[001d, 0017, 001e, 0019, 0018, 0100, 0101, 0102, 0103, 0104]",
+      "ec_point_formats": "[0000, 0001, 0002]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 4,
+          "data_hex": "03000102"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 22,
+          "data_hex": "0014001d0017001e0019001801000101010201030104"
+        },
+        {
+          "id": "3374",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0016",
+          "name": "encrypt_then_mac",
+          "len": 0
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0031",
+          "name": "certificate_authorities",
+          "len": 0
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 42,
+          "data_hex": "0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 5,
+          "data_hex": "0403040303"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d002004b2664c0179738f7bfa475ab18cf35cc297b1587bc5dce5c99f01caeef0d161"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 172
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc0303f494c991b96eb5858930246e3c8cb9a7aa5505439e0ed5ef4b80cbe525e80e04205b0bb5453b0ca3d7a265f9649faa519513d759eb07311154a30c20a93d6ce1e4003e130213031301c02cc030009fcca9cca8ccaac02bc02f009ec024c028006bc023c0270067c00ac0140039c009c0130033009d009c003d003c0035002f00ff01000175000000160014000011746573742e6175746f2d6772616d2e7275000b000403000102000a00160014001d0017001e0019001801000101010201030104337400000010000e000c02683208687474702f312e31001600000017000000310000000d002a0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602002b00050403040303002d00020101003300260024001d002004b2664c0179738f7bfa475ab18cf35cc297b1587bc5dce5c99f01caeef0d161001500ac00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T19:49:12.226379387Z",
+    "client": {
+      "ip": "185.240.120.152",
+      "port": 32334,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "curl/7.81.0",
+      "headers": [
+        {
+          "name": "User-Agent",
+          "value": "curl/7.81.0"
+        },
+        {
+          "name": "Accept",
+          "value": "*/*"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4866,4867,4865,49196,49200,159,52393,52392,52394,49195,49199,158,49188,49192,107,49187,49191,103,49162,49172,57,49161,49171,51,157,156,61,60,53,47,255-0,11,10,13172,16,22,23,49,13,43,45,51,21-29,23,30,25,24,256,257,258,259,260-0,1,2",
+      "ja3_hash": "c89cb1537b1054f5b39cefca36745277",
+      "ja4": "t13d3113h2_e8f1e7e78f70_ce5650b735ce",
+      "ja4_r": "t13d3113h2_1302,1303,1301,c02c,c030,009f,cca9,cca8,ccaa,c02b,c02f,009e,c024,c028,006b,c023,c027,0067,c00a,c014,0039,c009,c013,0033,009d,009c,003d,003c,0035,002f,00ff_0000,000b,000a,3374,0010,0016,0017,0031,000d,002b,002d,0033,0015_0403,0503,0603,0807,0808,0809,080a,080b,0804,0805,0806,0401,0501,0601,0303,0301,0302,0402,0502,0602",
+      "ja4_sha256": "9ec2f664bd5580e40eeeeac41d2aeacb78d52e3b13e3fa1d5dfb2dfa03d3ddd7",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303]",
+      "cipher_suites": "[1302, 1303, 1301, c02c, c030, 009f, cca9, cca8, ccaa, c02b, c02f, 009e, c024, c028, 006b, c023, c027, 0067, c00a, c014, 0039, c009, c013, 0033, 009d, 009c, 003d, 003c, 0035, 002f, 00ff]",
+      "signature_algorithms": "[0403, 0503, 0603, 0807, 0808, 0809, 080a, 080b, 0804, 0805, 0806, 0401, 0501, 0601, 0303, 0301, 0302, 0402, 0502, 0602]",
+      "supported_groups": "[001d, 0017, 001e, 0019, 0018, 0100, 0101, 0102, 0103, 0104]",
+      "ec_point_formats": "[0000, 0001, 0002]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 4,
+          "data_hex": "03000102"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 22,
+          "data_hex": "0014001d0017001e0019001801000101010201030104"
+        },
+        {
+          "id": "3374",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0016",
+          "name": "encrypt_then_mac",
+          "len": 0
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0031",
+          "name": "certificate_authorities",
+          "len": 0
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 42,
+          "data_hex": "0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 5,
+          "data_hex": "0403040303"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d0020ed37e90db8ed9bd1e3ea5fccf4ff99c8230a26aba99629316cf1a40a2dbcb33d"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 172
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc0303c9221aca31f9616c7008724b7e9a9eb1121175f7e268e63e5e2df6f1de98e4d4207c9ed51f2541da215d0983207aacc1ab465ba2de5ecaf7e7ae62d63700833ca8003e130213031301c02cc030009fcca9cca8ccaac02bc02f009ec024c028006bc023c0270067c00ac0140039c009c0130033009d009c003d003c0035002f00ff01000175000000160014000011746573742e6175746f2d6772616d2e7275000b000403000102000a00160014001d0017001e0019001801000101010201030104337400000010000e000c02683208687474702f312e31001600000017000000310000000d002a0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602002b00050403040303002d00020101003300260024001d0020ed37e90db8ed9bd1e3ea5fccf4ff99c8230a26aba99629316cf1a40a2dbcb33d001500ac00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T17:44:34.623251151Z",
+    "client": {
+      "ip": "185.240.120.152",
+      "port": 47304,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "curl/7.81.0",
+      "headers": [
+        {
+          "name": "User-Agent",
+          "value": "curl/7.81.0"
+        },
+        {
+          "name": "Accept",
+          "value": "*/*"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4866,4867,4865,49196,49200,159,52393,52392,52394,49195,49199,158,49188,49192,107,49187,49191,103,49162,49172,57,49161,49171,51,157,156,61,60,53,47,255-0,11,10,13172,16,22,23,49,13,43,45,51,21-29,23,30,25,24,256,257,258,259,260-0,1,2",
+      "ja3_hash": "c89cb1537b1054f5b39cefca36745277",
+      "ja4": "t13d3113h2_e8f1e7e78f70_ce5650b735ce",
+      "ja4_r": "t13d3113h2_1302,1303,1301,c02c,c030,009f,cca9,cca8,ccaa,c02b,c02f,009e,c024,c028,006b,c023,c027,0067,c00a,c014,0039,c009,c013,0033,009d,009c,003d,003c,0035,002f,00ff_0000,000b,000a,3374,0010,0016,0017,0031,000d,002b,002d,0033,0015_0403,0503,0603,0807,0808,0809,080a,080b,0804,0805,0806,0401,0501,0601,0303,0301,0302,0402,0502,0602",
+      "ja4_sha256": "9ec2f664bd5580e40eeeeac41d2aeacb78d52e3b13e3fa1d5dfb2dfa03d3ddd7",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303]",
+      "cipher_suites": "[1302, 1303, 1301, c02c, c030, 009f, cca9, cca8, ccaa, c02b, c02f, 009e, c024, c028, 006b, c023, c027, 0067, c00a, c014, 0039, c009, c013, 0033, 009d, 009c, 003d, 003c, 0035, 002f, 00ff]",
+      "signature_algorithms": "[0403, 0503, 0603, 0807, 0808, 0809, 080a, 080b, 0804, 0805, 0806, 0401, 0501, 0601, 0303, 0301, 0302, 0402, 0502, 0602]",
+      "supported_groups": "[001d, 0017, 001e, 0019, 0018, 0100, 0101, 0102, 0103, 0104]",
+      "ec_point_formats": "[0000, 0001, 0002]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 4,
+          "data_hex": "03000102"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 22,
+          "data_hex": "0014001d0017001e0019001801000101010201030104"
+        },
+        {
+          "id": "3374",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0016",
+          "name": "encrypt_then_mac",
+          "len": 0
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0031",
+          "name": "certificate_authorities",
+          "len": 0
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 42,
+          "data_hex": "0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 5,
+          "data_hex": "0403040303"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d00206a4bab28e639a362b91423e90679ca8027503c4c7b86d8550581fd7065cd513e"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 172
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc03036ac7035917a2f4c473ed7e897ecd5ae5606f80ae4fdbfc9c6af9a865a9f5e62520786ba0a372771f76154e13f52912a56b9b013b593f6d02f434be904af4ee028f003e130213031301c02cc030009fcca9cca8ccaac02bc02f009ec024c028006bc023c0270067c00ac0140039c009c0130033009d009c003d003c0035002f00ff01000175000000160014000011746573742e6175746f2d6772616d2e7275000b000403000102000a00160014001d0017001e0019001801000101010201030104337400000010000e000c02683208687474702f312e31001600000017000000310000000d002a0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602002b00050403040303002d00020101003300260024001d00206a4bab28e639a362b91423e90679ca8027503c4c7b86d8550581fd7065cd513e001500ac00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T17:04:08.783399741Z",
+    "client": {
+      "ip": "172.69.223.180",
+      "port": 11677,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/?rest_route=/wp/v2/users/",
+      "user_agent": "Mozilla/5.0 (l9scan/2.0.33e27393e2431313e2838313; +https://leakix.net)",
+      "headers": [
+        {
+          "name": "X-Forwarded-Proto",
+          "value": "https"
+        },
+        {
+          "name": "Cf-Ray",
+          "value": "a387c5367f039ee1-CDG"
+        },
+        {
+          "name": "Accept-Encoding",
+          "value": "gzip, br"
+        },
+        {
+          "name": "X-Forwarded-For",
+          "value": "164.90.228.79"
+        },
+        {
+          "name": "User-Agent",
+          "value": "Mozilla/5.0 (l9scan/2.0.33e27393e2431313e2838313; +https://leakix.net)"
+        },
+        {
+          "name": "Cdn-Loop",
+          "value": "cloudflare; loops=1"
+        },
+        {
+          "name": "Cf-Connecting-Ip",
+          "value": "164.90.228.79"
+        },
+        {
+          "name": "Cf-Ipcountry",
+          "value": "DE"
+        },
+        {
+          "name": "Cf-Visitor",
+          "value": "{\"scheme\":\"https\"}"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4865,4866,4867,49195,49196,49199,49200,49171,156,157,47,53,10-0,23,65281,10,11,35,16,13,51,45,43,21-29,23,24,25,4588,25497,65074-0",
+      "ja3_hash": "aa9f197dd55b9162753cc93c9bc18ad4",
+      "ja4": "t13d1312h2_a44d0ee8b3cc_e381dae6da6b",
+      "ja4_r": "t13d1312h2_1301,1302,1303,c02b,c02c,c02f,c030,c013,009c,009d,002f,0035,000a_0000,0017,ff01,000a,000b,0023,0010,000d,0033,002d,002b,0015_0904,0403,0804,0401,0503,0805,0501,0806,0601,0201,0603",
+      "ja4_sha256": "a7f306ac44fb4d6b625cfe664fb0fb2a57871ae4cc5d27ec29b68fd306f9c7ea",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303, 0302, 0301]",
+      "cipher_suites": "[1301, 1302, 1303, c02b, c02c, c02f, c030, c013, 009c, 009d, 002f, 0035, 000a]",
+      "signature_algorithms": "[0904, 0403, 0804, 0401, 0503, 0805, 0501, 0806, 0601, 0201, 0603]",
+      "supported_groups": "[001d, 0017, 0018, 0019, 11ec, 6399, fe32]",
+      "ec_point_formats": "[0000]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "ff01",
+          "name": "renegotiation_info",
+          "len": 1,
+          "data_hex": "00"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 16,
+          "data_hex": "000e001d00170018001911ec6399fe32"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 2,
+          "data_hex": "0100"
+        },
+        {
+          "id": "0023",
+          "name": "session_ticket",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 24,
+          "data_hex": "001609040403080404010503080505010806060102010603"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d0020c893e774488eb5c3a197b3e986cf7e7a15059d1c3718865ae7e381ac97f9aa32"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 9,
+          "data_hex": "080304030303020301"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 233
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc03039a17f7d8dbff1ec6a94335a5ab0546c8e8b1ec87a926a215276bf38f3a5bcec820fb843025fe4243fbbf40328e47db9fe21e83adca65769f1976c327e24713efcf001a130113021303c02bc02cc02fc030c013009c009d002f0035000a01000199000000160014000011746573742e6175746f2d6772616d2e727500170000ff01000100000a0010000e001d00170018001911ec6399fe32000b00020100002300000010000e000c02683208687474702f312e31000d0018001609040403080404010503080505010806060102010603003300260024001d0020c893e774488eb5c3a197b3e986cf7e7a15059d1c3718865ae7e381ac97f9aa32002d00020101002b0009080304030303020301001500e90000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T17:04:07.782470069Z",
+    "client": {
+      "ip": "172.71.127.6",
+      "port": 9889,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "OPTIONS",
+      "path": "/",
+      "user_agent": "Mozilla/5.0 (l9scan/2.0.33e27393e2431313e2838313; +https://leakix.net)",
+      "headers": [
+        {
+          "name": "X-Forwarded-For",
+          "value": "164.90.228.79"
+        },
+        {
+          "name": "Cf-Ray",
+          "value": "a387c5306e9bd114-CDG"
+        },
+        {
+          "name": "Cf-Ipcountry",
+          "value": "DE"
+        },
+        {
+          "name": "X-Forwarded-Proto",
+          "value": "https"
+        },
+        {
+          "name": "User-Agent",
+          "value": "Mozilla/5.0 (l9scan/2.0.33e27393e2431313e2838313; +https://leakix.net)"
+        },
+        {
+          "name": "Accept-Encoding",
+          "value": "gzip, br"
+        },
+        {
+          "name": "Cdn-Loop",
+          "value": "cloudflare; loops=1"
+        },
+        {
+          "name": "Cf-Connecting-Ip",
+          "value": "164.90.228.79"
+        },
+        {
+          "name": "Cf-Visitor",
+          "value": "{\"scheme\":\"https\"}"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4865,4866,4867,49195,49196,49199,49200,49171,156,157,47,53,10-0,23,65281,10,11,35,16,13,51,45,43,21-29,23,24,25,4588,25497,65074-0",
+      "ja3_hash": "aa9f197dd55b9162753cc93c9bc18ad4",
+      "ja4": "t13d1312h2_a44d0ee8b3cc_e381dae6da6b",
+      "ja4_r": "t13d1312h2_1301,1302,1303,c02b,c02c,c02f,c030,c013,009c,009d,002f,0035,000a_0000,0017,ff01,000a,000b,0023,0010,000d,0033,002d,002b,0015_0904,0403,0804,0401,0503,0805,0501,0806,0601,0201,0603",
+      "ja4_sha256": "a7f306ac44fb4d6b625cfe664fb0fb2a57871ae4cc5d27ec29b68fd306f9c7ea",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303, 0302, 0301]",
+      "cipher_suites": "[1301, 1302, 1303, c02b, c02c, c02f, c030, c013, 009c, 009d, 002f, 0035, 000a]",
+      "signature_algorithms": "[0904, 0403, 0804, 0401, 0503, 0805, 0501, 0806, 0601, 0201, 0603]",
+      "supported_groups": "[001d, 0017, 0018, 0019, 11ec, 6399, fe32]",
+      "ec_point_formats": "[0000]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "ff01",
+          "name": "renegotiation_info",
+          "len": 1,
+          "data_hex": "00"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 16,
+          "data_hex": "000e001d00170018001911ec6399fe32"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 2,
+          "data_hex": "0100"
+        },
+        {
+          "id": "0023",
+          "name": "session_ticket",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 24,
+          "data_hex": "001609040403080404010503080505010806060102010603"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d0020521646051d15bebb718059ed7eb42e33dc9eaa90d9d133248bc105aa7307d536"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 9,
+          "data_hex": "080304030303020301"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 233
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc0303ade7bd0df34768953b1d07734cd86dd3ff8fb7061e6aa1d0a3b7c3b56893703b203230a8b6b9db7e5a8ee58053328bc8184b6290c38fcd9e9b4ee8e5ee9be2091e001a130113021303c02bc02cc02fc030c013009c009d002f0035000a01000199000000160014000011746573742e6175746f2d6772616d2e727500170000ff01000100000a0010000e001d00170018001911ec6399fe32000b00020100002300000010000e000c02683208687474702f312e31000d0018001609040403080404010503080505010806060102010603003300260024001d0020521646051d15bebb718059ed7eb42e33dc9eaa90d9d133248bc105aa7307d536002d00020101002b0009080304030303020301001500e90000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T17:03:24.131448152Z",
+    "client": {
+      "ip": "172.71.127.6",
+      "port": 9889,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "Mozilla/5.0 (l9scan/2.0.33e27393e2431313e2838313; +https://leakix.net)",
+      "headers": [
+        {
+          "name": "Cdn-Loop",
+          "value": "cloudflare; loops=1"
+        },
+        {
+          "name": "Cf-Connecting-Ip",
+          "value": "164.90.228.79"
+        },
+        {
+          "name": "Cf-Ipcountry",
+          "value": "DE"
+        },
+        {
+          "name": "X-Forwarded-Proto",
+          "value": "https"
+        },
+        {
+          "name": "X-Forwarded-For",
+          "value": "164.90.228.79"
+        },
+        {
+          "name": "User-Agent",
+          "value": "Mozilla/5.0 (l9scan/2.0.33e27393e2431313e2838313; +https://leakix.net)"
+        },
+        {
+          "name": "Cf-Ray",
+          "value": "a387c41e6c7ed145-CDG"
+        },
+        {
+          "name": "Cf-Visitor",
+          "value": "{\"scheme\":\"https\"}"
+        },
+        {
+          "name": "Accept-Encoding",
+          "value": "gzip, br"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4865,4866,4867,49195,49196,49199,49200,49171,156,157,47,53,10-0,23,65281,10,11,35,16,13,51,45,43,21-29,23,24,25,4588,25497,65074-0",
+      "ja3_hash": "aa9f197dd55b9162753cc93c9bc18ad4",
+      "ja4": "t13d1312h2_a44d0ee8b3cc_e381dae6da6b",
+      "ja4_r": "t13d1312h2_1301,1302,1303,c02b,c02c,c02f,c030,c013,009c,009d,002f,0035,000a_0000,0017,ff01,000a,000b,0023,0010,000d,0033,002d,002b,0015_0904,0403,0804,0401,0503,0805,0501,0806,0601,0201,0603",
+      "ja4_sha256": "a7f306ac44fb4d6b625cfe664fb0fb2a57871ae4cc5d27ec29b68fd306f9c7ea",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303, 0302, 0301]",
+      "cipher_suites": "[1301, 1302, 1303, c02b, c02c, c02f, c030, c013, 009c, 009d, 002f, 0035, 000a]",
+      "signature_algorithms": "[0904, 0403, 0804, 0401, 0503, 0805, 0501, 0806, 0601, 0201, 0603]",
+      "supported_groups": "[001d, 0017, 0018, 0019, 11ec, 6399, fe32]",
+      "ec_point_formats": "[0000]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "ff01",
+          "name": "renegotiation_info",
+          "len": 1,
+          "data_hex": "00"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 16,
+          "data_hex": "000e001d00170018001911ec6399fe32"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 2,
+          "data_hex": "0100"
+        },
+        {
+          "id": "0023",
+          "name": "session_ticket",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 24,
+          "data_hex": "001609040403080404010503080505010806060102010603"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d0020521646051d15bebb718059ed7eb42e33dc9eaa90d9d133248bc105aa7307d536"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 9,
+          "data_hex": "080304030303020301"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 233
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc0303ade7bd0df34768953b1d07734cd86dd3ff8fb7061e6aa1d0a3b7c3b56893703b203230a8b6b9db7e5a8ee58053328bc8184b6290c38fcd9e9b4ee8e5ee9be2091e001a130113021303c02bc02cc02fc030c013009c009d002f0035000a01000199000000160014000011746573742e6175746f2d6772616d2e727500170000ff01000100000a0010000e001d00170018001911ec6399fe32000b00020100002300000010000e000c02683208687474702f312e31000d0018001609040403080404010503080505010806060102010603003300260024001d0020521646051d15bebb718059ed7eb42e33dc9eaa90d9d133248bc105aa7307d536002d00020101002b0009080304030303020301001500e90000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T17:03:10.641997073Z",
+    "client": {
+      "ip": "172.68.225.238",
+      "port": 11223,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "Mozilla/5.0 (l9scan/2.0.33e27393e2431313e2838313; +https://leakix.net)",
+      "headers": [
+        {
+          "name": "X-Forwarded-For",
+          "value": "164.90.228.79"
+        },
+        {
+          "name": "Accept-Encoding",
+          "value": "gzip, br"
+        },
+        {
+          "name": "Cf-Ray",
+          "value": "a387c3c69e6485e3-HKG"
+        },
+        {
+          "name": "User-Agent",
+          "value": "Mozilla/5.0 (l9scan/2.0.33e27393e2431313e2838313; +https://leakix.net)"
+        },
+        {
+          "name": "Cdn-Loop",
+          "value": "cloudflare; loops=1"
+        },
+        {
+          "name": "Cf-Ipcountry",
+          "value": "DE"
+        },
+        {
+          "name": "Cf-Visitor",
+          "value": "{\"scheme\":\"https\"}"
+        },
+        {
+          "name": "X-Forwarded-Proto",
+          "value": "https"
+        },
+        {
+          "name": "Cf-Connecting-Ip",
+          "value": "164.90.228.79"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4865,4866,4867,49195,49196,49199,49200,49171,156,157,47,53,10-0,23,65281,10,11,35,16,13,51,45,43,21-29,23,24,25,4588,25497,65074-0",
+      "ja3_hash": "aa9f197dd55b9162753cc93c9bc18ad4",
+      "ja4": "t13d1312h2_a44d0ee8b3cc_e381dae6da6b",
+      "ja4_r": "t13d1312h2_1301,1302,1303,c02b,c02c,c02f,c030,c013,009c,009d,002f,0035,000a_0000,0017,ff01,000a,000b,0023,0010,000d,0033,002d,002b,0015_0904,0403,0804,0401,0503,0805,0501,0806,0601,0201,0603",
+      "ja4_sha256": "a7f306ac44fb4d6b625cfe664fb0fb2a57871ae4cc5d27ec29b68fd306f9c7ea",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303, 0302, 0301]",
+      "cipher_suites": "[1301, 1302, 1303, c02b, c02c, c02f, c030, c013, 009c, 009d, 002f, 0035, 000a]",
+      "signature_algorithms": "[0904, 0403, 0804, 0401, 0503, 0805, 0501, 0806, 0601, 0201, 0603]",
+      "supported_groups": "[001d, 0017, 0018, 0019, 11ec, 6399, fe32]",
+      "ec_point_formats": "[0000]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "ff01",
+          "name": "renegotiation_info",
+          "len": 1,
+          "data_hex": "00"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 16,
+          "data_hex": "000e001d00170018001911ec6399fe32"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 2,
+          "data_hex": "0100"
+        },
+        {
+          "id": "0023",
+          "name": "session_ticket",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 24,
+          "data_hex": "001609040403080404010503080505010806060102010603"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d002084139d1078960d4a929efcf3133d3f94891e12e7b18275363553b08f4cbf9e18"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 9,
+          "data_hex": "080304030303020301"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 233
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc03031db39a552aa708b29b6ad2c60e15a33e3f6d9276fb75f18189c48b799d13d5f7208eab0235430f560b82c4cfbdb98142cd279a02e93e8dd0d272e143cf23e1f269001a130113021303c02bc02cc02fc030c013009c009d002f0035000a01000199000000160014000011746573742e6175746f2d6772616d2e727500170000ff01000100000a0010000e001d00170018001911ec6399fe32000b00020100002300000010000e000c02683208687474702f312e31000d0018001609040403080404010503080505010806060102010603003300260024001d002084139d1078960d4a929efcf3133d3f94891e12e7b18275363553b08f4cbf9e18002d00020101002b0009080304030303020301001500e90000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T16:41:41.924910409Z",
+    "client": {
+      "ip": "185.240.120.152",
+      "port": 21378,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "curl/7.81.0",
+      "headers": [
+        {
+          "name": "User-Agent",
+          "value": "curl/7.81.0"
+        },
+        {
+          "name": "Accept",
+          "value": "*/*"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4866,4867,4865,49196,49200,159,52393,52392,52394,49195,49199,158,49188,49192,107,49187,49191,103,49162,49172,57,49161,49171,51,157,156,61,60,53,47,255-0,11,10,13172,16,22,23,49,13,43,45,51,21-29,23,30,25,24,256,257,258,259,260-0,1,2",
+      "ja3_hash": "c89cb1537b1054f5b39cefca36745277",
+      "ja4": "t13d3113h2_e8f1e7e78f70_ce5650b735ce",
+      "ja4_r": "t13d3113h2_1302,1303,1301,c02c,c030,009f,cca9,cca8,ccaa,c02b,c02f,009e,c024,c028,006b,c023,c027,0067,c00a,c014,0039,c009,c013,0033,009d,009c,003d,003c,0035,002f,00ff_0000,000b,000a,3374,0010,0016,0017,0031,000d,002b,002d,0033,0015_0403,0503,0603,0807,0808,0809,080a,080b,0804,0805,0806,0401,0501,0601,0303,0301,0302,0402,0502,0602",
+      "ja4_sha256": "9ec2f664bd5580e40eeeeac41d2aeacb78d52e3b13e3fa1d5dfb2dfa03d3ddd7",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303]",
+      "cipher_suites": "[1302, 1303, 1301, c02c, c030, 009f, cca9, cca8, ccaa, c02b, c02f, 009e, c024, c028, 006b, c023, c027, 0067, c00a, c014, 0039, c009, c013, 0033, 009d, 009c, 003d, 003c, 0035, 002f, 00ff]",
+      "signature_algorithms": "[0403, 0503, 0603, 0807, 0808, 0809, 080a, 080b, 0804, 0805, 0806, 0401, 0501, 0601, 0303, 0301, 0302, 0402, 0502, 0602]",
+      "supported_groups": "[001d, 0017, 001e, 0019, 0018, 0100, 0101, 0102, 0103, 0104]",
+      "ec_point_formats": "[0000, 0001, 0002]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 4,
+          "data_hex": "03000102"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 22,
+          "data_hex": "0014001d0017001e0019001801000101010201030104"
+        },
+        {
+          "id": "3374",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0016",
+          "name": "encrypt_then_mac",
+          "len": 0
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0031",
+          "name": "certificate_authorities",
+          "len": 0
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 42,
+          "data_hex": "0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 5,
+          "data_hex": "0403040303"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d002036e86d5ce539fb1e895dc18b75cb0c36daed8d59e88ea241065730a156154716"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 172
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc0303ecdba188a7db8af1f3c7688ecc2ffa0094f5d01a894f75c9d5b49ab86d640e9420b53347b4e63e1bd73673a4fa4757e471dcdc1de9d7d4ef726d3c39d2f25f3428003e130213031301c02cc030009fcca9cca8ccaac02bc02f009ec024c028006bc023c0270067c00ac0140039c009c0130033009d009c003d003c0035002f00ff01000175000000160014000011746573742e6175746f2d6772616d2e7275000b000403000102000a00160014001d0017001e0019001801000101010201030104337400000010000e000c02683208687474702f312e31001600000017000000310000000d002a0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602002b00050403040303002d00020101003300260024001d002036e86d5ce539fb1e895dc18b75cb0c36daed8d59e88ea241065730a156154716001500ac00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T16:27:59.900733331Z",
+    "client": {
+      "ip": "45.41.130.233",
+      "port": 37000,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+      "headers": [
+        {
+          "name": "Sec-Fetch-User",
+          "value": "?1"
+        },
+        {
+          "name": "Accept-Encoding",
+          "value": "gzip, deflate, br, zstd"
+        },
+        {
+          "name": "Accept-Language",
+          "value": "en-US,en;q=0.9"
+        },
+        {
+          "name": "Sec-Ch-Ua",
+          "value": "\"Not;A=Brand\";v=\"8\", \"Chromium\";v=\"150\", \"Google Chrome\";v=\"150\""
+        },
+        {
+          "name": "Sec-Ch-Ua-Mobile",
+          "value": "?0"
+        },
+        {
+          "name": "User-Agent",
+          "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36"
+        },
+        {
+          "name": "Sec-Fetch-Site",
+          "value": "none"
+        },
+        {
+          "name": "Sec-Fetch-Dest",
+          "value": "document"
+        },
+        {
+          "name": "Priority",
+          "value": "u=0, i"
+        },
+        {
+          "name": "Sec-Ch-Ua-Platform",
+          "value": "\"macOS\""
+        },
+        {
+          "name": "Upgrade-Insecure-Requests",
+          "value": "1"
+        },
+        {
+          "name": "Accept",
+          "value": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
+        },
+        {
+          "name": "Sec-Fetch-Mode",
+          "value": "navigate"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4865,4866,4867,49195,49199,49196,49200,52393,52392,49171,49172,156,157,47,53-17613,10,13,65281,35,23,18,65037,11,43,51,16,27,45,0,5-4588,29,23,24-0",
+      "ja3_hash": "3818b4b5673b5cb5034c450fbcd55613",
+      "ja4": "t13d1516h2_8daaf6152771_806a8c22fdea",
+      "ja4_r": "t13d1516h2_1301,1302,1303,c02b,c02f,c02c,c030,cca9,cca8,c013,c014,009c,009d,002f,0035_44cd,000a,000d,ff01,0023,0017,0012,fe0d,000b,002b,0033,0010,001b,002d,0000,0005_0904,0905,0906,0403,0804,0401,0503,0805,0501,0806,0601",
+      "ja4_sha256": "b3631567f1376eb89485b1c7b774c102b97ddd808a248d5f41d9bb69cb7edf68",
+      "client_version": "0303",
+      "supported_versions": "[caca, 0304, 0303]",
+      "cipher_suites": "[8a8a, 1301, 1302, 1303, c02b, c02f, c02c, c030, cca9, cca8, c013, c014, 009c, 009d, 002f, 0035]",
+      "signature_algorithms": "[0904, 0905, 0906, 0403, 0804, 0401, 0503, 0805, 0501, 0806, 0601]",
+      "supported_groups": "[fafa, 11ec, 001d, 0017, 0018]",
+      "ec_point_formats": "[0000]",
+      "extensions": [
+        {
+          "id": "3a3a",
+          "len": 0
+        },
+        {
+          "id": "44cd",
+          "name": "ALPS",
+          "len": 5,
+          "data_hex": "0003026832"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 12,
+          "data_hex": "000afafa11ec001d00170018"
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 24,
+          "data_hex": "001609040905090604030804040105030805050108060601"
+        },
+        {
+          "id": "ff01",
+          "name": "renegotiation_info",
+          "len": 1,
+          "data_hex": "00"
+        },
+        {
+          "id": "0023",
+          "name": "session_ticket",
+          "len": 0
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0012",
+          "name": "signed_certificate_timestamp",
+          "len": 0
+        },
+        {
+          "id": "fe0d",
+          "len": 250
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 2,
+          "data_hex": "0100"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 7,
+          "data_hex": "06caca03040303"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 1263
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "001b",
+          "name": "compress_certificate",
+          "len": 3,
+          "data_hex": "020002"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "0005",
+          "name": "status_request",
+          "len": 5,
+          "data_hex": "0100000000"
+        },
+        {
+          "id": "caca",
+          "len": 1,
+          "data_hex": "00"
+        }
+      ],
+      "client_hello_bytes": 1797,
+      "client_hello_hex": "1603010700010006fc0303a0240c3a59598068a0a9e5129472a5e45b2d8f3070c4bb4290512091f0d9f2c020d957baa006f4676de5bdb1d1cce5490b55c8bcca1be7b1f2a31df048b312260e00208a8a130113021303c02bc02fc02cc030cca9cca8c013c014009c009d002f0035010006933a3a000044cd00050003026832000a000c000afafa11ec001d00170018000d0018001609040905090604030804040105030805050108060601ff01000100002300000017000000120000fe0d00fa0000010001a5002042e9c431dc7a4ebe89835109d695c523297d7c1854c61576b407de98dfe4283600d03a64c293a859ccd23f3b318c3ec25d9e5b27c580ddf3195b2238945beefdde88760b7e4360405702b4048560985c114a0fd9d3c19d85fd0e1cd2274aa2d69d982b2d901f992e117eaa98cf21079d53de5e930d60dacad85515236353705c29d522bda0def0be38b011524d2c07e73cd6064d8b87f18fb2337fb5805842c398c945f3ea44318036bf3c8b61f6c67b05a957fe5c41986719ff784ff0f36d88cce1e8eb7884b061fb611f632bb381effe89ed0f13dce09d0ab3258b6c776a4146865e4cc3048b86129c4edd309ac950b109000b00020100002b000706caca03040303003304ef04edfafa00010011ec04c0361a8da661c543b637d0c7a5728c62ad0a901293b0eb27cc454a706b19c44f2b5b1dd35943bc933cb13b88a5c3c173b0f3c40556bb49df7650f5928dcaf4b7e388644a307d981964125a6ef436bb1dc70ce0029759f637e85660f4b852555c5ac3fa7ea5c91aace16039615b55fb6fd82a134d9819496caf5f69bd8145ac26aa7608701d8e72c7c739b9557546589cae16c837f349708302434c99c8fc31ca9bdbc19d4a516933692110133b9b7bb450c1e3601d7249a6ccb13d4e5c1da67919d6f153a6f78e948373e8b9a2fb1068a5e42d57844a5aa88a8dc49a63f67120a7839c29c625036891718815c59d9ee434590842bd56086e39813fa21d09c705546cb88589bfdde629c5a4c8dc0a2c0c76b52abc8bf955cc6ef2be59ab54fda180339613c6ab2aa06b7581c99b2a05b9fe902d4803a530dacc814660b4979dd84881c6254dba085630f3359fe50601d929174b6185b9099f9976c6252b149cc6ba4240d0cbace9b258903c38bc872e5eb1a60d03b192b84075356a48d78790f6844961bd56eb1bcabc4c53002572706f9990ca8207466c5768100b110177af1f5c080133c4c7b6ca19809c5b6b5ff527088b88a8fe77591c2c212a173cc3481fc54bc721f056d3bcad9b8cb3c13b4639287dad947f03e2703bf396c9140d08f9316821047a8a3bbbd82a8ae467f3456e49eb2e41eb2232f6c865cb25b3d93c0b3b463b9c6b2059305e6790f00843f5c93104d378e38c2e91d80bf347381981b894f3994a193edaeb713ad469f84aa31b32af6bb397e6572d0ab5ae5fd17e6e3753c4484d1f4b61a4b86d277b9628f37cfddcc0e529234a1aa15389cbdcd1b1c23507861541a4a8b7a8e86850717f4144569295a2eb157662ea0466a102b1bc4fe1b1af5a2c39c30354a4da7e72696f277c89d1179c55e0aaeeb3202fe63591642e1fd5bc3b078e6b3435b732cd548a5a45956c8c4cb2efaa94f9ec7155257daaea4eace8728ef598e0e27e2cf699cf2807721604c5404f9805791e61b9aabb904b5606e2a1157ea153f39195a51387ae18b78e16079143a75ef79f8b557a55191f068c658cdb04a12a970e09584b7361c0e196ef353309309da2abb35863cb8aabacb53b9594f5754007557dd3cd7ff33a61a0a5f877c2e798a99226476503932940b34a62ab0b92022afc9a078178de932857012c08ca8598f6327a1a3ab5fcce9fd53b8c0c77205997043c6e81b596eee7898f44471d8c5e06c44ecf0c74c2db9dff4bc640a01fdb750a733320ad2241211b96249485c5192dabc4ae052b9914b207ad63be248153014c277864cba15c3d227c21b62740920b7997db88fb71c95de221ec69654d22a5c96abdd5f05646390f2688359255514484c22262bd1fd3393962c25f1b754a1b899e3c035c3229930cce8d91540dbc81b7eb7681134fd511571b8c1b5b50197936520773ab8088122a41c5cc37cc3b30a945096f985b5b7b8792d7010c49da868ed1ac34a50ad5503ba054bc72b2a8db248217e596d3548577a525b3775c047281d1e97efc14916820c44e896b2160b601199558b94cc27c52bdba06e0f83a5f4c564ebc7ce4b3804d126c1217af3922c3b786aa7bfb20c9cc6a8c7d8c9b7330c7a6c1b9d6949332f26312ce3936775eced3b55bb9548803286bc65cdcd922ed20c2ec41e6a98e15aa243f88b973b765a922d4e3bb7326001d00207372b2761c4e55d08098a3cbf1c30d8dbfd1d7a74bb2ab076b42c539d5a3e3680010000e000c02683208687474702f312e31001b0003020002002d00020101000000160014000011746573742e6175746f2d6772616d2e7275000500050100000000caca000100"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T15:38:52.229259811Z",
+    "client": {
+      "ip": "185.240.120.152",
+      "port": 24602,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "curl/7.81.0",
+      "headers": [
+        {
+          "name": "User-Agent",
+          "value": "curl/7.81.0"
+        },
+        {
+          "name": "Accept",
+          "value": "*/*"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4866,4867,4865,49196,49200,159,52393,52392,52394,49195,49199,158,49188,49192,107,49187,49191,103,49162,49172,57,49161,49171,51,157,156,61,60,53,47,255-0,11,10,13172,16,22,23,49,13,43,45,51,21-29,23,30,25,24,256,257,258,259,260-0,1,2",
+      "ja3_hash": "c89cb1537b1054f5b39cefca36745277",
+      "ja4": "t13d3113h2_e8f1e7e78f70_ce5650b735ce",
+      "ja4_r": "t13d3113h2_1302,1303,1301,c02c,c030,009f,cca9,cca8,ccaa,c02b,c02f,009e,c024,c028,006b,c023,c027,0067,c00a,c014,0039,c009,c013,0033,009d,009c,003d,003c,0035,002f,00ff_0000,000b,000a,3374,0010,0016,0017,0031,000d,002b,002d,0033,0015_0403,0503,0603,0807,0808,0809,080a,080b,0804,0805,0806,0401,0501,0601,0303,0301,0302,0402,0502,0602",
+      "ja4_sha256": "9ec2f664bd5580e40eeeeac41d2aeacb78d52e3b13e3fa1d5dfb2dfa03d3ddd7",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303]",
+      "cipher_suites": "[1302, 1303, 1301, c02c, c030, 009f, cca9, cca8, ccaa, c02b, c02f, 009e, c024, c028, 006b, c023, c027, 0067, c00a, c014, 0039, c009, c013, 0033, 009d, 009c, 003d, 003c, 0035, 002f, 00ff]",
+      "signature_algorithms": "[0403, 0503, 0603, 0807, 0808, 0809, 080a, 080b, 0804, 0805, 0806, 0401, 0501, 0601, 0303, 0301, 0302, 0402, 0502, 0602]",
+      "supported_groups": "[001d, 0017, 001e, 0019, 0018, 0100, 0101, 0102, 0103, 0104]",
+      "ec_point_formats": "[0000, 0001, 0002]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 4,
+          "data_hex": "03000102"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 22,
+          "data_hex": "0014001d0017001e0019001801000101010201030104"
+        },
+        {
+          "id": "3374",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0016",
+          "name": "encrypt_then_mac",
+          "len": 0
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0031",
+          "name": "certificate_authorities",
+          "len": 0
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 42,
+          "data_hex": "0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 5,
+          "data_hex": "0403040303"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d0020d48d6b4cb1b9841ea2da67293689bc17524cce3c38bd1db09584e490de4a326a"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 172
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc03036bfe0478fd9d28becbfb28bb2bd44a3a753ede4c960e65958b200adb0eb7383520b778e4161ddd637c7edaf7bad75aeb0d8d90f8a34631af9cbe349d27f6ff5255003e130213031301c02cc030009fcca9cca8ccaac02bc02f009ec024c028006bc023c0270067c00ac0140039c009c0130033009d009c003d003c0035002f00ff01000175000000160014000011746573742e6175746f2d6772616d2e7275000b000403000102000a00160014001d0017001e0019001801000101010201030104337400000010000e000c02683208687474702f312e31001600000017000000310000000d002a0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602002b00050403040303002d00020101003300260024001d0020d48d6b4cb1b9841ea2da67293689bc17524cce3c38bd1db09584e490de4a326a001500ac00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T14:34:20.124346988Z",
+    "client": {
+      "ip": "185.240.120.152",
+      "port": 29702,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "curl/7.81.0",
+      "headers": [
+        {
+          "name": "User-Agent",
+          "value": "curl/7.81.0"
+        },
+        {
+          "name": "Accept",
+          "value": "*/*"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4866,4867,4865,49196,49200,159,52393,52392,52394,49195,49199,158,49188,49192,107,49187,49191,103,49162,49172,57,49161,49171,51,157,156,61,60,53,47,255-0,11,10,13172,16,22,23,49,13,43,45,51,21-29,23,30,25,24,256,257,258,259,260-0,1,2",
+      "ja3_hash": "c89cb1537b1054f5b39cefca36745277",
+      "ja4": "t13d3113h2_e8f1e7e78f70_ce5650b735ce",
+      "ja4_r": "t13d3113h2_1302,1303,1301,c02c,c030,009f,cca9,cca8,ccaa,c02b,c02f,009e,c024,c028,006b,c023,c027,0067,c00a,c014,0039,c009,c013,0033,009d,009c,003d,003c,0035,002f,00ff_0000,000b,000a,3374,0010,0016,0017,0031,000d,002b,002d,0033,0015_0403,0503,0603,0807,0808,0809,080a,080b,0804,0805,0806,0401,0501,0601,0303,0301,0302,0402,0502,0602",
+      "ja4_sha256": "9ec2f664bd5580e40eeeeac41d2aeacb78d52e3b13e3fa1d5dfb2dfa03d3ddd7",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303]",
+      "cipher_suites": "[1302, 1303, 1301, c02c, c030, 009f, cca9, cca8, ccaa, c02b, c02f, 009e, c024, c028, 006b, c023, c027, 0067, c00a, c014, 0039, c009, c013, 0033, 009d, 009c, 003d, 003c, 0035, 002f, 00ff]",
+      "signature_algorithms": "[0403, 0503, 0603, 0807, 0808, 0809, 080a, 080b, 0804, 0805, 0806, 0401, 0501, 0601, 0303, 0301, 0302, 0402, 0502, 0602]",
+      "supported_groups": "[001d, 0017, 001e, 0019, 0018, 0100, 0101, 0102, 0103, 0104]",
+      "ec_point_formats": "[0000, 0001, 0002]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 4,
+          "data_hex": "03000102"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 22,
+          "data_hex": "0014001d0017001e0019001801000101010201030104"
+        },
+        {
+          "id": "3374",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0016",
+          "name": "encrypt_then_mac",
+          "len": 0
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0031",
+          "name": "certificate_authorities",
+          "len": 0
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 42,
+          "data_hex": "0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 5,
+          "data_hex": "0403040303"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d0020c5f9b69121f5f0c53f23a782d8dbb718837e8e4b522ab5f629b4e25a3c1f2a1c"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 172
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc030308e6ed57fdcbdcda307403a82add337d8568ab6a23f45008b6375a05ad918bdb20df99260bdc60a18b1fe1c50426f1663cfc54838c1063a1f2ba687c1b1af3aa69003e130213031301c02cc030009fcca9cca8ccaac02bc02f009ec024c028006bc023c0270067c00ac0140039c009c0130033009d009c003d003c0035002f00ff01000175000000160014000011746573742e6175746f2d6772616d2e7275000b000403000102000a00160014001d0017001e0019001801000101010201030104337400000010000e000c02683208687474702f312e31001600000017000000310000000d002a0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602002b00050403040303002d00020101003300260024001d0020c5f9b69121f5f0c53f23a782d8dbb718837e8e4b522ab5f629b4e25a3c1f2a1c001500ac00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T14:20:55.96609508Z",
+    "client": {
+      "ip": "45.56.135.229",
+      "port": 32444,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
+        },
+        {
+          "name": "Sec-Fetch-Mode",
+          "value": "navigate"
+        },
+        {
+          "name": "Accept-Encoding",
+          "value": "gzip, deflate, br, zstd"
+        },
+        {
+          "name": "Priority",
+          "value": "u=0, i"
+        },
+        {
+          "name": "Sec-Ch-Ua-Mobile",
+          "value": "?0"
+        },
+        {
+          "name": "Sec-Ch-Ua-Platform",
+          "value": "\"macOS\""
+        },
+        {
+          "name": "Upgrade-Insecure-Requests",
+          "value": "1"
+        },
+        {
+          "name": "Sec-Fetch-Site",
+          "value": "none"
+        },
+        {
+          "name": "Sec-Fetch-User",
+          "value": "?1"
+        },
+        {
+          "name": "Sec-Fetch-Dest",
+          "value": "document"
+        },
+        {
+          "name": "Accept-Language",
+          "value": "en-US,en;q=0.9"
+        },
+        {
+          "name": "Sec-Ch-Ua",
+          "value": "\"Not;A=Brand\";v=\"8\", \"Chromium\";v=\"150\", \"Google Chrome\";v=\"150\""
+        },
+        {
+          "name": "User-Agent",
+          "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4865,4866,4867,49195,49199,49196,49200,52393,52392,49171,49172,156,157,47,53-43,27,18,16,51,17613,65037,13,5,35,10,11,23,45,65281,0-4588,29,23,24-0",
+      "ja3_hash": "feddcd31ac793357f1f4918196ef6718",
+      "ja4": "t13d1516h2_8daaf6152771_806a8c22fdea",
+      "ja4_r": "t13d1516h2_1301,1302,1303,c02b,c02f,c02c,c030,cca9,cca8,c013,c014,009c,009d,002f,0035_002b,001b,0012,0010,0033,44cd,fe0d,000d,0005,0023,000a,000b,0017,002d,ff01,0000_0904,0905,0906,0403,0804,0401,0503,0805,0501,0806,0601",
+      "ja4_sha256": "b3631567f1376eb89485b1c7b774c102b97ddd808a248d5f41d9bb69cb7edf68",
+      "client_version": "0303",
+      "supported_versions": "[5a5a, 0304, 0303]",
+      "cipher_suites": "[baba, 1301, 1302, 1303, c02b, c02f, c02c, c030, cca9, cca8, c013, c014, 009c, 009d, 002f, 0035]",
+      "signature_algorithms": "[0904, 0905, 0906, 0403, 0804, 0401, 0503, 0805, 0501, 0806, 0601]",
+      "supported_groups": "[eaea, 11ec, 001d, 0017, 0018]",
+      "ec_point_formats": "[0000]",
+      "extensions": [
+        {
+          "id": "dada",
+          "len": 0
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 7,
+          "data_hex": "065a5a03040303"
+        },
+        {
+          "id": "001b",
+          "name": "compress_certificate",
+          "len": 3,
+          "data_hex": "020002"
+        },
+        {
+          "id": "0012",
+          "name": "signed_certificate_timestamp",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 1263
+        },
+        {
+          "id": "44cd",
+          "name": "ALPS",
+          "len": 5,
+          "data_hex": "0003026832"
+        },
+        {
+          "id": "fe0d",
+          "len": 218
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 24,
+          "data_hex": "001609040905090604030804040105030805050108060601"
+        },
+        {
+          "id": "0005",
+          "name": "status_request",
+          "len": 5,
+          "data_hex": "0100000000"
+        },
+        {
+          "id": "0023",
+          "name": "session_ticket",
+          "len": 0
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 12,
+          "data_hex": "000aeaea11ec001d00170018"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 2,
+          "data_hex": "0100"
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "ff01",
+          "name": "renegotiation_info",
+          "len": 1,
+          "data_hex": "00"
+        },
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "4a4a",
+          "len": 1,
+          "data_hex": "00"
+        }
+      ],
+      "client_hello_bytes": 1765,
+      "client_hello_hex": "16030106e0010006dc030304a3ea75ea147b73dfc9c1fe196a05d0c2c998636164ec429d51f2f6e25b3aff20a76d5438bb72acb317647968f35008d15582d45aea01b0b4ba2d4f5209dbd3890020baba130113021303c02bc02fc02cc030cca9cca8c013c014009c009d002f003501000673dada0000002b0007065a5a03040303001b0003020002001200000010000e000c02683208687474702f312e31003304ef04edeaea00010011ec04c058981c628846ddba620a4228839741753759dff5c8f2e84215786f55132f2b10873e067f99156256b188b131cf05d218ca1134fd3829f57cc9bc783da759770376b0cb393d5b2b27a1d816aa27b834b29de8228234ec2b25265fdd72c72ca696af32570d6a041b23886169c2dca58d3330657127aef89c9b72faa979f31229a329fbbc8205e773ec68c452105a3fe66ed0f1865fa782b36c7d61644b87f44c270420fb6a3a1c7c913f1958a1ba7ee5f31418b0adaa6a3f001505efa72aa8ba5a21b6b91039ad39d667d249ce0e30a05e6913d73b01250424778911f60594bec4999623a5b5444c5bdbbe1f2a5b02ba1a074539b31721711a3112d252824467fb4288c595ae5f38314f7a287e224681b55305227e844b15839a783124c300c98fe99b5cd2d44d830895815a6391f37490987f4b32acddb2c1e8232d6a7919d5302d66c2aedf6abaef536dda31c6bb4b697eb4cc87d000c90896ffa54c25c6365d48c9e8d9bd8f2a449ba726b91b22f20b890202495ba0554c11c615fa9ae3a6b55b337d0fe980ff07cf3c448f1f497ac375b1a2d28d2ef9963f84c2ea06152ce730927ba1b4499428288b2b13b227b6303eb5cf85e44be9910b1ff03096fc22e8f76d4ae71760c88333a9a4b957b5a8c20b5f40a2ca43170d2103ca1acfb02549e812ba02a89ce6a6a9c451014ab723825943221b3107a969b73b598174cdcd1c092989526df2ac9c2741f87b178d00432953682c11491bf1c7ca6856ff723480e4c236873ab97b533e808c7d18c4769a7ec8405c470392e54a321dc40e3f6841bbabb7cb703338e626b5c44578919b6a42b5ef35567b6c7cc7bbced01230d4a013adfa67799015d3097fa87443ff168a5aab81a885bfc2f31e99b837d3f0271d444d5622cf836190cb51926f62be7d1c475be076b20c5089a326e8203cfc1c9c9203037c88c1e9911e16d5b75eb40bb241400b0636c8a56b04351cb1cb97578a8382d986e4a9cdbfb988acc1a61c739d7675bf80454fd57cc352b7a2a1215a05c13868fbcca0c876cdf73835cb773734a596cbae80eb3d1f881186c71ca1eb4054b2ace6267abba7c405fb7631d5af99163d9417a030aca288824829685d713463b4f2c34ecc053a624d0f306c67a287ab91ba8fa636c1637e34f0b6f1e39d34e25c399395c010952970ba74e07974c37a791267981585b7f15e6e756ceb826ab351ae0fbac1783ab530707640e2b1e88921b6aa2b4738a798eb266858be23e53e5e45738f27ac20c40e6fc94c8f19684a5574eb9a00af0595cd08c92137580774bd08247df029cd8a17c0d390c408a4349c86a06240ba51cb7f9e0500be156ac8e53a2c2c5aa836c10a3c35e7f4bc27a7bc827a0874db38ae400662a490d023a765e6a65db11a13a5ad47bc17ed4693dddc7401a912c98a774b3643c0067194b9356f1977c4c8a3dbc5b39adb592740326fc39b2ae887a042143a64cb34140651c7a83fe8270b578c3a5679573846fec5c24d9c1c918cad632734141b1bc03a36d489cf0ff44d6501791d21cebbc33346e464b05461844706ae3a2ea9aa45e3337b1d046fcfaca0b03a2171c2c97b242273b0c2175c50a8382ab84431e7588ad7a88175fd67d59ec2e55aec75cad2114d9f1776bda8de58672f5fb4bbcd97b13608fa7660fb9b63ab49b3586c234c0c010aeaa37a45c80baf2fc413b4aff75b001d00203b8e6d6f8ef239dafebccdbc6b76575596692279883e767f7b2da1b72302fa1944cd00050003026832fe0d00da0000010001ac0020c61fffc2dd3fb83b6eea3a82302be2935bb45f1d643ec3b759e56fc106beaa1f00b056b1e9cde6c1327fefd948e22094615da5b5bc79a9da3f8f8d680bcd2614da7116d38a650b4673c55f586302a74fe7a504b3023d554c94b9fd04a2cdadb6c34d8b5adf8b4085a6303cdf75bc962d736e3b82c90d54a874b4d650fad1dc8aa637c986bcbf970b9d20b7a3896ac79817ce892fae097e3165169c6362c0f9b40b46a811c37c4b949e763372216b29c83a5eddc58f7cb473a80b05cad953aaaf367f867262e88f7e2b012a174c66a0bfe7d0000d001800160904090509060403080404010503080505010806060100050005010000000000230000000a000c000aeaea11ec001d00170018000b0002010000170000002d00020101ff01000100000000160014000011746573742e6175746f2d6772616d2e72754a4a000100"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T13:31:18.796521973Z",
+    "client": {
+      "ip": "185.240.120.152",
+      "port": 60750,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "curl/7.81.0",
+      "headers": [
+        {
+          "name": "User-Agent",
+          "value": "curl/7.81.0"
+        },
+        {
+          "name": "Accept",
+          "value": "*/*"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4866,4867,4865,49196,49200,159,52393,52392,52394,49195,49199,158,49188,49192,107,49187,49191,103,49162,49172,57,49161,49171,51,157,156,61,60,53,47,255-0,11,10,13172,16,22,23,49,13,43,45,51,21-29,23,30,25,24,256,257,258,259,260-0,1,2",
+      "ja3_hash": "c89cb1537b1054f5b39cefca36745277",
+      "ja4": "t13d3113h2_e8f1e7e78f70_ce5650b735ce",
+      "ja4_r": "t13d3113h2_1302,1303,1301,c02c,c030,009f,cca9,cca8,ccaa,c02b,c02f,009e,c024,c028,006b,c023,c027,0067,c00a,c014,0039,c009,c013,0033,009d,009c,003d,003c,0035,002f,00ff_0000,000b,000a,3374,0010,0016,0017,0031,000d,002b,002d,0033,0015_0403,0503,0603,0807,0808,0809,080a,080b,0804,0805,0806,0401,0501,0601,0303,0301,0302,0402,0502,0602",
+      "ja4_sha256": "9ec2f664bd5580e40eeeeac41d2aeacb78d52e3b13e3fa1d5dfb2dfa03d3ddd7",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303]",
+      "cipher_suites": "[1302, 1303, 1301, c02c, c030, 009f, cca9, cca8, ccaa, c02b, c02f, 009e, c024, c028, 006b, c023, c027, 0067, c00a, c014, 0039, c009, c013, 0033, 009d, 009c, 003d, 003c, 0035, 002f, 00ff]",
+      "signature_algorithms": "[0403, 0503, 0603, 0807, 0808, 0809, 080a, 080b, 0804, 0805, 0806, 0401, 0501, 0601, 0303, 0301, 0302, 0402, 0502, 0602]",
+      "supported_groups": "[001d, 0017, 001e, 0019, 0018, 0100, 0101, 0102, 0103, 0104]",
+      "ec_point_formats": "[0000, 0001, 0002]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 4,
+          "data_hex": "03000102"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 22,
+          "data_hex": "0014001d0017001e0019001801000101010201030104"
+        },
+        {
+          "id": "3374",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0016",
+          "name": "encrypt_then_mac",
+          "len": 0
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0031",
+          "name": "certificate_authorities",
+          "len": 0
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 42,
+          "data_hex": "0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 5,
+          "data_hex": "0403040303"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d00206a01dcafbe08c6d980a4a8737b552693c88181b7f2dd0bb5073f14a3e66bdc3e"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 172
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc0303036e32d9b0cba62fae727029e8b80e0e285c9649a775e96e6d794fdef36b018c20a9d50f0bf01fa5ccb7af7d46590133db23aafd095861361831f34c0c1af4920e003e130213031301c02cc030009fcca9cca8ccaac02bc02f009ec024c028006bc023c0270067c00ac0140039c009c0130033009d009c003d003c0035002f00ff01000175000000160014000011746573742e6175746f2d6772616d2e7275000b000403000102000a00160014001d0017001e0019001801000101010201030104337400000010000e000c02683208687474702f312e31001600000017000000310000000d002a0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602002b00050403040303002d00020101003300260024001d00206a01dcafbe08c6d980a4a8737b552693c88181b7f2dd0bb5073f14a3e66bdc3e001500ac00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T12:28:46.833216548Z",
+    "client": {
+      "ip": "185.240.120.152",
+      "port": 34142,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "curl/7.81.0",
+      "headers": [
+        {
+          "name": "User-Agent",
+          "value": "curl/7.81.0"
+        },
+        {
+          "name": "Accept",
+          "value": "*/*"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4866,4867,4865,49196,49200,159,52393,52392,52394,49195,49199,158,49188,49192,107,49187,49191,103,49162,49172,57,49161,49171,51,157,156,61,60,53,47,255-0,11,10,13172,16,22,23,49,13,43,45,51,21-29,23,30,25,24,256,257,258,259,260-0,1,2",
+      "ja3_hash": "c89cb1537b1054f5b39cefca36745277",
+      "ja4": "t13d3113h2_e8f1e7e78f70_ce5650b735ce",
+      "ja4_r": "t13d3113h2_1302,1303,1301,c02c,c030,009f,cca9,cca8,ccaa,c02b,c02f,009e,c024,c028,006b,c023,c027,0067,c00a,c014,0039,c009,c013,0033,009d,009c,003d,003c,0035,002f,00ff_0000,000b,000a,3374,0010,0016,0017,0031,000d,002b,002d,0033,0015_0403,0503,0603,0807,0808,0809,080a,080b,0804,0805,0806,0401,0501,0601,0303,0301,0302,0402,0502,0602",
+      "ja4_sha256": "9ec2f664bd5580e40eeeeac41d2aeacb78d52e3b13e3fa1d5dfb2dfa03d3ddd7",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303]",
+      "cipher_suites": "[1302, 1303, 1301, c02c, c030, 009f, cca9, cca8, ccaa, c02b, c02f, 009e, c024, c028, 006b, c023, c027, 0067, c00a, c014, 0039, c009, c013, 0033, 009d, 009c, 003d, 003c, 0035, 002f, 00ff]",
+      "signature_algorithms": "[0403, 0503, 0603, 0807, 0808, 0809, 080a, 080b, 0804, 0805, 0806, 0401, 0501, 0601, 0303, 0301, 0302, 0402, 0502, 0602]",
+      "supported_groups": "[001d, 0017, 001e, 0019, 0018, 0100, 0101, 0102, 0103, 0104]",
+      "ec_point_formats": "[0000, 0001, 0002]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 4,
+          "data_hex": "03000102"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 22,
+          "data_hex": "0014001d0017001e0019001801000101010201030104"
+        },
+        {
+          "id": "3374",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0016",
+          "name": "encrypt_then_mac",
+          "len": 0
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0031",
+          "name": "certificate_authorities",
+          "len": 0
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 42,
+          "data_hex": "0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 5,
+          "data_hex": "0403040303"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d00203a6c12a5ac0f74c1aa1142a334eeb7613090c351ba70039aff0b29636a1a3d76"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 172
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc0303cffe6d25dcaaaf5246031081f11902caf3a772d8d6493f440cb5c2a5afda1b9720a2773cfe700088683cb9d34352f0e4851cb110cbafb0b1e19ed4488a12602b41003e130213031301c02cc030009fcca9cca8ccaac02bc02f009ec024c028006bc023c0270067c00ac0140039c009c0130033009d009c003d003c0035002f00ff01000175000000160014000011746573742e6175746f2d6772616d2e7275000b000403000102000a00160014001d0017001e0019001801000101010201030104337400000010000e000c02683208687474702f312e31001600000017000000310000000d002a0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602002b00050403040303002d00020101003300260024001d00203a6c12a5ac0f74c1aa1142a334eeb7613090c351ba70039aff0b29636a1a3d76001500ac00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T11:26:28.913855492Z",
+    "client": {
+      "ip": "185.240.120.152",
+      "port": 37056,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "curl/7.81.0",
+      "headers": [
+        {
+          "name": "User-Agent",
+          "value": "curl/7.81.0"
+        },
+        {
+          "name": "Accept",
+          "value": "*/*"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4866,4867,4865,49196,49200,159,52393,52392,52394,49195,49199,158,49188,49192,107,49187,49191,103,49162,49172,57,49161,49171,51,157,156,61,60,53,47,255-0,11,10,13172,16,22,23,49,13,43,45,51,21-29,23,30,25,24,256,257,258,259,260-0,1,2",
+      "ja3_hash": "c89cb1537b1054f5b39cefca36745277",
+      "ja4": "t13d3113h2_e8f1e7e78f70_ce5650b735ce",
+      "ja4_r": "t13d3113h2_1302,1303,1301,c02c,c030,009f,cca9,cca8,ccaa,c02b,c02f,009e,c024,c028,006b,c023,c027,0067,c00a,c014,0039,c009,c013,0033,009d,009c,003d,003c,0035,002f,00ff_0000,000b,000a,3374,0010,0016,0017,0031,000d,002b,002d,0033,0015_0403,0503,0603,0807,0808,0809,080a,080b,0804,0805,0806,0401,0501,0601,0303,0301,0302,0402,0502,0602",
+      "ja4_sha256": "9ec2f664bd5580e40eeeeac41d2aeacb78d52e3b13e3fa1d5dfb2dfa03d3ddd7",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303]",
+      "cipher_suites": "[1302, 1303, 1301, c02c, c030, 009f, cca9, cca8, ccaa, c02b, c02f, 009e, c024, c028, 006b, c023, c027, 0067, c00a, c014, 0039, c009, c013, 0033, 009d, 009c, 003d, 003c, 0035, 002f, 00ff]",
+      "signature_algorithms": "[0403, 0503, 0603, 0807, 0808, 0809, 080a, 080b, 0804, 0805, 0806, 0401, 0501, 0601, 0303, 0301, 0302, 0402, 0502, 0602]",
+      "supported_groups": "[001d, 0017, 001e, 0019, 0018, 0100, 0101, 0102, 0103, 0104]",
+      "ec_point_formats": "[0000, 0001, 0002]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 4,
+          "data_hex": "03000102"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 22,
+          "data_hex": "0014001d0017001e0019001801000101010201030104"
+        },
+        {
+          "id": "3374",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0016",
+          "name": "encrypt_then_mac",
+          "len": 0
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0031",
+          "name": "certificate_authorities",
+          "len": 0
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 42,
+          "data_hex": "0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 5,
+          "data_hex": "0403040303"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d0020a5108823b646f72816db2db1e6d4ec0a62e4c76386b69b346a0e0a5503082b71"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 172
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc03039e80336746bbd3c287ee255714124e05eb4fee268d1e46fb42cb4c7489c534e1209ad6f3f2fd6e7f36075bfb94d6ae70468d4cb5884089871bf7020b1f0f610698003e130213031301c02cc030009fcca9cca8ccaac02bc02f009ec024c028006bc023c0270067c00ac0140039c009c0130033009d009c003d003c0035002f00ff01000175000000160014000011746573742e6175746f2d6772616d2e7275000b000403000102000a00160014001d0017001e0019001801000101010201030104337400000010000e000c02683208687474702f312e31001600000017000000310000000d002a0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602002b00050403040303002d00020101003300260024001d0020a5108823b646f72816db2db1e6d4ec0a62e4c76386b69b346a0e0a5503082b71001500ac00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T10:24:11.33733425Z",
+    "client": {
+      "ip": "185.240.120.152",
+      "port": 47896,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "curl/7.81.0",
+      "headers": [
+        {
+          "name": "User-Agent",
+          "value": "curl/7.81.0"
+        },
+        {
+          "name": "Accept",
+          "value": "*/*"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4866,4867,4865,49196,49200,159,52393,52392,52394,49195,49199,158,49188,49192,107,49187,49191,103,49162,49172,57,49161,49171,51,157,156,61,60,53,47,255-0,11,10,13172,16,22,23,49,13,43,45,51,21-29,23,30,25,24,256,257,258,259,260-0,1,2",
+      "ja3_hash": "c89cb1537b1054f5b39cefca36745277",
+      "ja4": "t13d3113h2_e8f1e7e78f70_ce5650b735ce",
+      "ja4_r": "t13d3113h2_1302,1303,1301,c02c,c030,009f,cca9,cca8,ccaa,c02b,c02f,009e,c024,c028,006b,c023,c027,0067,c00a,c014,0039,c009,c013,0033,009d,009c,003d,003c,0035,002f,00ff_0000,000b,000a,3374,0010,0016,0017,0031,000d,002b,002d,0033,0015_0403,0503,0603,0807,0808,0809,080a,080b,0804,0805,0806,0401,0501,0601,0303,0301,0302,0402,0502,0602",
+      "ja4_sha256": "9ec2f664bd5580e40eeeeac41d2aeacb78d52e3b13e3fa1d5dfb2dfa03d3ddd7",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303]",
+      "cipher_suites": "[1302, 1303, 1301, c02c, c030, 009f, cca9, cca8, ccaa, c02b, c02f, 009e, c024, c028, 006b, c023, c027, 0067, c00a, c014, 0039, c009, c013, 0033, 009d, 009c, 003d, 003c, 0035, 002f, 00ff]",
+      "signature_algorithms": "[0403, 0503, 0603, 0807, 0808, 0809, 080a, 080b, 0804, 0805, 0806, 0401, 0501, 0601, 0303, 0301, 0302, 0402, 0502, 0602]",
+      "supported_groups": "[001d, 0017, 001e, 0019, 0018, 0100, 0101, 0102, 0103, 0104]",
+      "ec_point_formats": "[0000, 0001, 0002]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 4,
+          "data_hex": "03000102"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 22,
+          "data_hex": "0014001d0017001e0019001801000101010201030104"
+        },
+        {
+          "id": "3374",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0016",
+          "name": "encrypt_then_mac",
+          "len": 0
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0031",
+          "name": "certificate_authorities",
+          "len": 0
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 42,
+          "data_hex": "0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 5,
+          "data_hex": "0403040303"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d00207c52f67127a52d8763210e524d6b595b0dbaba94c4b83834d4e56e6e4e9eaf79"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 172
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc0303cd9f02968ae39be3f92edb27202969fac782b043548c3e502c492e52423708392061d29adb96f83bb9b9004582e568334e689165dbfbee46fbde3502639de10bce003e130213031301c02cc030009fcca9cca8ccaac02bc02f009ec024c028006bc023c0270067c00ac0140039c009c0130033009d009c003d003c0035002f00ff01000175000000160014000011746573742e6175746f2d6772616d2e7275000b000403000102000a00160014001d0017001e0019001801000101010201030104337400000010000e000c02683208687474702f312e31001600000017000000310000000d002a0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602002b00050403040303002d00020101003300260024001d00207c52f67127a52d8763210e524d6b595b0dbaba94c4b83834d4e56e6e4e9eaf79001500ac00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T09:22:06.062122589Z",
+    "client": {
+      "ip": "185.240.120.152",
+      "port": 56352,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "curl/7.81.0",
+      "headers": [
+        {
+          "name": "User-Agent",
+          "value": "curl/7.81.0"
+        },
+        {
+          "name": "Accept",
+          "value": "*/*"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4866,4867,4865,49196,49200,159,52393,52392,52394,49195,49199,158,49188,49192,107,49187,49191,103,49162,49172,57,49161,49171,51,157,156,61,60,53,47,255-0,11,10,13172,16,22,23,49,13,43,45,51,21-29,23,30,25,24,256,257,258,259,260-0,1,2",
+      "ja3_hash": "c89cb1537b1054f5b39cefca36745277",
+      "ja4": "t13d3113h2_e8f1e7e78f70_ce5650b735ce",
+      "ja4_r": "t13d3113h2_1302,1303,1301,c02c,c030,009f,cca9,cca8,ccaa,c02b,c02f,009e,c024,c028,006b,c023,c027,0067,c00a,c014,0039,c009,c013,0033,009d,009c,003d,003c,0035,002f,00ff_0000,000b,000a,3374,0010,0016,0017,0031,000d,002b,002d,0033,0015_0403,0503,0603,0807,0808,0809,080a,080b,0804,0805,0806,0401,0501,0601,0303,0301,0302,0402,0502,0602",
+      "ja4_sha256": "9ec2f664bd5580e40eeeeac41d2aeacb78d52e3b13e3fa1d5dfb2dfa03d3ddd7",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303]",
+      "cipher_suites": "[1302, 1303, 1301, c02c, c030, 009f, cca9, cca8, ccaa, c02b, c02f, 009e, c024, c028, 006b, c023, c027, 0067, c00a, c014, 0039, c009, c013, 0033, 009d, 009c, 003d, 003c, 0035, 002f, 00ff]",
+      "signature_algorithms": "[0403, 0503, 0603, 0807, 0808, 0809, 080a, 080b, 0804, 0805, 0806, 0401, 0501, 0601, 0303, 0301, 0302, 0402, 0502, 0602]",
+      "supported_groups": "[001d, 0017, 001e, 0019, 0018, 0100, 0101, 0102, 0103, 0104]",
+      "ec_point_formats": "[0000, 0001, 0002]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 4,
+          "data_hex": "03000102"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 22,
+          "data_hex": "0014001d0017001e0019001801000101010201030104"
+        },
+        {
+          "id": "3374",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0016",
+          "name": "encrypt_then_mac",
+          "len": 0
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0031",
+          "name": "certificate_authorities",
+          "len": 0
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 42,
+          "data_hex": "0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 5,
+          "data_hex": "0403040303"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d00209ea3eb6f53bcbe89d18067e435defb55df752a10de4dde575aa85562a7f68d1f"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 172
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc03035d380b6ef1d4c83293b81f024a475ff0991c79491245746b67dc27eedd5d20f22038edb5f81f90ca7d7ae5897dcff7431ee74c52c66705b2c66936af1bde5d5968003e130213031301c02cc030009fcca9cca8ccaac02bc02f009ec024c028006bc023c0270067c00ac0140039c009c0130033009d009c003d003c0035002f00ff01000175000000160014000011746573742e6175746f2d6772616d2e7275000b000403000102000a00160014001d0017001e0019001801000101010201030104337400000010000e000c02683208687474702f312e31001600000017000000310000000d002a0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602002b00050403040303002d00020101003300260024001d00209ea3eb6f53bcbe89d18067e435defb55df752a10de4dde575aa85562a7f68d1f001500ac00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T08:20:01.617277816Z",
+    "client": {
+      "ip": "185.240.120.152",
+      "port": 14094,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "curl/7.81.0",
+      "headers": [
+        {
+          "name": "User-Agent",
+          "value": "curl/7.81.0"
+        },
+        {
+          "name": "Accept",
+          "value": "*/*"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4866,4867,4865,49196,49200,159,52393,52392,52394,49195,49199,158,49188,49192,107,49187,49191,103,49162,49172,57,49161,49171,51,157,156,61,60,53,47,255-0,11,10,13172,16,22,23,49,13,43,45,51,21-29,23,30,25,24,256,257,258,259,260-0,1,2",
+      "ja3_hash": "c89cb1537b1054f5b39cefca36745277",
+      "ja4": "t13d3113h2_e8f1e7e78f70_ce5650b735ce",
+      "ja4_r": "t13d3113h2_1302,1303,1301,c02c,c030,009f,cca9,cca8,ccaa,c02b,c02f,009e,c024,c028,006b,c023,c027,0067,c00a,c014,0039,c009,c013,0033,009d,009c,003d,003c,0035,002f,00ff_0000,000b,000a,3374,0010,0016,0017,0031,000d,002b,002d,0033,0015_0403,0503,0603,0807,0808,0809,080a,080b,0804,0805,0806,0401,0501,0601,0303,0301,0302,0402,0502,0602",
+      "ja4_sha256": "9ec2f664bd5580e40eeeeac41d2aeacb78d52e3b13e3fa1d5dfb2dfa03d3ddd7",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303]",
+      "cipher_suites": "[1302, 1303, 1301, c02c, c030, 009f, cca9, cca8, ccaa, c02b, c02f, 009e, c024, c028, 006b, c023, c027, 0067, c00a, c014, 0039, c009, c013, 0033, 009d, 009c, 003d, 003c, 0035, 002f, 00ff]",
+      "signature_algorithms": "[0403, 0503, 0603, 0807, 0808, 0809, 080a, 080b, 0804, 0805, 0806, 0401, 0501, 0601, 0303, 0301, 0302, 0402, 0502, 0602]",
+      "supported_groups": "[001d, 0017, 001e, 0019, 0018, 0100, 0101, 0102, 0103, 0104]",
+      "ec_point_formats": "[0000, 0001, 0002]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 4,
+          "data_hex": "03000102"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 22,
+          "data_hex": "0014001d0017001e0019001801000101010201030104"
+        },
+        {
+          "id": "3374",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0016",
+          "name": "encrypt_then_mac",
+          "len": 0
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0031",
+          "name": "certificate_authorities",
+          "len": 0
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 42,
+          "data_hex": "0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 5,
+          "data_hex": "0403040303"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d00200b5b1913f7ce7f301e74d61b859f8357f0196ac1dfbbc199f88fbe382ffed62b"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 172
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc03037c38de2f15356cf71da4d60e04acd1d725a54718c9ad14c29e3e3ec008d1d0fe20f42acd09d46039cc6ec64dfdbaaa8d785024d8c5435c2e6b75cd40b7baaaba23003e130213031301c02cc030009fcca9cca8ccaac02bc02f009ec024c028006bc023c0270067c00ac0140039c009c0130033009d009c003d003c0035002f00ff01000175000000160014000011746573742e6175746f2d6772616d2e7275000b000403000102000a00160014001d0017001e0019001801000101010201030104337400000010000e000c02683208687474702f312e31001600000017000000310000000d002a0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602002b00050403040303002d00020101003300260024001d00200b5b1913f7ce7f301e74d61b859f8357f0196ac1dfbbc199f88fbe382ffed62b001500ac00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T07:17:14.695302229Z",
+    "client": {
+      "ip": "185.240.120.152",
+      "port": 61308,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "curl/7.81.0",
+      "headers": [
+        {
+          "name": "User-Agent",
+          "value": "curl/7.81.0"
+        },
+        {
+          "name": "Accept",
+          "value": "*/*"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4866,4867,4865,49196,49200,159,52393,52392,52394,49195,49199,158,49188,49192,107,49187,49191,103,49162,49172,57,49161,49171,51,157,156,61,60,53,47,255-0,11,10,13172,16,22,23,49,13,43,45,51,21-29,23,30,25,24,256,257,258,259,260-0,1,2",
+      "ja3_hash": "c89cb1537b1054f5b39cefca36745277",
+      "ja4": "t13d3113h2_e8f1e7e78f70_ce5650b735ce",
+      "ja4_r": "t13d3113h2_1302,1303,1301,c02c,c030,009f,cca9,cca8,ccaa,c02b,c02f,009e,c024,c028,006b,c023,c027,0067,c00a,c014,0039,c009,c013,0033,009d,009c,003d,003c,0035,002f,00ff_0000,000b,000a,3374,0010,0016,0017,0031,000d,002b,002d,0033,0015_0403,0503,0603,0807,0808,0809,080a,080b,0804,0805,0806,0401,0501,0601,0303,0301,0302,0402,0502,0602",
+      "ja4_sha256": "9ec2f664bd5580e40eeeeac41d2aeacb78d52e3b13e3fa1d5dfb2dfa03d3ddd7",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303]",
+      "cipher_suites": "[1302, 1303, 1301, c02c, c030, 009f, cca9, cca8, ccaa, c02b, c02f, 009e, c024, c028, 006b, c023, c027, 0067, c00a, c014, 0039, c009, c013, 0033, 009d, 009c, 003d, 003c, 0035, 002f, 00ff]",
+      "signature_algorithms": "[0403, 0503, 0603, 0807, 0808, 0809, 080a, 080b, 0804, 0805, 0806, 0401, 0501, 0601, 0303, 0301, 0302, 0402, 0502, 0602]",
+      "supported_groups": "[001d, 0017, 001e, 0019, 0018, 0100, 0101, 0102, 0103, 0104]",
+      "ec_point_formats": "[0000, 0001, 0002]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 4,
+          "data_hex": "03000102"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 22,
+          "data_hex": "0014001d0017001e0019001801000101010201030104"
+        },
+        {
+          "id": "3374",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0016",
+          "name": "encrypt_then_mac",
+          "len": 0
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0031",
+          "name": "certificate_authorities",
+          "len": 0
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 42,
+          "data_hex": "0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 5,
+          "data_hex": "0403040303"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d0020412b539157289758b6e61f73774684651ddb8ca4d4f637378092ecdf759d3d6d"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 172
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc0303eb18460ab3b938025617c1266227838b36fe89b0e8603ad585c91cb9710e28d02098ab1f53524e0885f523c5496c91e48cf31e1c2252ac8ebd2a928c68f4bd76ab003e130213031301c02cc030009fcca9cca8ccaac02bc02f009ec024c028006bc023c0270067c00ac0140039c009c0130033009d009c003d003c0035002f00ff01000175000000160014000011746573742e6175746f2d6772616d2e7275000b000403000102000a00160014001d0017001e0019001801000101010201030104337400000010000e000c02683208687474702f312e31001600000017000000310000000d002a0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602002b00050403040303002d00020101003300260024001d0020412b539157289758b6e61f73774684651ddb8ca4d4f637378092ecdf759d3d6d001500ac00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T06:14:21.618943063Z",
+    "client": {
+      "ip": "185.240.120.152",
+      "port": 39042,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "curl/7.81.0",
+      "headers": [
+        {
+          "name": "User-Agent",
+          "value": "curl/7.81.0"
+        },
+        {
+          "name": "Accept",
+          "value": "*/*"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4866,4867,4865,49196,49200,159,52393,52392,52394,49195,49199,158,49188,49192,107,49187,49191,103,49162,49172,57,49161,49171,51,157,156,61,60,53,47,255-0,11,10,13172,16,22,23,49,13,43,45,51,21-29,23,30,25,24,256,257,258,259,260-0,1,2",
+      "ja3_hash": "c89cb1537b1054f5b39cefca36745277",
+      "ja4": "t13d3113h2_e8f1e7e78f70_ce5650b735ce",
+      "ja4_r": "t13d3113h2_1302,1303,1301,c02c,c030,009f,cca9,cca8,ccaa,c02b,c02f,009e,c024,c028,006b,c023,c027,0067,c00a,c014,0039,c009,c013,0033,009d,009c,003d,003c,0035,002f,00ff_0000,000b,000a,3374,0010,0016,0017,0031,000d,002b,002d,0033,0015_0403,0503,0603,0807,0808,0809,080a,080b,0804,0805,0806,0401,0501,0601,0303,0301,0302,0402,0502,0602",
+      "ja4_sha256": "9ec2f664bd5580e40eeeeac41d2aeacb78d52e3b13e3fa1d5dfb2dfa03d3ddd7",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303]",
+      "cipher_suites": "[1302, 1303, 1301, c02c, c030, 009f, cca9, cca8, ccaa, c02b, c02f, 009e, c024, c028, 006b, c023, c027, 0067, c00a, c014, 0039, c009, c013, 0033, 009d, 009c, 003d, 003c, 0035, 002f, 00ff]",
+      "signature_algorithms": "[0403, 0503, 0603, 0807, 0808, 0809, 080a, 080b, 0804, 0805, 0806, 0401, 0501, 0601, 0303, 0301, 0302, 0402, 0502, 0602]",
+      "supported_groups": "[001d, 0017, 001e, 0019, 0018, 0100, 0101, 0102, 0103, 0104]",
+      "ec_point_formats": "[0000, 0001, 0002]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 4,
+          "data_hex": "03000102"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 22,
+          "data_hex": "0014001d0017001e0019001801000101010201030104"
+        },
+        {
+          "id": "3374",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0016",
+          "name": "encrypt_then_mac",
+          "len": 0
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0031",
+          "name": "certificate_authorities",
+          "len": 0
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 42,
+          "data_hex": "0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 5,
+          "data_hex": "0403040303"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d0020d5a89a4e04d95e6de0e42de0cd2b1eb2b59332ff5a4c4cd4f0bc47afeb475c00"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 172
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc0303f32bf814fb83689d3b41ae2e3047793e7473c7408b9103395fc94d7ade236492205738d932af21549ae60b40dcfaab87afa037af07d5467143fd4c5679f749cdba003e130213031301c02cc030009fcca9cca8ccaac02bc02f009ec024c028006bc023c0270067c00ac0140039c009c0130033009d009c003d003c0035002f00ff01000175000000160014000011746573742e6175746f2d6772616d2e7275000b000403000102000a00160014001d0017001e0019001801000101010201030104337400000010000e000c02683208687474702f312e31001600000017000000310000000d002a0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602002b00050403040303002d00020101003300260024001d0020d5a89a4e04d95e6de0e42de0cd2b1eb2b59332ff5a4c4cd4f0bc47afeb475c00001500ac00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T05:11:54.318682441Z",
+    "client": {
+      "ip": "185.240.120.152",
+      "port": 32714,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "curl/7.81.0",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "*/*"
+        },
+        {
+          "name": "User-Agent",
+          "value": "curl/7.81.0"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4866,4867,4865,49196,49200,159,52393,52392,52394,49195,49199,158,49188,49192,107,49187,49191,103,49162,49172,57,49161,49171,51,157,156,61,60,53,47,255-0,11,10,13172,16,22,23,49,13,43,45,51,21-29,23,30,25,24,256,257,258,259,260-0,1,2",
+      "ja3_hash": "c89cb1537b1054f5b39cefca36745277",
+      "ja4": "t13d3113h2_e8f1e7e78f70_ce5650b735ce",
+      "ja4_r": "t13d3113h2_1302,1303,1301,c02c,c030,009f,cca9,cca8,ccaa,c02b,c02f,009e,c024,c028,006b,c023,c027,0067,c00a,c014,0039,c009,c013,0033,009d,009c,003d,003c,0035,002f,00ff_0000,000b,000a,3374,0010,0016,0017,0031,000d,002b,002d,0033,0015_0403,0503,0603,0807,0808,0809,080a,080b,0804,0805,0806,0401,0501,0601,0303,0301,0302,0402,0502,0602",
+      "ja4_sha256": "9ec2f664bd5580e40eeeeac41d2aeacb78d52e3b13e3fa1d5dfb2dfa03d3ddd7",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303]",
+      "cipher_suites": "[1302, 1303, 1301, c02c, c030, 009f, cca9, cca8, ccaa, c02b, c02f, 009e, c024, c028, 006b, c023, c027, 0067, c00a, c014, 0039, c009, c013, 0033, 009d, 009c, 003d, 003c, 0035, 002f, 00ff]",
+      "signature_algorithms": "[0403, 0503, 0603, 0807, 0808, 0809, 080a, 080b, 0804, 0805, 0806, 0401, 0501, 0601, 0303, 0301, 0302, 0402, 0502, 0602]",
+      "supported_groups": "[001d, 0017, 001e, 0019, 0018, 0100, 0101, 0102, 0103, 0104]",
+      "ec_point_formats": "[0000, 0001, 0002]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 4,
+          "data_hex": "03000102"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 22,
+          "data_hex": "0014001d0017001e0019001801000101010201030104"
+        },
+        {
+          "id": "3374",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0016",
+          "name": "encrypt_then_mac",
+          "len": 0
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0031",
+          "name": "certificate_authorities",
+          "len": 0
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 42,
+          "data_hex": "0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 5,
+          "data_hex": "0403040303"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d0020f8577a440ac8d4bd5eb4cdba0d1b9b25bb7b87796479e30cd80751a14e981c76"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 172
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc0303853663a76d9a11e1d7f116be93dfe7252cdd48066ea293bdbc48a58f328a273c20917d115334b0a14fb158b5023faf3037dd1d918541979d9bb7dde3cc4f36fd59003e130213031301c02cc030009fcca9cca8ccaac02bc02f009ec024c028006bc023c0270067c00ac0140039c009c0130033009d009c003d003c0035002f00ff01000175000000160014000011746573742e6175746f2d6772616d2e7275000b000403000102000a00160014001d0017001e0019001801000101010201030104337400000010000e000c02683208687474702f312e31001600000017000000310000000d002a0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602002b00050403040303002d00020101003300260024001d0020f8577a440ac8d4bd5eb4cdba0d1b9b25bb7b87796479e30cd80751a14e981c76001500ac00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T04:31:01.449491471Z",
+    "client": {
+      "ip": "3.18.186.238",
+      "port": 39741,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/1.1",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "visionheight.com/scan Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/126.0.0.0 Safari/537.36",
+      "headers": [
+        {
+          "name": "User-Agent",
+          "value": "visionheight.com/scan Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/126.0.0.0 Safari/537.36"
+        },
+        {
+          "name": "Accept",
+          "value": "*/*"
+        },
+        {
+          "name": "Accept-Encoding",
+          "value": "gzip"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "",
+      "negotiated_cipher_suite": "TLS_CHACHA20_POLY1305_SHA256 (0x1303)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "",
+      "ja3_string": "771-52392,52393,49199,49200,49195,49196,49171,49161,49172,49162,156,157,47,53,49170,10,4867,4865,4866-0,5,10,11,13,65281,18,43,51-29,23,24,25-0",
+      "ja3_hash": "f9600d0cd31af57f12d3d36e62d269ca",
+      "ja4": "t13d190900_9dc949149365_97f8aa674fd9",
+      "ja4_r": "t13d190900_cca8,cca9,c02f,c030,c02b,c02c,c013,c009,c014,c00a,009c,009d,002f,0035,c012,000a,1303,1301,1302_0000,0005,000a,000b,000d,ff01,0012,002b,0033_0804,0403,0807,0805,0806,0401,0501,0601,0503,0603,0201,0203",
+      "ja4_sha256": "741fbda8b56879339a8f8a3a166b5966289d24e3f3ea4665bc6839cfc4b24e39",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303, 0302, 0301]",
+      "cipher_suites": "[cca8, cca9, c02f, c030, c02b, c02c, c013, c009, c014, c00a, 009c, 009d, 002f, 0035, c012, 000a, 1303, 1301, 1302]",
+      "signature_algorithms": "[0804, 0403, 0807, 0805, 0806, 0401, 0501, 0601, 0503, 0603, 0201, 0203]",
+      "supported_groups": "[001d, 0017, 0018, 0019]",
+      "ec_point_formats": "[0000]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "0005",
+          "name": "status_request",
+          "len": 5,
+          "data_hex": "0100000000"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 10,
+          "data_hex": "0008001d001700180019"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 2,
+          "data_hex": "0100"
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 26,
+          "data_hex": "0018080404030807080508060401050106010503060302010203"
+        },
+        {
+          "id": "ff01",
+          "name": "renegotiation_info",
+          "len": 1,
+          "data_hex": "00"
+        },
+        {
+          "id": "0012",
+          "name": "signed_certificate_timestamp",
+          "len": 0
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 9,
+          "data_hex": "080304030303020301"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d00206f8fc9a36604917dd48c22e083c12b81cadd07e61d88ce5bc76ef02536c61f24"
+        }
+      ],
+      "client_hello_bytes": 269,
+      "client_hello_hex": "16030101080100010403030c1b6480fc4d39a6de6649804b2f47571140d2e79812c34783901c5281ae2d1a20d250c4fa498dd288db81f9bb817cae99c4f1db1f6de2890fe52a9b9cd0dce5120026cca8cca9c02fc030c02bc02cc013c009c014c00a009c009d002f0035c012000a13031301130201000095000000160014000011746573742e6175746f2d6772616d2e7275000500050100000000000a000a0008001d001700180019000b00020100000d001a0018080404030807080508060401050106010503060302010203ff0100010000120000002b0009080304030303020301003300260024001d00206f8fc9a36604917dd48c22e083c12b81cadd07e61d88ce5bc76ef02536c61f24"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T03:06:55.749892789Z",
+    "client": {
+      "ip": "185.240.120.152",
+      "port": 12366,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "curl/7.81.0",
+      "headers": [
+        {
+          "name": "User-Agent",
+          "value": "curl/7.81.0"
+        },
+        {
+          "name": "Accept",
+          "value": "*/*"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4866,4867,4865,49196,49200,159,52393,52392,52394,49195,49199,158,49188,49192,107,49187,49191,103,49162,49172,57,49161,49171,51,157,156,61,60,53,47,255-0,11,10,13172,16,22,23,49,13,43,45,51,21-29,23,30,25,24,256,257,258,259,260-0,1,2",
+      "ja3_hash": "c89cb1537b1054f5b39cefca36745277",
+      "ja4": "t13d3113h2_e8f1e7e78f70_ce5650b735ce",
+      "ja4_r": "t13d3113h2_1302,1303,1301,c02c,c030,009f,cca9,cca8,ccaa,c02b,c02f,009e,c024,c028,006b,c023,c027,0067,c00a,c014,0039,c009,c013,0033,009d,009c,003d,003c,0035,002f,00ff_0000,000b,000a,3374,0010,0016,0017,0031,000d,002b,002d,0033,0015_0403,0503,0603,0807,0808,0809,080a,080b,0804,0805,0806,0401,0501,0601,0303,0301,0302,0402,0502,0602",
+      "ja4_sha256": "9ec2f664bd5580e40eeeeac41d2aeacb78d52e3b13e3fa1d5dfb2dfa03d3ddd7",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303]",
+      "cipher_suites": "[1302, 1303, 1301, c02c, c030, 009f, cca9, cca8, ccaa, c02b, c02f, 009e, c024, c028, 006b, c023, c027, 0067, c00a, c014, 0039, c009, c013, 0033, 009d, 009c, 003d, 003c, 0035, 002f, 00ff]",
+      "signature_algorithms": "[0403, 0503, 0603, 0807, 0808, 0809, 080a, 080b, 0804, 0805, 0806, 0401, 0501, 0601, 0303, 0301, 0302, 0402, 0502, 0602]",
+      "supported_groups": "[001d, 0017, 001e, 0019, 0018, 0100, 0101, 0102, 0103, 0104]",
+      "ec_point_formats": "[0000, 0001, 0002]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 4,
+          "data_hex": "03000102"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 22,
+          "data_hex": "0014001d0017001e0019001801000101010201030104"
+        },
+        {
+          "id": "3374",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0016",
+          "name": "encrypt_then_mac",
+          "len": 0
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0031",
+          "name": "certificate_authorities",
+          "len": 0
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 42,
+          "data_hex": "0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 5,
+          "data_hex": "0403040303"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d0020b655eb903fa44cc5eab07cfba3feda3ce75e9a8fc9f697bf118cc5532e4eaf7d"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 172
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc030345f4a9008196bb2977c0bce40d00077fb2706e010e2f599e4e2a7906141f97ff208dc2409f24da3e74096f0bdb7ba2b59ed35df7a997e541d886947a1aa905b579003e130213031301c02cc030009fcca9cca8ccaac02bc02f009ec024c028006bc023c0270067c00ac0140039c009c0130033009d009c003d003c0035002f00ff01000175000000160014000011746573742e6175746f2d6772616d2e7275000b000403000102000a00160014001d0017001e0019001801000101010201030104337400000010000e000c02683208687474702f312e31001600000017000000310000000d002a0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602002b00050403040303002d00020101003300260024001d0020b655eb903fa44cc5eab07cfba3feda3ce75e9a8fc9f697bf118cc5532e4eaf7d001500ac00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T02:02:56.819254435Z",
+    "client": {
+      "ip": "185.240.120.152",
+      "port": 63274,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "curl/7.81.0",
+      "headers": [
+        {
+          "name": "User-Agent",
+          "value": "curl/7.81.0"
+        },
+        {
+          "name": "Accept",
+          "value": "*/*"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4866,4867,4865,49196,49200,159,52393,52392,52394,49195,49199,158,49188,49192,107,49187,49191,103,49162,49172,57,49161,49171,51,157,156,61,60,53,47,255-0,11,10,13172,16,22,23,49,13,43,45,51,21-29,23,30,25,24,256,257,258,259,260-0,1,2",
+      "ja3_hash": "c89cb1537b1054f5b39cefca36745277",
+      "ja4": "t13d3113h2_e8f1e7e78f70_ce5650b735ce",
+      "ja4_r": "t13d3113h2_1302,1303,1301,c02c,c030,009f,cca9,cca8,ccaa,c02b,c02f,009e,c024,c028,006b,c023,c027,0067,c00a,c014,0039,c009,c013,0033,009d,009c,003d,003c,0035,002f,00ff_0000,000b,000a,3374,0010,0016,0017,0031,000d,002b,002d,0033,0015_0403,0503,0603,0807,0808,0809,080a,080b,0804,0805,0806,0401,0501,0601,0303,0301,0302,0402,0502,0602",
+      "ja4_sha256": "9ec2f664bd5580e40eeeeac41d2aeacb78d52e3b13e3fa1d5dfb2dfa03d3ddd7",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303]",
+      "cipher_suites": "[1302, 1303, 1301, c02c, c030, 009f, cca9, cca8, ccaa, c02b, c02f, 009e, c024, c028, 006b, c023, c027, 0067, c00a, c014, 0039, c009, c013, 0033, 009d, 009c, 003d, 003c, 0035, 002f, 00ff]",
+      "signature_algorithms": "[0403, 0503, 0603, 0807, 0808, 0809, 080a, 080b, 0804, 0805, 0806, 0401, 0501, 0601, 0303, 0301, 0302, 0402, 0502, 0602]",
+      "supported_groups": "[001d, 0017, 001e, 0019, 0018, 0100, 0101, 0102, 0103, 0104]",
+      "ec_point_formats": "[0000, 0001, 0002]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 4,
+          "data_hex": "03000102"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 22,
+          "data_hex": "0014001d0017001e0019001801000101010201030104"
+        },
+        {
+          "id": "3374",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0016",
+          "name": "encrypt_then_mac",
+          "len": 0
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0031",
+          "name": "certificate_authorities",
+          "len": 0
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 42,
+          "data_hex": "0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 5,
+          "data_hex": "0403040303"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d0020ca0025b0655b05796536fe54f8000d179dbcbd30b66e197d5cf3e84794972263"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 172
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc030320154f5453bb900a1a0f3d2e286b02126ef40cf0886087ac166920f6a0fe53e020d0f6e76c906e8460ff0bc7fbd8ae5192ef46468ae94949fd18c9482b735caefb003e130213031301c02cc030009fcca9cca8ccaac02bc02f009ec024c028006bc023c0270067c00ac0140039c009c0130033009d009c003d003c0035002f00ff01000175000000160014000011746573742e6175746f2d6772616d2e7275000b000403000102000a00160014001d0017001e0019001801000101010201030104337400000010000e000c02683208687474702f312e31001600000017000000310000000d002a0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602002b00050403040303002d00020101003300260024001d0020ca0025b0655b05796536fe54f8000d179dbcbd30b66e197d5cf3e84794972263001500ac00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T01:55:56.999808487Z",
+    "client": {
+      "ip": "74.7.227.19",
+      "port": 36374,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GPTBot/1.4; +https://openai.com/gptbot)",
+      "headers": [
+        {
+          "name": "X-Openai-Host-Hash",
+          "value": "425422302"
+        },
+        {
+          "name": "From",
+          "value": "gptbot(at)openai.com"
+        },
+        {
+          "name": "User-Agent",
+          "value": "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GPTBot/1.4; +https://openai.com/gptbot)"
+        },
+        {
+          "name": "Accept",
+          "value": "*/*"
+        },
+        {
+          "name": "Accept-Encoding",
+          "value": "gzip, br, deflate"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4866,4865,4867,49196,49195,52393,49200,49199,52392,255-51,23,16,35,11,45,5,10,13,0,43-29,23,24-0",
+      "ja3_hash": "9af4a94bbf5eab1f1a858e6f78c4592a",
+      "ja4": "t13d1011h2_61a7ad8aa9b6_3fcd1a44f3e3",
+      "ja4_r": "t13d1011h2_1302,1301,1303,c02c,c02b,cca9,c030,c02f,cca8,00ff_0033,0017,0010,0023,000b,002d,0005,000a,000d,0000,002b_0503,0403,0807,0806,0805,0804,0601,0501,0401",
+      "ja4_sha256": "b149cae3f32c81ba6e761df2e5a7a476251f643fd18454716da29bedce5c1c66",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303]",
+      "cipher_suites": "[1302, 1301, 1303, c02c, c02b, cca9, c030, c02f, cca8, 00ff]",
+      "signature_algorithms": "[0503, 0403, 0807, 0806, 0805, 0804, 0601, 0501, 0401]",
+      "supported_groups": "[001d, 0017, 0018]",
+      "ec_point_formats": "[0000]",
+      "extensions": [
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d0020417d5fd70f671c7c2c1302286f612f6b038898efbed18956b08bd85328e13d05"
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0023",
+          "name": "session_ticket",
+          "len": 0
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 2,
+          "data_hex": "0100"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0005",
+          "name": "status_request",
+          "len": 5,
+          "data_hex": "0100000000"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 8,
+          "data_hex": "0006001d00170018"
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 20,
+          "data_hex": "0012050304030807080608050804060105010401"
+        },
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 5,
+          "data_hex": "0403040303"
+        }
+      ],
+      "client_hello_bytes": 262,
+      "client_hello_hex": "1603010101010000fd0303036e6830c6c99fa162980bdc2b68354dbbd9e5b9b27bd4ccbdfc699b12d208fe20fef95921e400da5d17eea1be48a579e9f1042dbfab3d67b368fc812eaab827960014130213011303c02cc02bcca9c030c02fcca800ff010000a0003300260024001d0020417d5fd70f671c7c2c1302286f612f6b038898efbed18956b08bd85328e13d05001700000010000e000c02683208687474702f312e3100230000000b00020100002d00020101000500050100000000000a00080006001d00170018000d00140012050304030807080608050804060105010401000000160014000011746573742e6175746f2d6772616d2e7275002b00050403040303"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-09T01:01:28.128157663Z",
+    "client": {
+      "ip": "185.240.120.152",
+      "port": 27158,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "curl/7.81.0",
+      "headers": [
+        {
+          "name": "User-Agent",
+          "value": "curl/7.81.0"
+        },
+        {
+          "name": "Accept",
+          "value": "*/*"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4866,4867,4865,49196,49200,159,52393,52392,52394,49195,49199,158,49188,49192,107,49187,49191,103,49162,49172,57,49161,49171,51,157,156,61,60,53,47,255-0,11,10,13172,16,22,23,49,13,43,45,51,21-29,23,30,25,24,256,257,258,259,260-0,1,2",
+      "ja3_hash": "c89cb1537b1054f5b39cefca36745277",
+      "ja4": "t13d3113h2_e8f1e7e78f70_ce5650b735ce",
+      "ja4_r": "t13d3113h2_1302,1303,1301,c02c,c030,009f,cca9,cca8,ccaa,c02b,c02f,009e,c024,c028,006b,c023,c027,0067,c00a,c014,0039,c009,c013,0033,009d,009c,003d,003c,0035,002f,00ff_0000,000b,000a,3374,0010,0016,0017,0031,000d,002b,002d,0033,0015_0403,0503,0603,0807,0808,0809,080a,080b,0804,0805,0806,0401,0501,0601,0303,0301,0302,0402,0502,0602",
+      "ja4_sha256": "9ec2f664bd5580e40eeeeac41d2aeacb78d52e3b13e3fa1d5dfb2dfa03d3ddd7",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303]",
+      "cipher_suites": "[1302, 1303, 1301, c02c, c030, 009f, cca9, cca8, ccaa, c02b, c02f, 009e, c024, c028, 006b, c023, c027, 0067, c00a, c014, 0039, c009, c013, 0033, 009d, 009c, 003d, 003c, 0035, 002f, 00ff]",
+      "signature_algorithms": "[0403, 0503, 0603, 0807, 0808, 0809, 080a, 080b, 0804, 0805, 0806, 0401, 0501, 0601, 0303, 0301, 0302, 0402, 0502, 0602]",
+      "supported_groups": "[001d, 0017, 001e, 0019, 0018, 0100, 0101, 0102, 0103, 0104]",
+      "ec_point_formats": "[0000, 0001, 0002]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 4,
+          "data_hex": "03000102"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 22,
+          "data_hex": "0014001d0017001e0019001801000101010201030104"
+        },
+        {
+          "id": "3374",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0016",
+          "name": "encrypt_then_mac",
+          "len": 0
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0031",
+          "name": "certificate_authorities",
+          "len": 0
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 42,
+          "data_hex": "0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 5,
+          "data_hex": "0403040303"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d002064e9abc58733487942833d98bbc134219110bce49e1b11a21ff1e7942dc63961"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 172
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc0303aad28ccbe74dc48ee532189798d804a97a702ed84bf4a2614e2e043bcf9118ba20641cd418e6f918dfa6600def43932122492947aef42ec05273d4d3e2adaafe7a003e130213031301c02cc030009fcca9cca8ccaac02bc02f009ec024c028006bc023c0270067c00ac0140039c009c0130033009d009c003d003c0035002f00ff01000175000000160014000011746573742e6175746f2d6772616d2e7275000b000403000102000a00160014001d0017001e0019001801000101010201030104337400000010000e000c02683208687474702f312e31001600000017000000310000000d002a0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602002b00050403040303002d00020101003300260024001d002064e9abc58733487942833d98bbc134219110bce49e1b11a21ff1e7942dc63961001500ac00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  },
+  {
+    "time": "2026-09-08T23:58:54.790606159Z",
+    "client": {
+      "ip": "185.240.120.152",
+      "port": 25494,
+      "proxy_note": "address from the haproxy proxy-v2 header (real client)"
+    },
+    "http": {
+      "proto": "HTTP/2.0",
+      "method": "GET",
+      "path": "/",
+      "user_agent": "curl/7.81.0",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "*/*"
+        },
+        {
+          "name": "User-Agent",
+          "value": "curl/7.81.0"
+        }
+      ]
+    },
+    "tls": {
+      "negotiated_alpn": "h2",
+      "negotiated_cipher_suite": "TLS_AES_128_GCM_SHA256 (0x1301)",
+      "negotiated_version": "TLS 1.3",
+      "sni": "test.auto-gram.ru",
+      "alpn_offered": "h2, http/1.1",
+      "ja3_string": "771-4866,4867,4865,49196,49200,159,52393,52392,52394,49195,49199,158,49188,49192,107,49187,49191,103,49162,49172,57,49161,49171,51,157,156,61,60,53,47,255-0,11,10,13172,16,22,23,49,13,43,45,51,21-29,23,30,25,24,256,257,258,259,260-0,1,2",
+      "ja3_hash": "c89cb1537b1054f5b39cefca36745277",
+      "ja4": "t13d3113h2_e8f1e7e78f70_ce5650b735ce",
+      "ja4_r": "t13d3113h2_1302,1303,1301,c02c,c030,009f,cca9,cca8,ccaa,c02b,c02f,009e,c024,c028,006b,c023,c027,0067,c00a,c014,0039,c009,c013,0033,009d,009c,003d,003c,0035,002f,00ff_0000,000b,000a,3374,0010,0016,0017,0031,000d,002b,002d,0033,0015_0403,0503,0603,0807,0808,0809,080a,080b,0804,0805,0806,0401,0501,0601,0303,0301,0302,0402,0502,0602",
+      "ja4_sha256": "9ec2f664bd5580e40eeeeac41d2aeacb78d52e3b13e3fa1d5dfb2dfa03d3ddd7",
+      "client_version": "0303",
+      "supported_versions": "[0304, 0303]",
+      "cipher_suites": "[1302, 1303, 1301, c02c, c030, 009f, cca9, cca8, ccaa, c02b, c02f, 009e, c024, c028, 006b, c023, c027, 0067, c00a, c014, 0039, c009, c013, 0033, 009d, 009c, 003d, 003c, 0035, 002f, 00ff]",
+      "signature_algorithms": "[0403, 0503, 0603, 0807, 0808, 0809, 080a, 080b, 0804, 0805, 0806, 0401, 0501, 0601, 0303, 0301, 0302, 0402, 0502, 0602]",
+      "supported_groups": "[001d, 0017, 001e, 0019, 0018, 0100, 0101, 0102, 0103, 0104]",
+      "ec_point_formats": "[0000, 0001, 0002]",
+      "extensions": [
+        {
+          "id": "0000",
+          "name": "server_name",
+          "len": 22,
+          "data_hex": "0014000011746573742e6175746f2d6772616d2e7275"
+        },
+        {
+          "id": "000b",
+          "name": "ec_point_formats",
+          "len": 4,
+          "data_hex": "03000102"
+        },
+        {
+          "id": "000a",
+          "name": "supported_groups",
+          "len": 22,
+          "data_hex": "0014001d0017001e0019001801000101010201030104"
+        },
+        {
+          "id": "3374",
+          "len": 0
+        },
+        {
+          "id": "0010",
+          "name": "application_layer_protocol_negotiation",
+          "len": 14,
+          "data_hex": "000c02683208687474702f312e31"
+        },
+        {
+          "id": "0016",
+          "name": "encrypt_then_mac",
+          "len": 0
+        },
+        {
+          "id": "0017",
+          "name": "extended_master_secret",
+          "len": 0
+        },
+        {
+          "id": "0031",
+          "name": "certificate_authorities",
+          "len": 0
+        },
+        {
+          "id": "000d",
+          "name": "signature_algorithms",
+          "len": 42,
+          "data_hex": "0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602"
+        },
+        {
+          "id": "002b",
+          "name": "supported_versions",
+          "len": 5,
+          "data_hex": "0403040303"
+        },
+        {
+          "id": "002d",
+          "name": "psk_key_exchange_modes",
+          "len": 2,
+          "data_hex": "0101"
+        },
+        {
+          "id": "0033",
+          "name": "post_handshake_auth",
+          "len": 38,
+          "data_hex": "0024001d0020c7190f7fd37519a842519d27f4647fb54427eb263afd18f291dee477cb10a951"
+        },
+        {
+          "id": "0015",
+          "name": "padding",
+          "len": 172
+        }
+      ],
+      "client_hello_bytes": 517,
+      "client_hello_hex": "1603010200010001fc0303e4b5da8f8490859cd7b19e32ef555d0e6085320bba4490e372e21b222506191f205521c9025dfbafbbe0ee00751c4f161a0b304dded7d5f8a5f2c12ab23f0b8e6a003e130213031301c02cc030009fcca9cca8ccaac02bc02f009ec024c028006bc023c0270067c00ac0140039c009c0130033009d009c003d003c0035002f00ff01000175000000160014000011746573742e6175746f2d6772616d2e7275000b000403000102000a00160014001d0017001e0019001801000101010201030104337400000010000e000c02683208687474702f312e31001600000017000000310000000d002a0028040305030603080708080809080a080b080408050806040105010601030303010302040205020602002b00050403040303002d00020101003300260024001d0020c7190f7fd37519a842519d27f4647fb54427eb263afd18f291dee477cb10a951001500ac00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "transport": {
+      "note": "no packets matched client ip:port yet (LAN hairpin usually works; check -iface)"
+    },
+    "notes": [
+      "HTTP header order and h2 SETTINGS/frames are not shown live: Go's h2 server does not expose them — capture wire-side (keylog + tshark) for that",
+      "everything above is what the server really received: TLS from the peeked ClientHello bytes, TTL/SYN from AF_PACKET on the WAN interface, headers from the request"
+    ]
+  }
+]

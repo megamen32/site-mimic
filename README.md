@@ -74,7 +74,7 @@ new site with [skill/SKILL.md](skill/SKILL.md).
 - [How it works, limits, roadmap](docs/methodology.md)
 - [HANDOFF — verified state and remaining work](HANDOFF.md)
 - [vk.ru example](examples/vk-ru/) · [m.vk.ru mobile example](examples/vk-ru-mobile/) · [stream.wb.ru example](examples/stream-wb-ru/) · [stand probe](examples/stand-probe/)
-- [Anti-bot boundary & cookie replay](docs/anti-bot.md) · [Desktop/phone JA4 references](docs/phone-reference.md)
+- [Anti-bot boundary & cookie replay](docs/anti-bot.md) · [Desktop/phone JA4 references](docs/phone-reference.md) · [Safari on macOS wire reference](docs/safari-macos.md)
 - [Public capture receiver: fp.example.test](docs/receiver-stand.md)
 
 ## Honest limits
