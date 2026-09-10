@@ -180,9 +180,14 @@ func (rb *reportBuilder) build(r *http.Request, m connMeta, sn *sniffer) report 
 
 	if m.addr.Local {
 		rep.Trans = map[string]string{"note": "no wire view for LOCAL proxy-v2 connections"}
-	} else if fi := sn.lookup(rep.Who.IP, rep.Who.Port); fi != nil {
+	} else if fi, exact := sn.lookup(rep.Who.IP, rep.Who.Port); fi != nil {
+		flowMatch := "ip:port"
+		if !exact {
+			flowMatch = "ip-only (hairpin NAT rewrote the source port)"
+		}
 		t := map[string]any{
 			"probe":      "AF_PACKET " + sn.iface,
+			"flow_match": flowMatch,
 			"ttl":        fi.TTL,
 			"df":         fi.DF,
 			"tos":        fi.TOS,

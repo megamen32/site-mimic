@@ -98,3 +98,27 @@ What changed vs 18.6 — each of these is a version tell:
 UA is still the frozen `Macintosh; Intel Mac OS X 10_15_7` form with
 `Version/27.0 Safari/605.1.15` — Apple keeps OS version frozen in UA even
 on macOS 26.
+
+## n>1 stability (2026-09-10, stand sampling)
+
+Per-client fresh-connection samples (Safari restarted between samples so
+every request rides a new TCP flow):
+
+| client | n | JA4 variants | JA3 variants | TTL | SYN |
+|---|---|---|---|---|---|
+| real Safari 27.0 (M1) | 3 fresh conns | 1 | 1 (`f725b961…`) | 63 | `mss 1460,wscale 6,TS,sackOK`, win 65535 |
+| site-mimic SafariMacOS | 6 | 1 | 1 (`f725b961…` — matches) | 127 (win-preset host) | `mss 1460,wscale 8,sackOK` |
+| real Chrome 151 (Win11) | 3 | 1 (`t13d1517h2_…cb7bf5808d99`) | **3** (random GREASE per conn) | 127 (hairpin; native 128) | `mss 1460,wscale 8,sackOK` |
+
+Take-aways:
+
+- **Safari 27 does not randomize GREASE per connection** — JA3 is stable,
+  so the parrot must (and now does) reproduce Safari's exact GREASE
+  values and the rotated cipher head `1302,1303,1301`; both JA4 and JA3
+  then match byte-for-byte.
+- **Chrome does randomize GREASE per connection** (3 connections → 3 JA3
+  hashes, 1 JA4) — any JA3 gate must GREASE-normalize; JA4 gates are safe.
+- TTL/SYN rows are L3-layer facts: Safari profiles still need
+  site-mimic's `WithTTL(64)` + a macOS-style SYN preset (wscale 6, TS,
+  EOL) to match the L3 leg; the Linux test host above runs the
+  win-tcp-preset (TTL 127 on the wire after one hairpin hop).

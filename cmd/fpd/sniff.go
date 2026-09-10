@@ -278,10 +278,15 @@ func tcpOptionsString(b []byte) string {
 }
 
 // lookup returns the cached transport facts for a client 4-tuple.
-func (s *sniffer) lookup(ip string, port int) *flowInfo {
+// lookup finds the wire flow for a proxy-v2 client address. Exact
+// ip:port matches always win. When the port misses — router hairpin
+// masquerade rewrites source ports, so LAN clients never match exactly —
+// fall back to the most recent flow from the same source IP; reports
+// then carry flow_match:"ip-only" so readers know the port was NATed.
+func (s *sniffer) lookup(ip string, port int) (*flowInfo, bool) {
 	p := net.ParseIP(ip)
 	if p == nil || port <= 0 {
-		return nil
+		return nil, false
 	}
 	p4 := p.To4()
 	var k flowKey
@@ -294,7 +299,22 @@ func (s *sniffer) lookup(ip string, port int) *flowInfo {
 	k.port = uint16(port)
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.flows[k]
+	if fi, ok := s.flows[k]; ok {
+		return fi, true
+	}
+	var best *flowInfo
+	for key, fi := range s.flows {
+		if key.is4 != k.is4 || key.ip != k.ip || key.port == k.port {
+			continue
+		}
+		if time.Since(fi.LastSeen) > 30*time.Second {
+			continue
+		}
+		if best == nil || fi.LastSeen.After(best.LastSeen) {
+			best = fi
+		}
+	}
+	return best, false
 }
 
 func (s *sniffer) purge() {
