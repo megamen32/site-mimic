@@ -5,3 +5,10 @@ __pycache__/
 *.test
 .fast-agent/
 .tmp/
+
+# compiled daemon binary — build locally: go build -o fetchd ./cmd/fetchd
+/fetchd
+
+# agent runtime state (task records under .agents/tasks/ stay tracked)
+.agents/shared-session/
+.worktrees/
