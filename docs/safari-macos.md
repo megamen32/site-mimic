@@ -1,6 +1,8 @@
 # Safari on macOS — wire reference (Safari 18.6, macOS 15.7.8)
 
-Captured 2026-09-10 from a real Mac mini (x86_64, macOS 15.7.8 build 24G824)
+Captured 2026-09-10 from real Macs: a Mac mini 2012 (x86_64, macOS 15.7.8
+build 24G824, Safari 18.6) and a MacBook Pro M1 (arm64, macOS 26.6 build
+25G5052e, Safari 27.0)
 visiting a capture receiver: full ClientHello hex, JA3/JA4, HTTP/2 header
 order. A transport spec (uTLS ClientHelloSpec) for this profile is pending —
 this page is the measured ground truth to build and verify against.
@@ -62,3 +64,37 @@ A full sample of the receiver report (TLS + headers + notes) is committed as
 ## L3
 
 macOS stays native: TTL 64, BSD SYN options (see fingerprint-matrix.md).
+
+
+---
+
+# Safari 27.0 (macOS 26.6, Apple Silicon) — the current reference
+
+| Field | Value |
+|---|---|
+| JA4 | `t13d2013h2_a09f3c656075_7f0f34a4126d` |
+| JA4_r | `t13d2013h2_1302,1303,1301,c02c,c02b,cca9,c030,c02f,cca8,c00a,c009,c014,c013,009d,009c,0035,002f,c008,c012,000a_0000,0017,ff01,000a,000b,0010,0005,000d,0012,0033,002d,002b,001b_0403,0804,0401,0503,0805,0805,0501,0806,0601,0201` |
+| Cipher set | same 20 suites as 18.6 (hash `a09f3c656075`); wire order rotates 1301/1302/1303 |
+| Extensions | 13 + GREASE: server_name, extended_master_secret, renegotiation_info, supported_groups, ec_point_formats, alpn, status_request, signature_algorithms, sct, key_share, psk_key_exchange_modes, supported_versions, compress_certificate |
+| supported_versions | GREASE, `0304`, `0303` — TLS 1.2/1.1 dropped from the extension |
+| ClientHello size | 1540 bytes, **no padding extension** |
+| sig_algs | still `…,0805,0805,…` duplicated — the quirk survives |
+
+What changed vs 18.6 — each of these is a version tell:
+
+- **Post-quantum key exchange**: `supported_groups` now leads with
+  `X25519MLKEM768 (0x11ec)` between GREASE and x25519
+  (18.6 had no PQ group). The big key_share is why the hello is 1540
+  bytes and why padding is gone.
+- **zstd arrived**: `Accept-Encoding: gzip, deflate, br, zstd` (18.6 had no zstd).
+- **Header order changed**: `UA, Accept, Sec-Fetch-Site, Sec-Fetch-Mode,
+  Accept-Language, Priority, Accept-Encoding, Sec-Fetch-Dest`
+  (18.6 led with Sec-Fetch-*).
+- supported_versions no longer lists `0302/0301`.
+- GREASE values are random per connection (`3a3a`,`dada`,`fafa`,`9a9a`,
+  `11ec`-adjacent quirks) — never hardcode them; JA4 ignores them, JA3
+  intentionally varies.
+
+UA is still the frozen `Macintosh; Intel Mac OS X 10_15_7` form with
+`Version/27.0 Safari/605.1.15` — Apple keeps OS version frozen in UA even
+on macOS 26.
