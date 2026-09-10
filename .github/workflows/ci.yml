@@ -44,7 +44,12 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - run: timeout 60s go run ./examples/vk-ru
+      # vk-ru loads its profile.json relative to the example dir, so the
+      # canary must run with that as CWD (root-level `go run ./examples/vk-ru`
+      # panics with "open profile.json: no such file").
+      - name: Canary request to vk.ru
+        working-directory: examples/vk-ru
+        run: timeout 60s go run .
 
   # Live transport-parity gate: builds the kulikov0/headless-client capture
   # stand (pinned Chromium browser + stand-probe side by side), runs both
