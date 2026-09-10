@@ -20,7 +20,7 @@ Usage (drop-in for the common requests calls):
 
     resp = gohttp.post(url, json={"refresh_token": rt}, cookies=jar, proxy=proxy)
 
-Config (env): GOHTTPD_URL (default http://127.0.0.1:8899) and GOHTTPD_TOKEN
+Config (env): GOHTTPD_URL (default http://127.0.0.1:30777) and GOHTTPD_TOKEN
 when the daemon requires a bearer. Async callers: wrap calls in
 asyncio.to_thread, like the rest of the server runtime does.
 """
