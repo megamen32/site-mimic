@@ -18,6 +18,19 @@ jobs:
       - run: go vet ./...
       - run: go test ./...
 
+  # Python client: install the subdirectory package the same way consumers
+  # do and run its pytest suite against a stub fetchd (no Go, no network).
+  python-client:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pytest ./python
+      - run: pytest python/tests -q
+
   # Real-site canary: exactly ONE request to vk.ru per push to main
   # (rate-limited by design — no loops, no retries). May flake if vk.ru is
   # down; that is intended signal, not noise to paper over.
