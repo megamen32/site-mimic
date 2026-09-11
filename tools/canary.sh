@@ -11,6 +11,7 @@ cd "$(dirname "$0")/.."
 
 # Lab Windows host running the real-Chrome trigger; all three are required.
 WIN_HOST=${WIN_HOST:?set WIN_HOST}
+REPORT_HOST=${REPORT_HOST:-203.0.113.10} # address serving /fp/recent; use a LAN address when the canary runs on the stand host
 WIN_USER=${WIN_USER:?set WIN_USER}
 WIN_PASS=${WIN_PASS:?set WIN_PASS}
 
@@ -56,27 +57,19 @@ import json, socket, ssl, sys
 ctx = ssl.create_default_context()
 ctx.check_hostname = False
 ctx.verify_mode = ssl.CERT_NONE
-raw = socket.create_connection(("203.0.113.10", 443), timeout=15)
+import os
+report_host = os.environ.get("REPORT_HOST", "203.0.113.10")
+raw = socket.create_connection((report_host, 443), timeout=15)
 t = ctx.wrap_socket(raw, server_hostname="fp.example.test")
-t.sendall(b"GET /fp/recent?limit=50 HTTP/1.1\r\nHost: fp.example.test\r\nConnection: close\r\n\r\n")
+# HTTP/1.0: the server answers with Content-Length framing, no chunked
+t.sendall(b"GET /fp/recent?limit=50 HTTP/1.0\r\nHost: fp.example.test\r\n\r\n")
 buf = b""
 while True:
     d = t.recv(65536)
     if not d:
         break
     buf += d
-head, _, body = buf.partition(b"\r\n\r\n")
-out = b""
-while body:
-    line, _, body = body.partition(b"\r\n")
-    try:
-        n = int(line.split(b";")[0], 16)
-    except ValueError:
-        break
-    if n == 0:
-        break
-    out += body[:n]
-    body = body[n + 2:]
+out = buf.partition(b"\r\n\r\n")[2]
 reports = json.loads(out)
 
 # Real Chrome always carries client hints on navigation; scanners faking a
