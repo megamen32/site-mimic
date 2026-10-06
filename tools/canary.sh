@@ -1,29 +1,53 @@
 #!/usr/bin/env bash
 # Daily real-vs-ours canary for the site-mimic verification stand.
 #
-# Drives a real Chrome (Windows box, scheduled task, headless so no visible
-# window) and our mimic clients at https://fp.example.test/fp, tags our
-# requests with an x-canary header, then diffs the freshest /fp/recent
-# reports: JA4 and header name count. Exit 0 = match, exit 2 = drift
-# (Chrome turned an experiment on/off, bundled browser stale, profile drift).
+# Drives a real Chrome (Mac mini via key SSH: headless, dedicated profile dir;
+# Windows scheduled task is the fallback) and our mimic clients at
+# https://fp.example.test/fp, tags our requests with an x-canary header, then
+# diffs the freshest /fp/recent reports: JA4 and header name count.
+# Exit 0 = match, exit 2 = drift (Chrome turned an experiment on/off, bundled
+# browser stale, profile drift).
 set -u
 cd "$(dirname "$0")/.."
 
-# Lab Windows host running the real-Chrome trigger; all three are required.
-WIN_HOST=${WIN_HOST:?set WIN_HOST}
-REPORT_HOST=${REPORT_HOST:-203.0.113.10} # address serving /fp/recent; use a LAN address when the canary runs on the stand host
-WIN_USER=${WIN_USER:?set WIN_USER}
-WIN_PASS=${WIN_PASS:?set WIN_PASS}
+# Real-browser trigger hosts. Mac mini is primary (always-on acceptance host);
+# the Windows lab box is the fallback. REPORT_HOST serves /fp/recent — use a
+# LAN address when the canary runs on the stand host.
+MAC_HOST=${MAC_HOST:?set MAC_HOST}
+MAC_USER=${MAC_USER:?set MAC_USER}
+MAC_CHROME=${MAC_CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}
+WIN_HOST=${WIN_HOST:-}
+WIN_USER=${WIN_USER:-}
+WIN_PASS=${WIN_PASS:-}
+REPORT_HOST=${REPORT_HOST:-203.0.113.10}
 
 step() { printf '[canary] %s\n' "$*"; }
 
-# 1) real browser: refresh the helper cmd to headless (no visible window),
+# 1) real browser. Mac mini: headless Chrome with a persistent dedicated
+#    profile dir, so resumption tickets accumulate across daily runs. The
+#    instance exits itself after --timeout. Windows: refresh the helper cmd,
 #    then fire the scheduled task.
-sshpass -p "$WIN_PASS" ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new \
-    "$WIN_USER@$WIN_HOST" \
-    'powershell -Command "Set-Content -Path C:\Users\fp\fpcheck.cmd -Value \"\"\"C:\Program Files\Google\Chrome\Application\chrome.exe\"\" --headless=new --timeout=20000 https://fp.example.test/fp\" -Encoding ASCII" && schtasks /Run /TN smfp2' \
-    >/dev/null 2>&1 || step "WARN: windows trigger failed (continuing with the cached real reference)"
-step "real chrome triggered"
+triggered=0
+mac_remote="nohup \"$MAC_CHROME\" --headless=new --user-data-dir=\"\$HOME/.fpcheck-chrome-profile\" --no-first-run --no-default-browser-check --timeout=20000 https://fp.example.test/fp >/dev/null 2>&1 & echo fired"
+if ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new \
+    "$MAC_USER@$MAC_HOST" "$mac_remote" >/dev/null 2>&1; then
+    triggered=1
+    step "real chrome triggered on mac mini"
+else
+    step "WARN: mac mini trigger failed"
+fi
+if [ "$triggered" -eq 0 ] && [ -n "$WIN_HOST" ] && [ -n "$WIN_USER" ] && [ -n "$WIN_PASS" ]; then
+    if sshpass -p "$WIN_PASS" ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new \
+        "$WIN_USER@$WIN_HOST" \
+        'powershell -Command "Set-Content -Path C:\Users\fp\fpcheck.cmd -Value \"\"\"C:\Program Files\Google\Chrome\Application\chrome.exe\"\" --headless=new --timeout=20000 https://fp.example.test/fp\" -Encoding ASCII" && schtasks /Run /TN smfp2' \
+        >/dev/null 2>&1; then
+        triggered=1
+        step "real chrome triggered on windows"
+    else
+        step "WARN: windows trigger failed"
+    fi
+fi
+[ "$triggered" -eq 1 ] || step "WARN: no real-browser trigger succeeded (this run will fail without a fresh reference)"
 sleep 20
 
 # 2) our clients through the same stand, tagged with x-canary markers.
@@ -53,6 +77,7 @@ step "mimic probes done"
 # 3) read the freshest reports and diff.
 python3 - <<'EOF'
 import json, socket, ssl, sys
+from datetime import datetime, timezone
 
 ctx = ssl.create_default_context()
 ctx.check_hostname = False
@@ -72,10 +97,21 @@ while True:
 out = buf.partition(b"\r\n\r\n")[2]
 reports = json.loads(out)
 
+# Only reports from this run's window matter: the stand is public, so older
+# real-browser visits must not satisfy today's comparison.
+def age_seconds(r):
+    try:
+        then = datetime.strptime(r["time"].split(".")[0], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+        return (datetime.now(timezone.utc) - then).total_seconds()
+    except Exception:
+        return 1e9
+
 # Real Chrome always carries client hints on navigation; scanners faking a
-# Windows UA do not. This keeps third-party noise out of the real set.
+# browser UA do not. The platform is irrelevant for JA4, so any Chrome UA on
+# any OS qualifies (the trigger host is a Mac; ours are tagged x-canary).
 real = [r for r in reports
-        if "Windows NT" in (r["http"]["user_agent"] or "")
+        if age_seconds(r) < 1800
+        and "Chrome/" in (r["http"]["user_agent"] or "")
         and any(h["name"].lower() == "sec-ch-ua" for h in r["http"]["headers"])
         and not any(h["name"].lower() == "x-canary" for h in r["http"]["headers"])]
 ours = {h["value"]: r for r in reports for h in r["http"]["headers"]
@@ -95,8 +131,8 @@ for r in real:
     if ja4:
         real_variants[ja4] = real_variants.get(ja4, 0) + 1
 r0 = real[0]
-print(f"real variants today: {real_variants} (hdrs={len(r0['http']['headers'])}, "
-      f"ttl={(r0.get('transport') or {}).get('ttl')})")
+print(f"real variants today: {real_variants} (ua={r0['http']['user_agent'].split(') ')[0]}) "
+      f"(hdrs={len(r0['http']['headers'])}, ttl={(r0.get('transport') or {}).get('ttl')})")
 
 # Known hello shapes our specs produce (fresh vs resumed). A probe landing
 # here but missing from TODAY's real sample is a NOTE (the real browser just
