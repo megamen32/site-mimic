@@ -72,9 +72,11 @@ trigger_windows() {
     # effort: AdGuard self-protection may deny taskkill over SSH)
     sshpass -p "$WIN_PASS" ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new \
         "$WIN_USER@$WIN_HOST" 'taskkill /im chrome.exe /f' >/dev/null 2>&1
+    # headed, default profile, visible window via the /it scheduled task -
+    # a real desktop browser navigation (no --headless flag anywhere)
     sshpass -p "$WIN_PASS" ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new \
         "$WIN_USER@$WIN_HOST" \
-        'powershell -Command "Set-Content -Path C:\Users\fp\fpcheck.cmd -Value \"\"\"C:\Program Files\Google\Chrome\Application\chrome.exe\"\" --headless=new --timeout=20000 https://fp.example.test/fp\" -Encoding ASCII" && schtasks /Run /TN smfp2'
+        'powershell -Command "Set-Content -Path C:\Users\fp\fpcheck.cmd -Value \"\"\"C:\Program Files\Google\Chrome\Application\chrome.exe\"\" --no-first-run --no-default-browser-check https://fp.example.test/fp\" -Encoding ASCII" && schtasks /Run /TN smfp2'
 }
 case "$TRIGGER" in
     mac)     MACHINE=mac ;;
