@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -248,6 +249,10 @@ func (rb *reportBuilder) serve(w http.ResponseWriter, r *http.Request, sn *sniff
 		rb.serveRecent(w, r)
 		return
 	}
+	if r.URL.Path == "/favicon.ico" || r.URL.Path == "/fp/dot.png" {
+		rb.serveAsset(w, r, sn)
+		return
+	}
 	rep := rb.build(r, metaFrom(r), sn)
 	rb.remember(rep)
 	forceJSON := r.URL.Query().Get("format") == "json" || r.URL.Query().Get("fmt") == "json"
@@ -279,9 +284,46 @@ func (rb *reportBuilder) serve(w http.ResponseWriter, r *http.Request, sn *sniff
 	w.Write([]byte(buf.String()))
 }
 
+// pixelPNG is a 1x1 PNG served for the stand's static assets. The /fp page
+// references it twice (favicon + an img), and it always carries cache
+// validators, so every later visit — real browser or the mimic PageCache —
+// revalidates it with If-None-Match; those conditional requests land in
+// /fp/recent and close the cache-behavior verification loop.
+var pixelPNG = func() []byte {
+	b, err := base64.StdEncoding.DecodeString("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==")
+	if err != nil {
+		panic(err)
+	}
+	return b
+}()
+
+const (
+	pixelETag    = `"fpd-pixel-v1"`
+	pixelLastMod = "Mon, 06 Oct 2026 00:00:00 GMT"
+)
+
+// serveAsset records the request in the /fp/recent ring, then serves the
+// static pixel with validators; a matching If-None-Match gets the 304 a real
+// cached site would answer. If-Modified-Since is deliberately not compared:
+// RFC 7232 says the ETag wins when both are present, and both our clients
+// and Chrome send the ETag verbatim.
+func (rb *reportBuilder) serveAsset(w http.ResponseWriter, r *http.Request, sn *sniffer) {
+	rb.remember(rb.build(r, metaFrom(r), sn))
+	w.Header().Set("ETag", pixelETag)
+	w.Header().Set("Last-Modified", pixelLastMod)
+	w.Header().Set("Cache-Control", "max-age=0, must-revalidate")
+	if r.Header.Get("If-None-Match") == pixelETag {
+		w.WriteHeader(http.StatusNotModified)
+		return
+	}
+	w.Header().Set("Content-Type", "image/png")
+	w.Write(pixelPNG)
+}
+
 var reportTmpl = template.Must(template.New("fp").Parse(`<!doctype html>
 <html lang="ru"><head><meta charset="utf-8">
 <title>Полный фингерпринт — fp.example.test</title>
+<link rel="icon" href="/favicon.ico">
 <style>
  body{background:#111;color:#ddd;font:14px/1.5 monospace;margin:2rem;max-width:70rem}
  h1{color:#7fd08f;font-size:1.3rem} h2{color:#9db8d9;font-size:1rem;margin-top:1.4rem}
@@ -302,6 +344,7 @@ var reportTmpl = template.Must(template.New("fp").Parse(`<!doctype html>
 <p><button onclick="navigator.clipboard.writeText(document.getElementById('fp').textContent)">Скопировать JSON</button></p>
 <h2>Полный отчёт (JSON)</h2>
 <pre id="fp">{{.JSON}}</pre>
+<img src="/fp/dot.png" alt="" width="1" height="1">
 </body></html>
 `))
 

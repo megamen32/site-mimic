@@ -87,7 +87,8 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/" || r.URL.Path == "/fp" || r.URL.Path == "/fp/recent" {
+		if r.URL.Path == "/" || r.URL.Path == "/fp" || r.URL.Path == "/fp/recent" ||
+			r.URL.Path == "/favicon.ico" || r.URL.Path == "/fp/dot.png" {
 			rep.serve(w, r, sn)
 			return
 		}
