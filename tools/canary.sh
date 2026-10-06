@@ -133,6 +133,8 @@ for r in real:
 r0 = real[0]
 print(f"real variants today: {real_variants} (ua={r0['http']['user_agent'].split(') ')[0]}) "
       f"(hdrs={len(r0['http']['headers'])}, ttl={(r0.get('transport') or {}).get('ttl')})")
+if (r0.get("transport") or {}).get("ttl") is None:
+    print("WARN  transport.ttl missing - fpd wire sniffer is not capturing; restart fpd.service")
 
 # Known hello shapes our specs produce (fresh vs resumed). A probe landing
 # here but missing from TODAY's real sample is a NOTE (the real browser just
