@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# Daily real-vs-ours canary for the site-mimic verification stand.
+# Weekly real-vs-ours canary for the site-mimic verification stand.
 #
-# Drives a real Chrome (machine picked by TRIGGER, several visits per run so
-# the persistent profile yields both fresh and resumed hello shapes) and our
+# Drives a real HEADED Chrome (machine picked by TRIGGER; one trigger call
+# samples BOTH hello shapes: a fresh-profile navigation does the full
+# handshake, and a hand-off tab in the persistent profile opens a second
+# connection that offers the session ticket - the resumed shape) and our
 # mimic clients at https://fp.example.test/fp, tags our requests with an
 # x-canary header, then diffs the freshest /fp/recent reports: JA4, JA3 and
 # header name sets. Exit 0 = match, exit 2 = drift (Chrome turned an
@@ -28,16 +30,37 @@ REPORT_HOST=${REPORT_HOST:-203.0.113.10}
 step() { printf '[canary] %s\n' "$*"; }
 
 # 1) real browser, machine picked by TRIGGER (auto|mac|windows). Mac mini:
-#    headless Chrome with a persistent dedicated profile dir, so resumption
-#    tickets accumulate across daily runs; the instance exits itself after
-#    --timeout. Windows: refresh the helper cmd, then fire the scheduled task.
+#    HEADED Chrome — a real window on the mini's console, no --headless flag:
+#    the reference must be a normal desktop browser. One trigger call runs two
+#    sessions: (A) a throwaway profile -> fresh full handshake; (B) the
+#    persistent canary profile -> tab 1 full handshake, then a hand-off tab
+#    (second Chrome invocation with the same user-data-dir; ProcessSingleton
+#    forwards the URL to the running instance) which opens a second TLS
+#    connection and resumes with the in-memory ticket. Both real hello shapes
+#    (fresh and resumed) land on the stand every run, and no graceful-shutdown
+#    games are needed: the fingerprint is captured on the wire long before the
+#    browser exits. Windows: refresh the helper cmd, fire the scheduled task.
 triggered=0
-# Synchronous and bounded: macOS has no GNU timeout and neither --timeout nor
-# --dump-dom guarantees process exit, so the visit is bounded by our own kill.
-# The profile lock from a lingering instance aborts every later launch (exit
-# code 0!), hence the scoped pkill before and after. Persistent profile dir is
-# kept so resumption tickets accumulate across visits.
-mac_remote="pkill -f fpcheck-chrome-profile >/dev/null 2>&1; sleep 1; \"$MAC_CHROME\" --headless=new --user-data-dir=\"\$HOME/.fpcheck-chrome-profile\" --no-first-run --no-default-browser-check https://fp.example.test/fp >/dev/null 2>&1 & CPID=\$!; sleep 25; kill \$CPID >/dev/null 2>&1; sleep 2; pkill -f fpcheck-chrome-profile >/dev/null 2>&1; echo done"
+# macOS has no GNU timeout and headed Chrome ignores --timeout, so every
+# session is bounded by our own kill (main PID + scoped sweep). The pgrep
+# bracket pattern "fpcheck[-]" matches our profile dirs (fpcheck-fresh.*,
+# fpcheck-chrome-profile) but never this script's own command line, and a
+# leftover ProcessSingleton lock would abort later launches with exit 0.
+mac_remote='for p in $(pgrep -f "fpcheck[-]"); do kill "$p" 2>/dev/null; done; sleep 1
+D=$(mktemp -d /tmp/fpcheck-fresh.XXXXXX)
+"'"$MAC_CHROME"'" --user-data-dir="$D" --no-first-run --no-default-browser-check "https://fp.example.test/fp?a" >/dev/null 2>&1 &
+APID=$!
+sleep 13
+kill $APID 2>/dev/null; sleep 2; rm -rf "$D"
+"'"$MAC_CHROME"'" --user-data-dir="$HOME/.fpcheck-chrome-profile" --no-first-run --no-default-browser-check "https://fp.example.test/fp?b1" >/dev/null 2>&1 &
+BPID=$!
+sleep 13
+"'"$MAC_CHROME"'" --user-data-dir="$HOME/.fpcheck-chrome-profile" --no-first-run "https://fp.example.test/fp?b2" >/dev/null 2>&1
+sleep 13
+kill $BPID 2>/dev/null; sleep 2
+for p in $(pgrep -f "fpcheck[-]"); do kill "$p" 2>/dev/null; done
+sleep 2
+echo done'
 trigger_mac() {
     [ -n "$MAC_HOST" ] && [ -n "$MAC_USER" ] || { step "WARN: mac trigger skipped (MAC_HOST/MAC_USER unset)"; return 1; }
     ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new \
@@ -64,32 +87,31 @@ case "$TRIGGER" in
 esac
 case "$TRIGGER" in mac|windows|auto) ;; *) step "WARN: unknown TRIGGER=$TRIGGER (want auto|mac|windows)" ;; esac
 
-i=0
-while [ "$i" -lt "$TRIGGER_VISITS" ]; do
-    i=$((i+1))
-    case "$MACHINE" in
-        mac)
-            if trigger_mac; then
-                triggered=1
-                step "real chrome visit $i/$TRIGGER_VISITS on mac mini"
-            else
-                step "WARN: mac mini visit $i failed"
-            fi ;;
-        windows)
-            if trigger_windows; then
-                triggered=1
-                step "real chrome visit $i/$TRIGGER_VISITS on windows"
-            else
-                step "WARN: windows visit $i failed"
-            fi ;;
-        *)
-            step "WARN: no trigger machine available (check TRIGGER and creds)"
-            break ;;
-    esac
-    [ "$i" -lt "$TRIGGER_VISITS" ] || break
-    gap=3; [ "$MACHINE" = windows ] && gap=35
-    sleep "$gap"
-done
+if [ "$MACHINE" = mac ]; then
+    # one trigger call = both sessions (fresh profile + persistent with the
+    # hand-off resumption tab), three real reports on the stand
+    if trigger_mac; then
+        triggered=1
+        step "real chrome sessions on mac mini (headed: fresh + resumed)"
+    else
+        step "WARN: mac mini trigger failed"
+    fi
+elif [ "$MACHINE" = windows ]; then
+    i=0
+    while [ "$i" -lt "$TRIGGER_VISITS" ]; do
+        i=$((i+1))
+        if trigger_windows; then
+            triggered=1
+            step "real chrome visit $i/$TRIGGER_VISITS on windows"
+        else
+            step "WARN: windows visit $i failed"
+        fi
+        [ "$i" -lt "$TRIGGER_VISITS" ] || break
+        sleep 35
+    done
+else
+    step "WARN: no trigger machine available (check TRIGGER and creds)"
+fi
 # auto fallback: preferred machine dead -> one attempt on the other
 if [ "$triggered" -eq 0 ] && [ "$TRIGGER" = auto ]; then
     if [ "$MACHINE" = mac ] && trigger_windows; then
