@@ -81,9 +81,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("parse target: %v", err)
 	}
+	// one session cache across all iterations: the first navigation stores
+	// ETag/Last-Modified validators, later ones revalidate them exactly like
+	// a browser returning to the site in the same session
+	cache := mimic.NewPageCache()
 	for i := 0; i < count; i++ {
 		if len(profile.ResourcePlan) > 0 {
-			lines, err := profile.RunPlan(client, base)
+			lines, err := profile.RunPlanSession(client, base, cache)
 			if err != nil {
 				log.Fatal(err)
 			}

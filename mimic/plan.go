@@ -102,11 +102,77 @@ func (p Profile) stepRequest(step ResourceStep, base *url.URL) (*http.Request, e
 	return req, nil
 }
 
+// cacheEntry holds the validators (ETag, Last-Modified) of one resource the
+// way a browser session cache would.
+type cacheEntry struct {
+	etag    string
+	lastMod string
+}
+
+// PageCache is the per-session HTTP cache: validators observed on earlier
+// navigations, replayed as conditional request headers on later ones - what
+// Chrome does when it revalidates cached resources inside one browser
+// session. A nil cache disables revalidation (every request stays a plain
+// GET). Freshness lifetimes are deliberately not parsed: every step still
+// produces a wire request, so verification stands keep seeing the full
+// session instead of silent cache hits.
+type PageCache struct {
+	entries map[string]cacheEntry
+}
+
+// NewPageCache returns an empty session cache.
+func NewPageCache() *PageCache {
+	return &PageCache{entries: map[string]cacheEntry{}}
+}
+
+// applyValidators adds If-None-Match / If-Modified-Since for a stored entry.
+// Chrome sends both validators when it has both; per RFC 7232 the ETag wins
+// server-side, the date is the heuristic fallback.
+func (c *PageCache) applyValidators(h http.Header, key string) {
+	if c == nil {
+		return
+	}
+	e, ok := c.entries[key]
+	if !ok {
+		return
+	}
+	if e.etag != "" {
+		h.Set("If-None-Match", e.etag)
+	}
+	if e.lastMod != "" {
+		h.Set("If-Modified-Since", e.lastMod)
+	}
+}
+
+// store keeps the validators of a response and drops entries whose responses
+// stopped carrying validators, so stale values are never replayed. A 304
+// carries the same validators and simply re-confirms the entry.
+func (c *PageCache) store(key string, h http.Header) {
+	if c == nil {
+		return
+	}
+	e := cacheEntry{etag: h.Get("ETag"), lastMod: h.Get("Last-Modified")}
+	if e.etag == "" && e.lastMod == "" {
+		delete(c.entries, key)
+		return
+	}
+	c.entries[key] = e
+}
+
 // RunPlan walks the profile's ResourcePlan against base: per-step jittered
 // delays, one client (connection pool) for the whole session — the way a
 // real browser multiplexes a page load over one TLS connection. Returns the
 // step statuses.
 func (p Profile) RunPlan(client *http.Client, base *url.URL) ([]string, error) {
+	return p.RunPlanSession(client, base, nil)
+}
+
+// RunPlanSession walks the plan like RunPlan and revalidates through cache:
+// the first pass stores each response's ETag/Last-Modified, later passes
+// replay them as If-None-Match/If-Modified-Since (server answers 304, the
+// entry is kept or refreshed from a 200). Pass the same *PageCache across
+// repeat navigations of one session, e.g. one stand-probe run.
+func (p Profile) RunPlanSession(client *http.Client, base *url.URL, cache *PageCache) ([]string, error) {
 	if len(p.ResourcePlan) == 0 {
 		return nil, fmt.Errorf("mimic: profile %q has no resource_plan", p.Name)
 	}
@@ -129,11 +195,14 @@ func (p Profile) RunPlan(client *http.Client, base *url.URL) ([]string, error) {
 		if err != nil {
 			return out, fmt.Errorf("step %d (%s): %w", i, step.Path, err)
 		}
+		key := req.URL.String()
+		cache.applyValidators(req.Header, key)
 		resp, err := client.Do(req)
 		if err != nil {
 			return out, fmt.Errorf("step %d (%s): %w", i, step.Path, err)
 		}
 		out = append(out, fmt.Sprintf("%s %s -> %s", req.Method, step.Path, resp.Status))
+		cache.store(key, resp.Header)
 		resp.Body.Close()
 	}
 	return out, nil
