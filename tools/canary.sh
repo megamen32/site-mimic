@@ -10,11 +10,14 @@
 set -u
 cd "$(dirname "$0")/.."
 
-# Real-browser trigger hosts. Mac mini is primary (always-on acceptance host);
-# the Windows lab box is the fallback. REPORT_HOST serves /fp/recent — use a
-# LAN address when the canary runs on the stand host.
-MAC_HOST=${MAC_HOST:?set MAC_HOST}
-MAC_USER=${MAC_USER:?set MAC_USER}
+# Real-browser trigger machines. TRIGGER selects one per run: auto (default,
+# Mac mini first, Windows fallback), mac, or windows. The Mac mini is the
+# always-on acceptance host (key SSH); the Windows lab box needs sshpass
+# credentials. REPORT_HOST serves /fp/recent — use a LAN address when the
+# canary runs on the stand host.
+TRIGGER=${TRIGGER:-auto}
+MAC_HOST=${MAC_HOST:-}
+MAC_USER=${MAC_USER:-}
 MAC_CHROME=${MAC_CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}
 WIN_HOST=${WIN_HOST:-}
 WIN_USER=${WIN_USER:-}
@@ -23,30 +26,40 @@ REPORT_HOST=${REPORT_HOST:-203.0.113.10}
 
 step() { printf '[canary] %s\n' "$*"; }
 
-# 1) real browser. Mac mini: headless Chrome with a persistent dedicated
-#    profile dir, so resumption tickets accumulate across daily runs. The
-#    instance exits itself after --timeout. Windows: refresh the helper cmd,
-#    then fire the scheduled task.
+# 1) real browser, machine picked by TRIGGER (auto|mac|windows). Mac mini:
+#    headless Chrome with a persistent dedicated profile dir, so resumption
+#    tickets accumulate across daily runs; the instance exits itself after
+#    --timeout. Windows: refresh the helper cmd, then fire the scheduled task.
 triggered=0
 mac_remote="nohup \"$MAC_CHROME\" --headless=new --user-data-dir=\"\$HOME/.fpcheck-chrome-profile\" --no-first-run --no-default-browser-check --timeout=20000 https://fp.example.test/fp >/dev/null 2>&1 & echo fired"
-if ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new \
-    "$MAC_USER@$MAC_HOST" "$mac_remote" >/dev/null 2>&1; then
-    triggered=1
-    step "real chrome triggered on mac mini"
-else
-    step "WARN: mac mini trigger failed"
-fi
-if [ "$triggered" -eq 0 ] && [ -n "$WIN_HOST" ] && [ -n "$WIN_USER" ] && [ -n "$WIN_PASS" ]; then
-    if sshpass -p "$WIN_PASS" ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new \
+trigger_mac() {
+    [ -n "$MAC_HOST" ] && [ -n "$MAC_USER" ] || { step "WARN: mac trigger skipped (MAC_HOST/MAC_USER unset)"; return 1; }
+    ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new \
+        "$MAC_USER@$MAC_HOST" "$mac_remote" >/dev/null 2>&1
+}
+trigger_windows() {
+    [ -n "$WIN_HOST" ] && [ -n "$WIN_USER" ] && [ -n "$WIN_PASS" ] || { step "WARN: windows trigger skipped (WIN_HOST/WIN_USER/WIN_PASS unset)"; return 1; }
+    sshpass -p "$WIN_PASS" ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new \
         "$WIN_USER@$WIN_HOST" \
-        'powershell -Command "Set-Content -Path C:\Users\fp\fpcheck.cmd -Value \"\"\"C:\Program Files\Google\Chrome\Application\chrome.exe\"\" --headless=new --timeout=20000 https://fp.example.test/fp\" -Encoding ASCII" && schtasks /Run /TN smfp2' \
-        >/dev/null 2>&1; then
+        'powershell -Command "Set-Content -Path C:\Users\fp\fpcheck.cmd -Value \"\"\"C:\Program Files\Google\Chrome\Application\chrome.exe\"\" --headless=new --timeout=20000 https://fp.example.test/fp\" -Encoding ASCII" && schtasks /Run /TN smfp2'
+}
+if [ "$TRIGGER" = mac ] || [ "$TRIGGER" = auto ]; then
+    if trigger_mac; then
+        triggered=1
+        step "real chrome triggered on mac mini"
+    else
+        step "WARN: mac mini trigger failed"
+    fi
+fi
+if [ "$triggered" -eq 0 ] && { [ "$TRIGGER" = windows ] || [ "$TRIGGER" = auto ]; }; then
+    if trigger_windows; then
         triggered=1
         step "real chrome triggered on windows"
     else
         step "WARN: windows trigger failed"
     fi
 fi
+case "$TRIGGER" in mac|windows|auto) ;; *) step "WARN: unknown TRIGGER=$TRIGGER (want auto|mac|windows)" ;; esac
 [ "$triggered" -eq 1 ] || step "WARN: no real-browser trigger succeeded (this run will fail without a fresh reference)"
 sleep 20
 
