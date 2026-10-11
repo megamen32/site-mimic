@@ -53,24 +53,28 @@ func newSniffer(iface string, port int) *sniffer {
 	return &sniffer{iface: iface, port: uint16(port), flows: map[flowKey]*flowInfo{}}
 }
 
-// bpfTCPDst443 is `tcpdump -dd 'tcp dst port 443'` for an Ethernet link.
-var bpfTCPDst443 = []unix.SockFilter{
-	{Code: 0x28, Jt: 0, Jf: 0, K: 0x0000000c},
-	{Code: 0x15, Jt: 0, Jf: 4, K: 0x000086dd},
-	{Code: 0x30, Jt: 0, Jf: 0, K: 0x00000014},
-	{Code: 0x15, Jt: 0, Jf: 11, K: 0x00000006},
-	{Code: 0x28, Jt: 0, Jf: 0, K: 0x00000038},
-	{Code: 0x15, Jt: 8, Jf: 9, K: 0x000001bb},
-	{Code: 0x15, Jt: 0, Jf: 8, K: 0x00000800},
-	{Code: 0x30, Jt: 0, Jf: 0, K: 0x00000017},
-	{Code: 0x15, Jt: 0, Jf: 6, K: 0x00000006},
-	{Code: 0x28, Jt: 0, Jf: 0, K: 0x00000014},
-	{Code: 0x45, Jt: 4, Jf: 0, K: 0x00001fff},
-	{Code: 0xb1, Jt: 0, Jf: 0, K: 0x0000000e},
-	{Code: 0x48, Jt: 0, Jf: 0, K: 0x00000010},
-	{Code: 0x15, Jt: 0, Jf: 1, K: 0x000001bb},
-	{Code: 0x6, Jt: 0, Jf: 0, K: 0x00040000},
-	{Code: 0x6, Jt: 0, Jf: 0, K: 0x00000000},
+// bpfTCPDst builds `tcpdump -dd 'tcp dst port N'` for an Ethernet link
+// (IPv4 and IPv6 branches).
+func bpfTCPDst(port uint16) []unix.SockFilter {
+	p := uint32(port)
+	return []unix.SockFilter{
+		{Code: 0x28, Jt: 0, Jf: 0, K: 0x0000000c},
+		{Code: 0x15, Jt: 0, Jf: 4, K: 0x000086dd},
+		{Code: 0x30, Jt: 0, Jf: 0, K: 0x00000014},
+		{Code: 0x15, Jt: 0, Jf: 11, K: 0x00000006},
+		{Code: 0x28, Jt: 0, Jf: 0, K: 0x00000038},
+		{Code: 0x15, Jt: 8, Jf: 9, K: p},
+		{Code: 0x15, Jt: 0, Jf: 8, K: 0x00000800},
+		{Code: 0x30, Jt: 0, Jf: 0, K: 0x00000017},
+		{Code: 0x15, Jt: 0, Jf: 6, K: 0x00000006},
+		{Code: 0x28, Jt: 0, Jf: 0, K: 0x00000014},
+		{Code: 0x45, Jt: 4, Jf: 0, K: 0x00001fff},
+		{Code: 0xb1, Jt: 0, Jf: 0, K: 0x0000000e},
+		{Code: 0x48, Jt: 0, Jf: 0, K: 0x00000010},
+		{Code: 0x15, Jt: 0, Jf: 1, K: p},
+		{Code: 0x6, Jt: 0, Jf: 0, K: 0x00040000},
+		{Code: 0x6, Jt: 0, Jf: 0, K: 0x00000000},
+	}
 }
 
 func (s *sniffer) run() {
@@ -88,7 +92,8 @@ func (s *sniffer) run() {
 		fmt.Printf("fpd: sniffer: bind: %v\n", err)
 		return
 	}
-	prog := unix.SockFprog{Len: uint16(len(bpfTCPDst443)), Filter: &bpfTCPDst443[0]}
+	filter := bpfTCPDst(s.port)
+	prog := unix.SockFprog{Len: uint16(len(filter)), Filter: &filter[0]}
 	if err := unix.SetsockoptSockFprog(fd, unix.SOL_SOCKET, unix.SO_ATTACH_FILTER, &prog); err != nil {
 		fmt.Printf("fpd: sniffer: attach bpf: %v\n", err)
 	}

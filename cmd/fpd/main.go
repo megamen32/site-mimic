@@ -50,6 +50,7 @@ func main() {
 	keyFile := flag.String("key", "/etc/letsencrypt/live/fp.example.test/privkey.pem", "TLS key")
 	upstream := flag.String("upstream", "http://127.0.0.1:8477", "receiver base URL for pass-through paths")
 	iface := flag.String("iface", "enp28s0f2np2", "WAN interface for the TTL/SYN sniffer")
+	sport := flag.Int("sport", 443, "client destination TCP port the TTL/SYN sniffer BPF filters on (must match -listen's port as seen by clients)")
 	selftest := flag.Bool("selftest", false, "run a local PPv2+TLS probe against -listen and print /fp")
 	flag.Parse()
 
@@ -75,7 +76,7 @@ func main() {
 		log.Printf("fpd: TLS keys -> %s", kl)
 	}
 
-	sn := newSniffer(*iface, 443)
+	sn := newSniffer(*iface, *sport)
 	go sn.run()
 
 	upURL, err := url.Parse(*upstream)
@@ -178,9 +179,9 @@ func (s *metaStore) del(c net.Conn) {
 // and returns the bytes to replay into the TLS server.
 func handshakeFront(raw net.Conn) (clientAddr, *clientHello, []byte, error) {
 	br := newBufioReader(raw)
-	addr, err := readProxyV2Header(br)
+	addr, _, err := readProxyV2Header(br, raw.RemoteAddr())
 	if err != nil {
-		return addr, nil, nil, fmt.Errorf("proxy-v2: %w", err)
+		return addr, nil, nil, fmt.Errorf("front: %w", err)
 	}
 	rec, err := readHelloRecords(br)
 	if err != nil {
