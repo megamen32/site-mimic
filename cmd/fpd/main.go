@@ -32,8 +32,9 @@ import (
 )
 
 type connMeta struct {
-	hello *clientHello
-	addr  clientAddr
+	hello    *clientHello
+	addr     clientAddr
+	viaProxy bool
 }
 
 // metaKey carries per-connection capture data into request contexts.
@@ -133,7 +134,7 @@ func serveTLS(srv *http.Server, addr string, cfg *tls.Config) error {
 			return err
 		}
 		go func(raw net.Conn) {
-			meta, hello, prefix, err := handshakeFront(raw)
+			meta, viaProxy, hello, prefix, err := handshakeFront(raw)
 			if err != nil {
 				if !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
 					log.Printf("fpd: front from %s: %v", raw.RemoteAddr(), err)
@@ -143,7 +144,7 @@ func serveTLS(srv *http.Server, addr string, cfg *tls.Config) error {
 			}
 			rc := &replayConn{Conn: raw, prefix: prefix}
 			tlsConn := tls.Server(rc, cfg)
-			s.put(tlsConn, connMeta{hello: hello, addr: meta})
+			s.put(tlsConn, connMeta{hello: hello, addr: meta, viaProxy: viaProxy})
 			rc.onClose = func() { s.del(tlsConn) }
 			ch <- tlsConn
 		}(raw)
@@ -177,30 +178,30 @@ func (s *metaStore) del(c net.Conn) {
 
 // handshakeFront reads the proxy-v2 header and the ClientHello record(s)
 // and returns the bytes to replay into the TLS server.
-func handshakeFront(raw net.Conn) (clientAddr, *clientHello, []byte, error) {
+func handshakeFront(raw net.Conn) (clientAddr, bool, *clientHello, []byte, error) {
 	br := newBufioReader(raw)
-	addr, _, err := readProxyV2Header(br, raw.RemoteAddr())
+	addr, ok, err := readProxyV2Header(br, raw.RemoteAddr())
 	if err != nil {
-		return addr, nil, nil, fmt.Errorf("front: %w", err)
+		return addr, false, nil, nil, fmt.Errorf("front: %w", err)
 	}
 	rec, err := readHelloRecords(br)
 	if err != nil {
-		return addr, nil, nil, fmt.Errorf("client-hello: %w", err)
+		return addr, ok, nil, nil, fmt.Errorf("client-hello: %w", err)
 	}
 	hello, err := parseClientHelloRecord(rec)
 	if err != nil {
-		return addr, nil, nil, fmt.Errorf("parse: %w", err)
+		return addr, ok, nil, nil, fmt.Errorf("parse: %w", err)
 	}
 	// Drain anything still buffered beyond the hello (normally nothing:
 	// the client waits for ServerHello before sending more).
 	rest := make([]byte, br.Buffered())
 	if _, err := io.ReadFull(br, rest); err != nil {
-		return addr, nil, nil, fmt.Errorf("drain: %w", err)
+		return addr, ok, nil, nil, fmt.Errorf("drain: %w", err)
 	}
 	var replay []byte
 	replay = append(replay, rec...)
 	replay = append(replay, rest...)
-	return addr, hello, replay, nil
+	return addr, ok, hello, replay, nil
 }
 
 // replayConn feeds the already-consumed bytes back before the raw conn

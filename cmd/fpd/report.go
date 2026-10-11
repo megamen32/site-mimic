@@ -130,6 +130,8 @@ func (rb *reportBuilder) build(r *http.Request, m connMeta, sn *sniffer) report 
 	}
 	if m.addr.Local {
 		rep.Who.Proxy = "proxy-v2 LOCAL command — address is the local hop"
+	} else if !m.viaProxy {
+		rep.Who.Proxy = "direct connection (no proxy-v2 header) — address is the TCP peer"
 	}
 	rep.Who.IP = m.addr.IP.String()
 	rep.Who.Port = m.addr.Port
