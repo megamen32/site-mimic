@@ -6,9 +6,11 @@ description: >
   the target expects from the real client. Use when a site blocks, captchas
   or challenges Go's default HTTP client, when a JA3/ClientHello-based filter
   (DPI/anti-bot) must be passed, when onboarding a new site into an automated
-  client, or when an API must be called exactly like a native app calls it
-  (Node/Electron client, managed gateway). Worked targets: vk.ru,
-  stream.wb.ru, the MiniMax managed gateway.
+  client, when an API must be called exactly like a native app calls it
+  (Node/Electron client, managed gateway, Android/OkHttp app), or when the
+  real client is a phone you have in hand (rooted Android: app traffic and
+  mobile web). Worked targets: vk.ru, stream.wb.ru, the MiniMax managed
+  gateway, MAX (ru.oneme.app) and web.max.ru.
 ---
 
 # Fit a Go client to a site (site-mimic)
@@ -106,8 +108,8 @@ capture date in `profile.json`'s `name`/README.
 ## Worked example: an API behind a native client (not a website)
 
 Some targets are not websites but APIs reached by a native client — a desktop
-app, an Electron/Node agent, an SDK. The same method applies, with two extra
-steps, because the client identity is not a browser:
+app, an Electron/Node agent, an SDK, a mobile app. The same method applies,
+with two extra steps, because the client identity is not a browser:
 
 1. **Find the real endpoint and the real credential.** The public docs
    endpoint is often a *different product* than the one the app uses
@@ -122,7 +124,11 @@ steps, because the client identity is not a browser:
    headers, so a profile without `http1_wire_order` will not match.
 3. **Pick the transport profile from the client stack**, not from a habit:
    a Node/undici client is BoringSSL — `tls_client_hello: "node_24"`,
-   ALPN `http/1.1` only, HTTP/1.1. Browser profiles do not apply.
+   ALPN `http/1.1` only, HTTP/1.1. An Android app on Conscrypt/OkHttp
+   (`ru.oneme.app`) sends **no ALPN at all**, 17 cipher suites including
+   CBC-SHA1, and `status_request` — `tls_client_hello: "max_app"` /
+   `"max_app_psk"`, HTTP/1.1, and `http1_wire_order: true` for the header
+   block. Browser profiles do not apply to either.
    Gotcha: a custom spec without a `pre_shared_key` extension cannot resume
    — uTLS panics on the second request to the same host unless
    `PreferSkipResumptionOnNilExtension` is set (mimic sets it).
@@ -135,11 +141,105 @@ steps, because the client identity is not a browser:
    (same `content-length`). `mimic.ParseClientHello` + `JA3()`/`JA4()`
    compute the fingerprint from captured bytes; keep the captured hello as a
    fixture and assert the spec against it, so the profile cannot drift.
+   Assert against a **real handshake**, not against the spec struct: a
+   swapped uTLS cipher constant still "looks right" in the literal and only
+   shows up in the bytes on the wire (see `mimic/spec_max_app_test.go`).
 6. **Verify the business path**: a real request through the mimic client must
    return the same status and payload the app gets.
 
 Full measured case: `docs/minimax-agent-gateway.ru.md`,
 `examples/minimax-agent-gateway/`.
+
+## Worked example: the real client is a phone you have in hand
+
+A rooted Android phone is the most honest capture source: the app and the
+mobile web version are the real clients, and their fingerprints are not
+guessed from a browser profile. Full procedure and toolchain:
+`tools/phone/README.md`. The short version:
+
+```sh
+# 0. the phone is a shared resource — take a lease first
+s21-lease acquire --owner "$USER" --minutes 60 --purpose "capture <app>"
+
+# 1. capture host: SOCKS5 mitmproxy that records ClientHello bytes + headers
+mitmdump --mode socks5 --listen-host 0.0.0.0 --listen-port 31896 \
+         --set ssl_insecure=true --set connection_strategy=lazy \
+         -s tools/phone/mitm_capture_addon.py --set out_jsonl=/tmp/capture.jsonl
+
+# 2. phone: redirect the app's TCP, block QUIC, mount the CA into zygote
+GOOS=linux GOARCH=arm64 go build -o /tmp/tproxyfwd ./cmd/tproxyfwd
+adb push /tmp/tproxyfwd tools/phone/setup_capture.sh tools/phone/ca_mount.sh \
+         /data/local/tmp/
+adb shell "su -c 'PKG=ru.oneme.app SOCKS5=<capture-host>:31896 \
+                   sh /data/local/tmp/setup_capture.sh start'"
+
+# 3. read the capture with the library's own parser
+go run ./cmd/hellofp /tmp/capture.jsonl
+
+# 4. TEAR DOWN — the rules are per-uid and stay on the phone
+adb shell "su -c 'PKG=ru.oneme.app sh /data/local/tmp/setup_capture.sh stop'"
+s21-lease release <lease-id>
+```
+
+What matters and why (each of these cost a full capture attempt):
+
+- **Block QUIC for the target uid** (`iptables -A OUTPUT -p udp -m owner
+  --uid-owner <uid> --dport 443 -j REJECT`). A modern app speaks HTTP/3 over
+  UDP/443 by default, so there is no TCP ClientHello at all and the capture
+  looks empty. This was the real cause of the first failed capture of
+  `ru.oneme.app`, not the app's behaviour.
+- **Mount the CA into the zygote mount namespace**, not into the app's.
+  A per-pid bind-mount is not inherited when the app restarts, so the trust
+  silently disappears; zygote's view is inherited by every app forked after
+  the mount.
+- **The uid is the selector** (`stat -c %u /data/data/<pkg>`), not the
+  package: it also covers the app's helper processes, and the browser is
+  just another uid.
+- **Only the CDN host speaks HTTP.** For `ru.oneme.app`, mitmproxy parsed
+  HTTP requests only from `i.oneme.ru`; 116 connections to `api2.oneme.ru`
+  produced no request line at all — the API is a binary protocol over TLS.
+  Do not assume the API host is HTTP.
+- **Always tear down.** A leftover `REJECT` rule breaks QUIC for that uid;
+  a leftover redirect sends its traffic into a dead forwarder. `stop` removes
+  both rules and kills the forwarder.
+
+### The web version on the same phone: use CDP, not MITM
+
+Capturing the browser's **ClientHello** works with the same chain — mitmproxy
+reads it before the client rejects our certificate. Capturing the browser's
+**headers** does not: Chrome 155 uses the Chrome Root Store and does not
+consult the Android platform trust store, so it refuses the proxy
+certificate (`tls alert certificate unknown`). Neither the conscrypt APEX
+mount, nor the user store, nor `--ignore-certificate-errors` gets past it.
+
+Use the DevTools protocol instead — Chrome itself reports the headers it is
+about to send, and no CA is involved:
+
+```sh
+adb forward tcp:9333 localabstract:chrome_devtools_remote
+ssh -f -N -L 9334:127.0.0.1:9333 <host-with-the-phone>
+python3 tools/phone/cdp_headers.py --cdp 127.0.0.1:9334 \
+        --url https://web.max.ru/ --out web.jsonl --seconds 30
+```
+
+Two limits to plan for:
+
+- CDP reports **browser-added headers only**. `Host`, `Accept`,
+  `Accept-Encoding`, `Accept-Language`, `Sec-Fetch-*` and `Priority` come
+  from the network stack and are **not** in `requestWillBeSent` — take them
+  from a real navigation or from an existing Chrome profile
+  (`examples/profiles/android-chrome152.json`).
+- The DevTools websocket must not carry an `Origin` header
+  (`suppress_origin=True`).
+
+Result for `web.max.ru`: mobile Chrome 155 → JA4
+`t13d1517h2_8daaf6152771_cb7bf5808d99`, ALPN `h2,http/1.1`, 16 ciphers, 19
+extensions — the same JA4 the repo's `chrome_152` spec already produces, so
+the web profile needs headers only, no new TLS spec.
+
+Full measured case: `docs/max-oneme.ru.md`,
+`examples/profiles/max-app-oneme.json`,
+`examples/profiles/max-web-chrome155.json`.
 
 ## Known limits (do not overclaim)
 
@@ -152,6 +252,12 @@ Full measured case: `docs/minimax-agent-gateway.ru.md`,
   profiles still use Go's canonical write.
 - `accept-encoding` is left to Go (transparent gzip; browser value includes
   `br` which Go cannot decode).
+- The HTTP/1.1 wire transport always writes `host` first. A client that puts
+  it elsewhere (the MAX app puts it fourth) is off by one position.
+- CDP (`Network.requestWillBeSent`) reports browser-added headers only —
+  `Host`, `Accept`, `Accept-Encoding`, `Accept-Language`, `Sec-Fetch-*` and
+  `Priority` are network-stack headers and are missing there. Take them from
+  a real navigation.
 - JA4 here is the simplified in-repo variant (version token from
   legacy_version); use it for self-comparison, not for cross-repo equality.
 

@@ -1,0 +1,21 @@
+{
+  "name": "max-app-oneme-26.35.1",
+  "tls_client_hello": "max_app_psk",
+  "user_agent": "OKMessages%2F26.35.1+%28Android+15%3B+samsung+SM-G998B%3B+450dpi+450dpi+1080x2400%29",
+  "http1_wire_order": true,
+  "wire_header_order": [
+    "Cache-Control",
+    "Accept",
+    "User-Agent",
+    "Connection",
+    "Accept-Encoding"
+  ],
+  "headers": {
+    "Cache-Control": "no-store",
+    "Accept": "image/webp,/;q=0.8",
+    "User-Agent": "OKMessages%2F26.35.1+%28Android+15%3B+samsung+SM-G998B%3B+450dpi+450dpi+1080x2400%29",
+    "Connection": "Keep-Alive",
+    "Accept-Encoding": "gzip"
+  },
+  "ip_ttl": 64
+}

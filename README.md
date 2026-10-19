@@ -22,6 +22,8 @@ fully worked examples.
 | Real phone Chrome **152** (updated 2026-09-01) | `t13d1518h2_8daaf6152771_e2d80978ab2e` — ML-DSA + 0xCA24 on mobile | newest mobile reference |
 | Desktop Chrome 152 stable | `t13d1517h2_8daaf6152771_cb7bf5808d99` | desktop 152 reference |
 | Windows Chrome 151 headed (AdGuard on) | `t13d1516h2_8daaf6152771_806a8c22fdea`, TTL 128 | `examples/vk-ru-windows` |
+| MAX app 26.35.1 on Android 15 (Conscrypt/OkHttp) | `t13d171100_5b57614c22b0_40271e0a5736` — **no ALPN**, 17 ciphers | `max_app` / `max_app_psk` specs, 1:1 vs capture |
+| Mobile Chrome 155 (phone) on `web.max.ru` | `t13d1517h2_8daaf6152771_cb7bf5808d99` | same JA4 as `chrome_152`; headers only |
 
 The complete by-platform/by-condition table (AdGuard, headless vs headed,
 BrowserOS, Schannel, insecure-context caveats) lives in
@@ -75,6 +77,7 @@ new site with [skill/SKILL.md](skill/SKILL.md).
 - [HANDOFF — verified state and remaining work](HANDOFF.md)
 - [vk.ru example](examples/vk-ru/) · [m.vk.ru mobile example](examples/vk-ru-mobile/) · [stream.wb.ru example](examples/stream-wb-ru/) · [MiniMax managed gateway example](examples/minimax-agent-gateway/) · [stand probe](examples/stand-probe/)
 - [Anti-bot boundary & cookie replay](docs/anti-bot.md) · [Desktop/phone JA4 references](docs/phone-reference.md) · [Safari on macOS wire reference](docs/safari-macos.md) · [MiniMax managed gateway vs the public Anthropic endpoint (RU)](docs/minimax-agent-gateway.ru.md)
+- [MAX app + web.max.ru: profiles taken off a rooted Android phone (RU)](docs/max-oneme.ru.md) · [Rooted-Android capture toolkit](tools/phone/README.md)
 - [Public capture receiver: fp.example.test](docs/receiver-stand.md)
 
 ## Honest limits
