@@ -38,12 +38,22 @@ APP_UID="${APP_UID:-}"
 if [ -z "$APP_UID" ]; then
   APP_UID=$(stat -c %u "/data/data/$PKG" 2>/dev/null)
 fi
-[ -n "$APP_UID" ] || { echo "FATAL: no uid for $PKG (set APP_UID)"; exit 1; }
-echo "PKG=$PKG APP_UID=$APP_UID SOCKS5=$SOCKS5"
+if [ -z "$APP_UID" ]; then
+  # "stop" must still run: the forwarder has to die and the leftover rules
+  # have to go even if the package was uninstalled meanwhile.
+  if [ "$ACTION" = "start" ]; then
+    echo "FATAL: no uid for $PKG (set APP_UID)"; exit 1
+  fi
+  echo "WARN: no uid for $PKG — only the forwarder is stopped"
+else
+  echo "PKG=$PKG APP_UID=$APP_UID SOCKS5=$SOCKS5"
+fi
 
 cleanup() {
-  iptables -t nat -D OUTPUT -p tcp -m owner --uid-owner "$APP_UID" ! -d 127.0.0.0/8 -j REDIRECT --to-ports "$LISTEN_PORT" 2>/dev/null
-  iptables -D OUTPUT -p udp -m owner --uid-owner "$APP_UID" --dport 443 -j REJECT 2>/dev/null
+  if [ -n "$APP_UID" ]; then
+    iptables -t nat -D OUTPUT -p tcp -m owner --uid-owner "$APP_UID" ! -d 127.0.0.0/8 -j REDIRECT --to-ports "$LISTEN_PORT" 2>/dev/null
+    iptables -D OUTPUT -p udp -m owner --uid-owner "$APP_UID" --dport 443 -j REJECT 2>/dev/null
+  fi
   pkill -x tproxyfwd 2>/dev/null
 }
 

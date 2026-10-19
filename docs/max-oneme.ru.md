@@ -35,13 +35,21 @@ MAX 26.35.1 (`ru.oneme.app`) и мобильный Chrome 155 на том же �
 | session id | 32 байта | 32 байта |
 | ALPN-версия HTTP | HTTP/1.1 | HTTP/1.1 (h2 не предлагается) |
 
-Порядок расширений приложения (Conscrypt не перемешивает):
+Порядок расширений приложения (Conscrypt не перемешивает; в варианте
+`max_app_psk` последним добавляется `0x0029`):
 
 ```
-0x0000 server_name          0x0023 session_ticket     0x002d psk_key_exchange_modes
-0x0017 extended_master_secret 0x0005 status_request  0x002b supported_versions
-0xff01 renegotiation_info   0x000d signature_algorithms 0x0033 key_share
-0x000a supported_groups     0x000b ec_point_formats
+0x0000 server_name
+0x0017 extended_master_secret
+0xff01 renegotiation_info
+0x000a supported_groups
+0x000b ec_point_formats
+0x0023 session_ticket
+0x0005 status_request
+0x000d signature_algorithms
+0x0033 key_share
+0x002d psk_key_exchange_modes
+0x002b supported_versions
 ```
 
 Группы `29,23,24` (X25519, P-256, P-384), point formats `[0]`, версии
