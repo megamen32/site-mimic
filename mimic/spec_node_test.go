@@ -117,6 +117,36 @@ func TestNode24Spec_Shape(t *testing.T) {
 	}
 }
 
+// TestNode24Spec_RealHandshake_MatchesReference is the wire-level guard: a
+// real uTLS handshake with the node_24 spec must produce a ClientHello that
+// fingerprints exactly like the captured Node client — same JA3, same JA4,
+// same ciphers in the same order, same extension order and payloads.
+//
+// The struct-level assertions above cannot catch a wrong uTLS constant (two
+// cipher constants swapped in the literal still "look right"), so this test
+// runs the handshake and parses the bytes that hit the wire.
+func TestNode24Spec_RealHandshake_MatchesReference(t *testing.T) {
+	spec, err := node24Spec()
+	if err != nil {
+		t.Fatalf("node24Spec: %v", err)
+	}
+	reference := loadFixture(t, "node24_clienthello_1.json")
+	ours := handshakeClientHello(t, spec, "test.auto-gram.ru")
+
+	compareHello(t, "node_24", ours, reference)
+
+	ja3, _ := ours.JA3()
+	if ja3 != node24JA3 {
+		t.Errorf("our JA3:\n got %s\nwant %s", ja3, node24JA3)
+	}
+	if got := ours.JA4(); got != node24JA4 {
+		t.Errorf("our JA4: got %s, want %s", got, node24JA4)
+	}
+	if len(ours.ALPN) != 1 || ours.ALPN[0] != "http/1.1" {
+		t.Errorf("our ALPN: got %v, want [http/1.1]", ours.ALPN)
+	}
+}
+
 // extensionID returns the wire id of a uTLS extension.
 func extensionID(ext utls.TLSExtension) (uint16, bool) {
 	switch ext.(type) {
