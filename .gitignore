@@ -16,3 +16,7 @@ __pycache__/
 
 # macOS artifacts
 .DS_Store
+
+# python build artifacts (local pip install of the drop-in client)
+python/build/
+python/*.egg-info/

@@ -11,11 +11,11 @@ layers. Each is a separate gate a defender can close.
 | Layer | What it exposes | site-mimic status |
 |---|---|---|
 | TCP | MSS/TTL/window quirks of Go's stack | **TTL stamped per connection** (`mimic.WithTTL` / profile `ip_ttl`, e.g. 128 = Windows; kernel default otherwise — 64 on Linux/Android); other TCP-options quirks not addressed (rarely gated) |
-| TLS ClientHello | cipher/extension/group sets and order → JA3/JA4 | **matched** via uTLS `chrome_auto` |
+| TLS ClientHello | cipher/extension/group sets and order → JA3/JA4 | **matched** via uTLS `chrome_auto`; browser-shaped and native-client-shaped specs (`chrome_152`, `node_24`) are custom specs — see below |
 | TLS handshake completion | record sizes, key-share behaviour | uTLS Chrome spec |
 | ALPN | h2 offer | matched |
 | HTTP/2 frames | SETTINGS/WINDOW_UPDATE/PRIORITY values and order (Akamai fp) | **matched on `chrome_exact`** — Chrome's SETTINGS/WINDOW_UPDATE/priority via headless-client; Go default on the uTLS path |
-| HTTP headers | names, values, order | **values + wire order matched on `chrome_exact`** — Chrome's h1/h2 order tables via headless-client; values-only on the uTLS path |
+| HTTP headers | names, values, order | **values + wire order matched on `chrome_exact`** — Chrome's h1/h2 order tables via headless-client; values-only on the uTLS path; **order + casing matched on the `http1_wire_order` path** (HTTP/1.1 profiles) |
 | Cookies / tokens | session state | `Profile.CookieJar` |
 | JavaScript | anti-bot challenges, behaviour tracking | **out of scope** |
 
@@ -84,7 +84,10 @@ Still true on the **uTLS path** (`chrome_auto` etc.):
   of 1 GiB…) in its own order. Use `chrome_exact` when the frame layer is
   gated.
 - **Header wire order.** Go canonicalizes and reorders; values and the set
-  are exact. Use `chrome_exact` when order is gated.
+  are exact. Use `chrome_exact` when order is gated, or set
+  `http1_wire_order: true` with `wire_header_order` in the profile — the
+  HTTP/1.1 transport then writes the header block itself, in the captured
+  order and casing (see "Fitting a native client" below).
 - **accept-encoding.** On this path profiles must not set it: the stdlib
   decompresses transparently only when it owns the header, and it cannot
   decode Brotli or zstd.
@@ -127,3 +130,40 @@ consistent fingerprint end-to-end.
   directly — the canonical uTLS pattern.
 - Works against Go ≥ 1.24; deps: `refraction-networking/utls`,
   `golang.org/x/net`.
+
+## Fitting a native client (Node/Electron), not a browser
+
+A target is not always a website. When the client is a native app — a
+desktop agent, an Electron/Node process, an SDK — the identity to reproduce
+is that client's stack, and three of the repo's browser assumptions change:
+
+| Layer | Browser path | Native-client path |
+|---|---|---|
+| ClientHello | Chrome/Firefox/Safari spec | the client's own TLS stack (`node_24` = Node 24 / Electron 42 / BoringSSL) |
+| ALPN / HTTP version | `h2, http/1.1` → HTTP/2 | `http/1.1` only → HTTP/1.1 (undici never negotiates h2) |
+| Header order | browser order table | the client's own order **and casing** — undici lowercases `Headers`-set names and keeps object-literal names as written |
+
+`tls_client_hello: "node_24"` (mimic/spec_node.go) reproduces the Node 24
+ClientHello: 18 cipher suites, 12 extensions in BoringSSL's fixed order, a
+32-byte legacy session id, x25519 as the only key share, ALPN `http/1.1`.
+`mimic/fingerprint.go` computes JA3/JA4 from a captured hello, and
+`mimic/fingerprint_test.go` pins the spec against three captured hellos of
+the real client (fixtures in `mimic/testdata/`) — the spec cannot drift from
+the reference without the test failing.
+
+Two implementation notes that cost real debugging time:
+
+- **Resumption trap.** A `ClientHelloSpec` without a `pre_shared_key`
+  extension cannot present a session ticket, and uTLS panics
+  (`initPskExt failed`) as soon as the shared session cache holds one for
+  the host — the second request to the same host kills the process, and
+  with it the fetchd daemon. `PreferSkipResumptionOnNilExtension: true`
+  skips resumption instead; the hello then stays exactly the captured one.
+  Regression test: `mimic/http1_test.go`.
+- **One connection per request.** The wire-order transport opens a fresh
+  connection for each request (no keep-alive pooling) and does not support
+  chunked request bodies.
+
+Worked case with all measurements: `docs/minimax-agent-gateway.ru.md`,
+`examples/minimax-agent-gateway/`.
+

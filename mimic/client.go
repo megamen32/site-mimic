@@ -200,7 +200,18 @@ func New(p Profile, opts ...Option) (*http.Client, error) {
 		if o.serverName != "" {
 			sni = o.serverName
 		}
-		cfg := &utls.Config{ServerName: sni, InsecureSkipVerify: o.insecureTLS, ClientSessionCache: clientSessionCache, OmitEmptyPsk: true}
+		cfg := &utls.Config{
+			ServerName:         sni,
+			InsecureSkipVerify: o.insecureTLS,
+			ClientSessionCache: clientSessionCache,
+			OmitEmptyPsk:       true,
+			// A ClientHelloSpec without a pre_shared_key extension (node_24,
+			// chrome_152) cannot carry a resumption ticket. uTLS panics in
+			// that case once the session cache holds a ticket for the host,
+			// so resumption is skipped instead — the hello stays exactly the
+			// captured one.
+			PreferSkipResumptionOnNilExtension: true,
+		}
 		uConn, err := newUConn(rawConn, cfg, p.TLSClientHello)
 		if err != nil {
 			_ = rawConn.Close()

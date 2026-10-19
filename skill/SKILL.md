@@ -123,13 +123,18 @@ steps, because the client identity is not a browser:
 3. **Pick the transport profile from the client stack**, not from a habit:
    a Node/undici client is BoringSSL — `tls_client_hello: "node_24"`,
    ALPN `http/1.1` only, HTTP/1.1. Browser profiles do not apply.
+   Gotcha: a custom spec without a `pre_shared_key` extension cannot resume
+   — uTLS panics on the second request to the same host unless
+   `PreferSkipResumptionOnNilExtension` is set (mimic sets it).
 4. **Write the profile with `http1_wire_order: true` and
    `wire_header_order: [...]`** listing the captured names in the captured
    order and casing. Keep secrets out: the profile holds static identity,
    the token is set per request.
 5. **Verify on the stand** (`/fp`): JA3/JA4, ALPN and HTTP version must match
    the real client, and the raw request block must match byte for byte
-   (same `content-length`).
+   (same `content-length`). `mimic.ParseClientHello` + `JA3()`/`JA4()`
+   compute the fingerprint from captured bytes; keep the captured hello as a
+   fixture and assert the spec against it, so the profile cannot drift.
 6. **Verify the business path**: a real request through the mimic client must
    return the same status and payload the app gets.
 
