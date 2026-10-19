@@ -48,11 +48,16 @@ var errNoH2 = errors.New("mimic: server did not negotiate h2 via ALPN")
 // spec for current stable Chrome 152: post-quantum signature algorithms +
 // extension 0xCA24 — wire reference t13d1517h2_8daaf6152771_cb7bf5808d99;
 // resolved through newUConn, the returned ID is only the spec base),
+// "node_24" (custom spec for the Node.js 24 / Electron 42 ClientHello —
+// BoringSSL shape, ALPN http/1.1 only; wire reference JA4
+// t13d1812h1_5d04281c6031_ef7df7f74e48; resolved through newUConn),
 // "firefox_auto", "ios_auto", "random", "random_alpn".
 func ParseClientHelloID(name string) (utls.ClientHelloID, error) {
 	switch name {
 	case "", "chrome_auto", "android_149", "chrome_152", "chrome_152_psk":
 		return utls.HelloChrome_Auto, nil
+	case node24HelloName:
+		return node24HelloID(), nil
 	case "firefox_auto":
 		return utls.HelloFirefox_Auto, nil
 	case "ios_auto":
@@ -62,7 +67,7 @@ func ParseClientHelloID(name string) (utls.ClientHelloID, error) {
 	case "random_alpn":
 		return utls.HelloRandomizedALPN, nil
 	default:
-		return utls.ClientHelloID{}, fmt.Errorf("mimic: unknown tls_client_hello %q (want chrome_auto, firefox_auto, ios_auto, random, random_alpn)", name)
+		return utls.ClientHelloID{}, fmt.Errorf("mimic: unknown tls_client_hello %q (want chrome_auto, chrome_152, node_24, firefox_auto, ios_auto, random, random_alpn)", name)
 	}
 }
 
@@ -228,6 +233,24 @@ func New(p Profile, opts ...Option) (*http.Client, error) {
 	}
 
 	rt := &roundTripper{h2: h2, h1: h1, h1Only: map[string]bool{}}
+	if clientHelloIsHTTP1Only(p.TLSClientHello) {
+		// The ClientHello offers "http/1.1" only (Node/undici shape), so h2
+		// can never be negotiated: speak HTTP/1.1 from the first connection
+		// instead of probing h2 and retrying, which would put two
+		// ClientHellos on the wire per request.
+		rt.forceH1 = true
+		if p.HTTP1WireOrder {
+			// Reproduce the captured header block byte for byte: Go's
+			// net/http canonicalizes and re-sorts header names.
+			wire := &wireRoundTripper{
+				dial: func(ctx context.Context, network, addr string) (net.Conn, error) {
+					return dial(ctx, network, addr, false)
+				},
+				order: p.WireHeaderOrder,
+			}
+			return &http.Client{Transport: wire, Jar: p.CookieJar}, nil
+		}
+	}
 	return &http.Client{Transport: rt, Jar: p.CookieJar}, nil
 }
 
@@ -239,13 +262,16 @@ type roundTripper struct {
 	h1     *http.Transport
 	mu     sync.Mutex
 	h1Only map[string]bool
+	// forceH1 skips the h2 attempt entirely — for ClientHellos that offer
+	// ALPN "http/1.1" only (Node/undici).
+	forceH1 bool
 }
 
 func (rt *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	if req.URL.Scheme != "https" {
 		return rt.h1.RoundTrip(req)
 	}
-	if rt.isH1Only(req.URL.Host) {
+	if rt.forceH1 || rt.isH1Only(req.URL.Host) {
 		return rt.h1.RoundTrip(req)
 	}
 	resp, err := rt.h2.RoundTrip(req)

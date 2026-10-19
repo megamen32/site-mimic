@@ -28,6 +28,18 @@ type Profile struct {
 	// ordering follows Go's canonical write.
 	HeaderOrder []string          `json:"header_order"`
 	Headers     map[string]string `json:"headers"`
+	// HTTP1WireOrder switches the HTTP/1.1 path to a hand-written request
+	// block: the headers are emitted in WireHeaderOrder, with the captured
+	// casing, instead of Go's canonical sorted write. It only applies to
+	// HTTP/1.1 profiles (a ClientHello that offers ALPN "http/1.1" only).
+	HTTP1WireOrder bool `json:"http1_wire_order"`
+	// WireHeaderOrder is the captured wire order of the header names, in the
+	// exact casing the imitated client sends them ("x-stainless-lang" vs
+	// "X-Stainless-Lang" — undici keeps the case of object-literal headers
+	// and lowercases the ones the SDK sets through a Headers object).
+	// "host" is written first by the transport; "content-length" is computed
+	// from the body.
+	WireHeaderOrder []string `json:"wire_header_order"`
 	// CookieJar persists site cookies across requests.
 	CookieJar http.CookieJar `json:"-"`
 	// IPTTL stamps every outgoing connection with this IP TTL (see

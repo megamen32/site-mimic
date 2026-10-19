@@ -13,3 +13,6 @@ __pycache__/
 .agents/shared-session/
 .worktrees/
 .tmpbin/
+
+# macOS artifacts
+.DS_Store

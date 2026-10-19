@@ -126,6 +126,18 @@ func shuffleExtensions(exts []utls.TLSExtension) []utls.TLSExtension {
 // "chrome_152" uses the custom spec; every other name resolves through
 // ParseClientHelloID.
 func newUConn(rawConn net.Conn, cfg *utls.Config, helloName string) (*utls.UConn, error) {
+	if helloName == node24HelloName {
+		spec, err := node24Spec()
+		if err != nil {
+			return nil, err
+		}
+		uc := utls.UClient(rawConn, cfg, utls.HelloCustom)
+		if err := uc.ApplyPreset(spec); err != nil {
+			return nil, fmt.Errorf("mimic: %s apply preset: %w", helloName, err)
+		}
+		// BoringSSL emits a fixed extension order — do not shuffle it.
+		return uc, nil
+	}
 	if helloName == "chrome_152" || helloName == "chrome_152_psk" {
 		uc := utls.UClient(rawConn, cfg, utls.HelloCustom)
 		var spec *utls.ClientHelloSpec

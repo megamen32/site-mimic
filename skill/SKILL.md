@@ -1,12 +1,14 @@
 ---
 name: site-mimic-fit
 description: >
-  Fit a Go HTTP client to a target website so its transport fingerprint
-  (TLS ClientHello / JA3 / JA4, ALPN, HTTP/2) and request headers match what
-  the site expects from a real browser. Use when a site blocks, captchas or
-  challenges Go's default HTTP client, when a JA3/ClientHello-based filter
-  (DPI/anti-bot) must be passed, or when onboarding a new site into an
-  automated client. Worked sites: vk.ru, stream.wb.ru.
+  Fit a Go HTTP client to a target so its transport fingerprint (TLS
+  ClientHello / JA3 / JA4, ALPN, HTTP version) and request headers match what
+  the target expects from the real client. Use when a site blocks, captchas
+  or challenges Go's default HTTP client, when a JA3/ClientHello-based filter
+  (DPI/anti-bot) must be passed, when onboarding a new site into an automated
+  client, or when an API must be called exactly like a native app calls it
+  (Node/Electron client, managed gateway). Worked targets: vk.ru,
+  stream.wb.ru, the MiniMax managed gateway.
 ---
 
 # Fit a Go client to a site (site-mimic)
@@ -101,12 +103,48 @@ capture date in `profile.json`'s `name`/README.
    extensions — indistinguishable from the uTLS Chrome spec at the JA4 level.
 4. Full files: `examples/vk-ru/`.
 
+## Worked example: an API behind a native client (not a website)
+
+Some targets are not websites but APIs reached by a native client — a desktop
+app, an Electron/Node agent, an SDK. The same method applies, with two extra
+steps, because the client identity is not a browser:
+
+1. **Find the real endpoint and the real credential.** The public docs
+   endpoint is often a *different product* than the one the app uses
+   (MiniMax Code talks to `agent.minimax.io/mavis/api/v1/llm/v1/messages`
+   with a managed `mmoat_…` token, while the documented Anthropic-compatible
+   endpoint `api.minimax.io/anthropic` bills a platform API key). Read the
+   app's own code/config: the endpoint, the auth scheme and the placeholder
+   headers are all there.
+2. **Capture the raw request bytes, not just DevTools headers.** Point the
+   real client at a local TLS sink and keep the bytes: request line, header
+   order, header casing, body field order. Go canonicalizes and re-sorts
+   headers, so a profile without `http1_wire_order` will not match.
+3. **Pick the transport profile from the client stack**, not from a habit:
+   a Node/undici client is BoringSSL — `tls_client_hello: "node_24"`,
+   ALPN `http/1.1` only, HTTP/1.1. Browser profiles do not apply.
+4. **Write the profile with `http1_wire_order: true` and
+   `wire_header_order: [...]`** listing the captured names in the captured
+   order and casing. Keep secrets out: the profile holds static identity,
+   the token is set per request.
+5. **Verify on the stand** (`/fp`): JA3/JA4, ALPN and HTTP version must match
+   the real client, and the raw request block must match byte for byte
+   (same `content-length`).
+6. **Verify the business path**: a real request through the mimic client must
+   return the same status and payload the app gets.
+
+Full measured case: `docs/minimax-agent-gateway.ru.md`,
+`examples/minimax-agent-gateway/`.
+
 ## Known limits (do not overclaim)
 
 - HTTP/2 frame shape (SETTINGS/WINDOW_UPDATE values and order) is Go's
   `x/net/http2` default, not the browser's. Sites fingerprinting h2 frames
   (Akamai-style) can still tell Go apart — roadmap.
 - Wire header order is Go's, not the browser's. Values and set are exact.
+  Closed for HTTP/1.1 profiles with `http1_wire_order` (the transport writes
+  the header block itself, in the captured order and casing); browser/h2
+  profiles still use Go's canonical write.
 - `accept-encoding` is left to Go (transparent gzip; browser value includes
   `br` which Go cannot decode).
 - JA4 here is the simplified in-repo variant (version token from

@@ -66,7 +66,7 @@ python3 ../../tools/parse_clienthello.py ch.json   # JA3/JA4 нашего Client
 - [Методология подгона сайта (скилл для ИИ)](../skill/SKILL.md)
 - [Как устроено, ограничения, роадмап](methodology.md)
 - [HANDOFF — проверенное состояние и остатки работ](../HANDOFF.md)
-- [Пример vk.ru](../examples/vk-ru/) · [Пример stream.wb.ru](../examples/stream-wb-ru/) · [Пробник для стенда](../examples/stand-probe/)
+- [Пример vk.ru](../examples/vk-ru/) · [Пример stream.wb.ru](../examples/stream-wb-ru/) · [Пример управляемого шлюза MiniMax](../examples/minimax-agent-gateway/) · [Пробник для стенда](../examples/stand-probe/)
 
 ## Честные ограничения
 
@@ -74,6 +74,8 @@ python3 ../../tools/parse_clienthello.py ch.json   # JA3/JA4 нашего Client
 Значения и состав заголовков точны, порядок на проводе и фрейминг HTTP/2
 SETTINGS — гошные; QUIC/DTLS не покрыты — подробности в
 [methodology.md](methodology.md). JS-челленджи антиботов сознательно вне
-скоупа.
+скоупа. Порядок заголовков на проводе воспроизводится только в режиме
+`http1_wire_order` (профили Node/HTTP-1.1), см.
+[minimax-agent-gateway.ru.md](minimax-agent-gateway.ru.md).
 
 Лицензия MIT. Не аффилировано с VK и Wildberries.
