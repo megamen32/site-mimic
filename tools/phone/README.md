@@ -41,6 +41,11 @@ Two rules carry the whole thing:
    (zygote forks with its own namespace view). Bind-mount into the zygote
    namespace instead — every app forked afterwards inherits the CA view.
 
+On networks that hijack DNS (some office routers) add
+`iptables -t nat -A OUTPUT -p udp --dport 53 -j DNAT --to-destination 1.1.1.1`
+(and the same for TCP/53) — not needed when the capture host is reached over
+a VPN.
+
 ## Step by step
 
 ### 0. Get onto the device
