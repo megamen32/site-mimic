@@ -51,6 +51,9 @@ var errNoH2 = errors.New("mimic: server did not negotiate h2 via ALPN")
 // "node_24" (custom spec for the Node.js 24 / Electron 42 ClientHello —
 // BoringSSL shape, ALPN http/1.1 only; wire reference JA4
 // t13d1812h1_5d04281c6031_ef7df7f74e48; resolved through newUConn),
+// "max_app" / "max_app_psk" (custom spec for the MAX messenger app —
+// Conscrypt/OkHttp shape, no ALPN at all, 17 cipher suites; wire reference
+// JA4 t13d171100_5b57614c22b0_40271e0a5736; resolved through newUConn),
 // "firefox_auto", "ios_auto", "random", "random_alpn".
 func ParseClientHelloID(name string) (utls.ClientHelloID, error) {
 	switch name {
@@ -58,6 +61,8 @@ func ParseClientHelloID(name string) (utls.ClientHelloID, error) {
 		return utls.HelloChrome_Auto, nil
 	case node24HelloName:
 		return node24HelloID(), nil
+	case maxAppHelloName, maxAppPSKHelloName:
+		return maxAppHelloID(), nil
 	case "firefox_auto":
 		return utls.HelloFirefox_Auto, nil
 	case "ios_auto":
@@ -67,7 +72,7 @@ func ParseClientHelloID(name string) (utls.ClientHelloID, error) {
 	case "random_alpn":
 		return utls.HelloRandomizedALPN, nil
 	default:
-		return utls.ClientHelloID{}, fmt.Errorf("mimic: unknown tls_client_hello %q (want chrome_auto, chrome_152, node_24, firefox_auto, ios_auto, random, random_alpn)", name)
+		return utls.ClientHelloID{}, fmt.Errorf("mimic: unknown tls_client_hello %q (want chrome_auto, chrome_152, node_24, max_app, max_app_psk, firefox_auto, ios_auto, random, random_alpn)", name)
 	}
 }
 

@@ -104,13 +104,17 @@ func node24Spec() (*utls.ClientHelloSpec, error) {
 // node24HelloName is the profile value that selects the Node 24 ClientHello.
 const node24HelloName = "node_24"
 
-// clientHelloIsHTTP1Only reports whether the named ClientHello only offers
-// "http/1.1" over ALPN. Such a client never negotiates h2, so the transport
-// must speak HTTP/1.1 from the first connection instead of probing h2 and
-// falling back — the probe would double the handshakes and put a second
-// ClientHello on the wire.
+// clientHelloIsHTTP1Only reports whether the named ClientHello cannot
+// negotiate HTTP/2 over ALPN. Such a client never negotiates h2, so the
+// transport must speak HTTP/1.1 from the first connection instead of probing
+// h2 and falling back — the probe would double the handshakes and put a
+// second ClientHello on the wire.
+//
+// Two shapes qualify: the Node stack offers "http/1.1" only, and the MAX app
+// stack offers no ALPN extension at all (Conscrypt/OkHttp never sends one) —
+// both end up on HTTP/1.1.
 func clientHelloIsHTTP1Only(name string) bool {
-	return name == node24HelloName
+	return name == node24HelloName || name == maxAppHelloName || name == maxAppPSKHelloName
 }
 
 // node24HelloID is the uTLS ID used for validity checks. The concrete spec
