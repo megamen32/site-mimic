@@ -104,10 +104,23 @@ func chrome152BaseSpec(withResumption bool) (utls.ClientHelloSpec, error) {
 	return spec, nil
 }
 
-// shuffleExtensions randomises the extension order per connection, keeping
-// pre_shared_key (0x0029) last as RFC 8446 requires. uTLS only shuffles its
-// built-in Chrome presets; a HelloCustom preset is written in spec order.
+// shuffleExtensions randomises the extension order per connection, the way
+// Chrome does — but not every extension moves. Chrome keeps a few of them
+// positionally invariant: the GREASE pair, the padding and pre_shared_key.
+// uTLS applies the same rule to its own Chrome presets
+// (utls.ShuffleChromeTLSExtensions); a HelloCustom preset is written in spec
+// order, so the rule has to be applied here.
+//
+// The rule comes from the wire, not from taste: in the real Chrome capture
+// (mimic/testdata/max_web_clienthello_chrome155.json) the GREASE extension
+// is the first one and the second GREASE the last, while 0xCA34 sits in the
+// middle — a GREASE floating in the middle of the list is a tell.
+//
+// uTLS only shuffles its built-in Chrome presets, so this function exists.
 func shuffleExtensions(exts []utls.TLSExtension) []utls.TLSExtension {
+	// The pre_shared_key extension has to stay last (RFC 8446 and uTLS's
+	// own assertion), so it is pulled out before the shuffle and put back
+	// at the end.
 	pskIdx := -1
 	for i, ext := range exts {
 		if _, ok := ext.(utls.PreSharedKeyExtension); ok {
@@ -124,11 +137,38 @@ func shuffleExtensions(exts []utls.TLSExtension) []utls.TLSExtension {
 		psk = exts[pskIdx]
 		exts = append(exts[:pskIdx], exts[pskIdx+1:]...)
 	}
-	rand.Shuffle(len(exts), func(i, j int) { exts[i], exts[j] = exts[j], exts[i] })
+
+	// Everything that must not move keeps its slot; the rest is permuted
+	// among the remaining slots.
+	movable := make([]utls.TLSExtension, 0, len(exts))
+	slots := make([]int, 0, len(exts))
+	for i, ext := range exts {
+		if positionallyInvariant(ext) {
+			continue
+		}
+		movable = append(movable, ext)
+		slots = append(slots, i)
+	}
+	rand.Shuffle(len(movable), func(i, j int) { movable[i], movable[j] = movable[j], movable[i] })
+	for k, slot := range slots {
+		exts[slot] = movable[k]
+	}
+
 	if pskIdx >= 0 {
 		exts = append(exts, psk)
 	}
 	return exts
+}
+
+// positionallyInvariant reports whether an extension must keep its place in
+// the hello, the way Chrome keeps it: the GREASE pair, the padding and
+// pre_shared_key.
+func positionallyInvariant(ext utls.TLSExtension) bool {
+	switch ext.(type) {
+	case *utls.UtlsGREASEExtension, *utls.UtlsPaddingExtension:
+		return true
+	}
+	return false
 }
 
 // newUConn builds a uTLS connection for the given profile hello name.
