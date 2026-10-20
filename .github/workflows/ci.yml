@@ -72,6 +72,26 @@ jobs:
           [ "$failed" -eq 0 ] || exit 1
           echo "committed binaries carry no builder paths"
 
+  # The capture scripts are shell, and a syntax error in one of them shows
+  # up only on the machine that runs it — which is exactly where it is least
+  # welcome. Parse every script the repository carries.
+  shell-syntax:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Every shell script parses
+        run: |
+          failed=0
+          for script in $(git ls-files '*.sh'); do
+            if ! bash -n "$script"; then
+              echo "::error file=$script::shell syntax error"
+              failed=1
+            fi
+          done
+          [ "$failed" -eq 0 ] || exit 1
+          echo "all shell scripts parse"
+
   # Real-site canary: exactly ONE request to vk.ru per push to main
   # (rate-limited by design — no loops, no retries). May flake if vk.ru is
   # down; that is intended signal, not noise to paper over.
