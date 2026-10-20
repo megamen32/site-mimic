@@ -18,7 +18,7 @@ fully worked examples.
 | Client | JA4 (stand, pinned Chromium) | Result |
 |---|---|---|
 | uTLS `chrome_auto` | `t13d1516h2_8daaf6152771_d8a2da3f94cd` | 200 OK over HTTP/2; near-match (extension set differs) |
-| `chrome_exact` (delegates TLS to [headless-client](https://github.com/kulikov0/headless-client)) | `t13d1516h2_8daaf6152771_806a8c22fdea` | **byte-exact JA4 match with the browser** |
+| `chrome_exact` (delegates TLS to [headless-client](https://github.com/kulikov0/headless-client)) | `t13d1517h2_8daaf6152771_cb7bf5808d99` | **byte-exact JA4 match with the browser** (re-verified 2026-10-20, after the fork was synced with upstream) |
 | Real phone, Android Chrome **149** | `t13d1516h2_8daaf6152771_d8a2da3f94cd` ([phone reference](docs/phone-reference.md)) | mobile reference; `android_149` profile matches field-for-field |
 | Real phone Chrome **152** (updated 2026-09-01) | `t13d1518h2_8daaf6152771_e2d80978ab2e` — ML-DSA + 0xCA24 on mobile | newest mobile reference |
 | Desktop Chrome 152 stable | `t13d1517h2_8daaf6152771_cb7bf5808d99` | desktop 152 reference |

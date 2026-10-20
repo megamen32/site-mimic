@@ -4,6 +4,14 @@ State of this repository, what is already verified, and the ranked list of
 remaining work. Written 2026-08-30 after the first capture-stand comparison
 against `kulikov0/headless-client`.
 
+> **Dated snapshot.** Everything below describes the state of 2026-08-30 and
+> is kept as the research record. The live contract is the README table and
+> `mimic/exact_capture_test.go`: `chrome_exact` now answers
+> `t13d1517h2_8daaf6152771_cb7bf5808d99` (the fork was synced with upstream
+> on 2026-10-20; the value `806a8c22fdea` quoted here belongs to the older
+> Windows Chrome 151 capture, not to `chrome_exact`). The full by-platform
+> table lives in `docs/fingerprint-matrix.md`.
+
 ## Verified so far (2026-08-30)
 
 - `mimic` client works against the real sites: vk.ru returns 200 over
@@ -49,13 +57,13 @@ Findings:
 - The PcapDroid tun-side view DISTORTS L4 (`MSS=9960` is a tun-MTU artifact;
   a native 4G SYN carries ~1340-1420, and TTL crosses the radio leg
   decremented). Only a receiver-side capture shows the true bytes.
-- Phone-as-proxy leg is live: `com.gptadmin.cellularproxy` on the phone
+- Phone-as-proxy leg is live: a cellular-proxy app on the phone
   (HTTP CONNECT on :3126, reached via `adb forward tcp:3126 tcp:3126`;
   NOTE the service needs a UI launch — the exported-intent start is
   blocked, `am start-foreground-service` fails with not-exported). Our
   chrome_exact client through the phone reached vk.ru with 200 OK over
-  HTTP/2, and tls.peet.ws confirmed the egress IP is the phone's carrier
-  (178.176.77.182), not the host's.
+  HTTP/2, and tls.peet.ws confirmed the egress IP is the phone's carrier,
+  not the host's.
 - Still missing: receiver-side TTL/TCP-options truth for the full chain
   (our client → phone proxy → a byte-capturing endpoint). Needs a public
   byte-capturing target address (peet.ws shows TLS/h2 but not TTL).

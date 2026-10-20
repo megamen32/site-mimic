@@ -19,7 +19,7 @@ site-mimic — это проверенный в бою uTLS-транспорт �
 | Клиент | JA4 (стенд, закреплённый Chromium) | Результат |
 |---|---|---|
 | uTLS `chrome_auto` | `t13d1516h2_8daaf6152771_d8a2da3f94cd` | 200 OK по HTTP/2; почти-матч (набор расширений чуть отличается) |
-| `chrome_exact` (TLS делегирован [headless-client](https://github.com/kulikov0/headless-client)) | `t13d1516h2_8daaf6152771_806a8c22fdea` | **JA4 байт-в-байт совпадает с браузером** |
+| `chrome_exact` (TLS делегирован [headless-client](https://github.com/kulikov0/headless-client)) | `t13d1517h2_8daaf6152771_cb7bf5808d99` | **JA4 байт-в-байт совпадает с браузером** (перепроверено 2026-10-20, после синхронизации форка с upstream) |
 | Реальный телефон (Android Chrome 149, 4G) | тот же класс отпечатка: TLS 1.3, 16 шифров с GREASE, ALPN h2, шафл порядка расширений на каждое соединение | подтверждает десктопный эталон |
 
 Также проверено: `stream.wb.ru` отдаёт тот же 498-челлендж антибота `wbaas`,

@@ -17,7 +17,7 @@ site-mimic 打包了一套经过生产验证的 uTLS 传输层，以及让“浏
 | 客户端 | JA4（stand 固定版本 Chromium） | 结果 |
 |---|---|---|
 | uTLS `chrome_auto` | `t13d1516h2_8daaf6152771_d8a2da3f94cd` | 200 OK，HTTP/2；近似匹配（扩展集合略有差异） |
-| `chrome_exact`（TLS 委托给 [headless-client](https://github.com/kulikov0/headless-client)） | `t13d1516h2_8daaf6152771_806a8c22fdea` | **JA4 与浏览器逐字节一致** |
+| `chrome_exact`（TLS 委托给 [headless-client](https://github.com/kulikov0/headless-client)） | `t13d1517h2_8daaf6152771_cb7bf5808d99` | **JA4 与浏览器逐字节一致**（2026-10-20 重新验证，fork 已与 upstream 同步） |
 | 真实手机（Android Chrome 149，4G） | 同一指纹类别：TLS 1.3、含 GREASE 的 16 个密码套件、ALPN h2、每次连接随机化扩展顺序 | 证实了桌面参考基准 |
 
 另已验证：`stream.wb.ru` 返回与全新真实浏览器完全相同的 498 `wbaas`
