@@ -136,9 +136,9 @@ func rewriteSyn(pkt []byte) ([]byte, bool) {
 	}
 
 	out := make([]byte, 0, 20+20+len(newOpts))
-	out = append(out, pkt[:20]...)        // IP header
-	out = append(out, tcp[:20]...)        // fixed TCP header
-	out = append(out, newOpts...)         // reordered options
+	out = append(out, pkt[:20]...)                         // IP header
+	out = append(out, tcp[:20]...)                         // fixed TCP header
+	out = append(out, newOpts...)                          // reordered options
 	binary.BigEndian.PutUint16(out[2:4], uint16(len(out))) // IP total length
 	out[20+12] = byte((20+len(newOpts))/4) << 4            // TCP data offset
 

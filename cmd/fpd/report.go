@@ -1,8 +1,8 @@
 package main
 
 import (
-	"encoding/base64"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"

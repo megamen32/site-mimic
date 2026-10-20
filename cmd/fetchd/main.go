@@ -26,7 +26,6 @@
 package main
 
 import (
-	"sync/atomic"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -36,6 +35,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/megamen32/site-mimic/mimic"
