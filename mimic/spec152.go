@@ -25,10 +25,14 @@ const chrome152PSKPayloadHex = "00260020469f3e3d562016e08e28c5c53829047bf8871baf
 // Chrome 152 (wire reference t13d1517h2_8daaf6152771_cb7bf5808d99,
 // re-verified on the live stand 2026-09-02): the HelloChrome_Auto layout
 // plus post-quantum signature algorithms (ML-DSA-44/65/87 behind a GREASE
-// value) and the 0xCA34 extension. Chrome A/Bs the pre_shared_key part of
-// yesterday's experiment on and off per connection; the dominant public
-// shape today carries no PSK on a fresh full handshake — chrome_152_psk
-// keeps the 18-extension variant for when it returns.
+// value) and the 0xCA34 extension.
+//
+// The pre_shared_key part is not hard-coded here: the spec carries uTLS's
+// managed placeholder, which is filled from the session cache when the
+// client holds a ticket for the host and concealed (OmitEmptyPsk) when it
+// does not. That is the browser's A/B: the dominant public shape today
+// carries no PSK on a fresh full handshake, and a resuming hello carries
+// 0x0029 last with a binder computed over that hello.
 func chrome152Spec() (*utls.ClientHelloSpec, error) {
 	spec, err := chrome152BaseSpec(true)
 	if err != nil {
@@ -40,6 +44,11 @@ func chrome152Spec() (*utls.ClientHelloSpec, error) {
 // chrome152PSKSpec is the 18-extension variant with pre_shared_key last
 // (t13d1518h2_8daaf6152771_e2d80978ab2e) observed 2026-09-01 and still
 // served to some connections on 2026-09-02.
+//
+// The payload is the captured one, so it is a ticket the server does not
+// know: the server answers with a full handshake, exactly like a browser
+// offering yesterday's ticket. For a real resumption use chrome_152 — its
+// binder is computed from the ticket the server actually issued.
 func chrome152PSKSpec() (*utls.ClientHelloSpec, error) {
 	spec, err := chrome152BaseSpec(false)
 	if err != nil {
@@ -55,10 +64,10 @@ func chrome152PSKSpec() (*utls.ClientHelloSpec, error) {
 	return &spec, nil
 }
 
-// chrome152BaseSpec builds the common 17-extension layout; withFakePSK adds
-// the utls-managed resumption placeholder (used by the fresh-handshake
+// chrome152BaseSpec builds the common 17-extension layout; withResumption
+// adds the utls-managed resumption placeholder (used by the fresh-handshake
 // variant, where real sessions make utls fill it).
-func chrome152BaseSpec(withFakePSK bool) (utls.ClientHelloSpec, error) {
+func chrome152BaseSpec(withResumption bool) (utls.ClientHelloSpec, error) {
 	spec, err := utls.UTLSIdToSpec(utls.HelloChrome_Auto)
 	if err != nil {
 		return spec, fmt.Errorf("mimic: chrome_152 base spec: %w", err)
@@ -86,11 +95,11 @@ func chrome152BaseSpec(withFakePSK bool) (utls.ClientHelloSpec, error) {
 		return spec, fmt.Errorf("mimic: chrome_152 0xCA34 payload: %w", err)
 	}
 	spec.Extensions = append(spec.Extensions, &utls.GenericExtension{Id: 0xCA34, Data: ca34})
-	if withFakePSK {
+	if withResumption {
 		// Resumption placeholder: utls fills it from the session cache when
 		// one exists; OmitEmptyPsk conceals it on full handshakes. Must be
 		// the only PSK-class extension and stay last (utls asserts both).
-		spec.Extensions = append(spec.Extensions, &utls.UtlsPreSharedKeyExtension{})
+		withResumptionPSK(&spec)
 	}
 	return spec, nil
 }
@@ -177,6 +186,25 @@ func newUConn(rawConn net.Conn, cfg *utls.Config, helloName string) (*utls.UConn
 	helloID, err := ParseClientHelloID(helloName)
 	if err != nil {
 		return nil, err
+	}
+	if helloID == utls.HelloChrome_Auto {
+		// The Chrome preset uTLS ships carries no pre_shared_key extension,
+		// so a client that speaks it never resumes: every connection is a
+		// full handshake, while a real Chrome resumes from the second one
+		// on. The managed placeholder restores the browser's A/B — no
+		// ticket yet means the extension is concealed and the hello stays
+		// the captured one, a ticket means a proper PSK offer with a
+		// binder computed over that hello.
+		spec, err := utls.UTLSIdToSpec(helloID)
+		if err != nil {
+			return nil, fmt.Errorf("mimic: %s base spec: %w", helloName, err)
+		}
+		withResumptionPSK(&spec)
+		uc := utls.UClient(rawConn, cfg, utls.HelloCustom)
+		if err := uc.ApplyPreset(&spec); err != nil {
+			return nil, fmt.Errorf("mimic: %s apply preset: %w", helloName, err)
+		}
+		return uc, nil
 	}
 	return utls.UClient(rawConn, cfg, helloID), nil
 }
