@@ -54,7 +54,7 @@ Windows и Android. Google выключил Finch-флаг за ночь. Выв
 | Обновить chrome_exact до 152 | форк `megamen32/headless-client` (9d1cd55): добавлен 0xCA34 рядом с ECH GREASE | на проводе JA4 = `t13d1517h2_8daaf6152771_cb7bf5808d99` == реальный Chrome 152 |
 | Пересобрать chrome_152 | спека под текущий доминантный вариант (17 exts, без PSK) + отдельный `chrome_152_psk` (18 exts) | оба варианта wire-verified на стенде |
 | «Живые» эталоны | `tools/canary.sh` — суточный канарей: триггерит реальный Chrome на Windows-машине, гоняет наши 3 варианта через стенд, сравнивает МНОЖЕСТВО JA4-вариантов реального браузера за день; расписание — ежедневно 12:00 (отчёт в Telegram) | первый же прогон поймал переключение варианта реального Chrome |
-| Session resumption | общий `utls.ClientSessionCache` + `OmitEmptyPsk` + `UtlsPreSharedKeyExtension`; chrome_exact возобновляет через upstream sessionCache | первое соединение — полный handshake (17 exts), второе — resumption с 0x0029 на проводе |
+| Session resumption | `mimic/resumption.go`: хранилище тикетов общее, но именованное по (идентичность профиля, сервер) — `scopedSessionCache`; `chrome_auto` (дефолт) и `max_app` получили управляемый плейсхолдер `pre_shared_key`; chrome_exact возобновляет через upstream sessionCache | первое соединение — полный handshake (17 exts), второе — resumption с 0x0029 на проводе; тикет не переходит между профилями (проверено в трёх направлениях) |
 | TCP SYN per-profile | `tools/win-netns.sh` + `tools/rawsyn`: изолированный netns (macvlan, свой LAN IP, без TCP timestamps, wscale 8, TTL 128) без изменения хостовых sysctl; NFQUEUE-демон `rawsyn` переставляет опции исходящего SYN в Windows-порядок с пересчётом контрольных сумм | на проводе SYN = `mss 1460,wscale 8,sackOK` — байт-в-байт как у реального Windows Chrome (стенд, 2026-09-02) |
 | QUIC 152 | `mimic.NewHTTP3` (`mimic/quic_spec.go`) — QUIC-спека Chrome 152: PQ-подписи 0x0904-0906 + 0xCA34, транспортные параметры — 94 измеренных байта Chrome | наш JA4 `q13d0311h3_55b375c5d22e_8dd94ab2d40e`: JA4_a и JA4_b совпадают с эталоном `7ae7f4a1bb73`, расходится JA4_c (нет ECH GREASE) |
 | accept-language | поле `accept_language` в профиле — подмена значения без правки таблиц заголовков | go test |
@@ -77,9 +77,13 @@ Windows и Android. Google выключил Finch-флаг за ночь. Выв
    рандомным ID) при сохранении 11-расширенной формы
    `q13d0311h3_55b375c5d22e_7ae7f4a1bb73` (tshark-verified: форма не
    уезжает в q13d0314h3).
-3. **TLS session resumption**: Chrome возвращает session tickets и
-   сокращает рукопожатия; наш клиент делает полный handshake каждый
-   раз. Антибот видит «все соединения — новые».
+3. ~~**TLS session resumption**~~ ЗАКРЫТО 2026-10-20: клиент возобновляет
+   сессию — тикет живёт в общем хранилище, но именован по (идентичность
+   профиля, сервер), поэтому тикет не переходит между профилями. Свежие
+   приветствия не сдвинулись; возобновлённые формы — захваченные
+   `e2d80978ab2e` (chrome_152) и `352634941f3a` (max_app). Открыто:
+   `node_24` (нет подтверждённой захватом возобновлённой формы) и
+   `firefox_auto`/`ios_auto`.
 4. **ECH**: реальный Chrome отправляет Encrypted Client Hello GREASE;
    поведение нашего стека — не разобрано до конца.
 5. **IP ID / DF / TOS паттерны** и прочие мелочи L3 — фиксируются

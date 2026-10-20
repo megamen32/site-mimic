@@ -29,6 +29,13 @@ set and its order, the IP TTL, and an optional resource plan that turns a
 single hit into a browser-like session. `mimic.New` takes options for the
 proxy, DNS pinning, TLS verification, dial timeout and SNI override.
 
+Sessions resume on their own: the client keeps TLS session tickets between
+connections, so the second connection to a host presents a real
+`pre_shared_key` offer instead of a fresh handshake. The ticket store is
+shared by every client of a profile — a browser keeps its tickets too — but
+namespaced per identity, so a ticket negotiated under one ClientHello is
+never offered under another.
+
 ### HTTP/3
 
 `mimic.NewHTTP3` is the same client on a QUIC wire: the same profile, the
