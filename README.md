@@ -70,6 +70,7 @@ new site with [skill/SKILL.md](skill/SKILL.md).
 
 ## Learn more
 
+- [How to use site-mimic: the ready-made profiles, Go and Python (EN)](docs/USAGE.md) · [(RU)](docs/USAGE.ru.md)
 - [Исследование простыми словами (RU)](docs/RESEARCH.ru.md)
 - [Статус мимикрии: что совпадает байт-в-байт, что нет (RU, 2026-09-02)](docs/RESEARCH-STATUS.ru.md)
 - [Fit-a-site methodology (AI-agent skill)](skill/SKILL.md)
@@ -78,6 +79,7 @@ new site with [skill/SKILL.md](skill/SKILL.md).
 - [vk.ru example](examples/vk-ru/) · [m.vk.ru mobile example](examples/vk-ru-mobile/) · [stream.wb.ru example](examples/stream-wb-ru/) · [MiniMax managed gateway example](examples/minimax-agent-gateway/) · [stand probe](examples/stand-probe/)
 - [Anti-bot boundary & cookie replay](docs/anti-bot.md) · [Desktop/phone JA4 references](docs/phone-reference.md) · [Safari on macOS wire reference](docs/safari-macos.md) · [MiniMax managed gateway vs the public Anthropic endpoint (RU)](docs/minimax-agent-gateway.ru.md)
 - [MAX app + web.max.ru: profiles taken off a rooted Android phone (RU)](docs/max-oneme.ru.md) · [Rooted-Android capture toolkit](tools/phone/README.md)
+- [Windows capture (real Chrome, real headers)](tools/win/README.md) · [Android emulator capture](tools/avd/README.md)
 - [Public capture receiver: fp.example.test](docs/receiver-stand.md)
 
 ## Honest limits

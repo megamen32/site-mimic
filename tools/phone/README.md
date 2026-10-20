@@ -9,10 +9,15 @@ root; the measured numbers live in `docs/max-oneme.ru.md`.
 
 | file | where it runs | what it does |
 | --- | --- | --- |
-| `setup_capture.sh` | on the phone (root) | iptables redirect of one uid's TCP + QUIC block, CA mount, and the full teardown (rules, forwarder, CA unmount) |
+| `setup_capture.sh` | on the phone (root) | iptables redirect of one uid's TCP + QUIC block, CA mount, and the full teardown (rules, forwarder, CA unmount **and CA files deleted**) |
 | `ca_mount.sh` | on the phone (root) | bind-mounts the mitmproxy CA into the conscrypt APEX view of zygote |
 | `mitm_capture_addon.py` | on the capture host | mitmproxy addon: writes ClientHello bytes and HTTP headers to JSONL |
 | `cdp_headers.py` | on your laptop | reads the browser's request headers over the DevTools protocol (no CA needed) |
+| `build_patched_apk.sh` | on your laptop | rebuilds the app with the capture CA embedded in **its own** trust config — the phone's system store stays clean |
+| `phone_ui_drive.sh` | on your laptop | drives the phone (tap, tap-by-node, screenshot, UI dump) so the capture is aligned with a known action |
+| `phone_ui_find.py` | on your laptop | finds a node in a uiautomator dump and prints its tap centre |
+| `tproxy_leg.sh` | on the phone | fallback capture leg over a reverse SSH tunnel, for a phone that is not on USB |
+| `capture_ignore_hosts.sh` | on the capture host | the hosts to tunnel instead of decrypting (those pin outside the app) |
 | `../cmd/tproxyfwd` | on the phone | transparent TCP → SOCKS5 forwarder (recovers the pre-REDIRECT destination) |
 | `../cmd/hello-tap` | on your laptop | plain TCP-level ClientHello tap — the cheap path when you only need JA3/JA4 |
 
@@ -170,12 +175,25 @@ s21-lease release <lease-id>
 ```
 
 `stop` removes both iptables rules (the TCP redirect and the UDP/443
-REJECT), kills the forwarder **and unmounts the CA bind-mount**. The unmount
-matters twice over: a left-over `REJECT` rule silently breaks QUIC for that
-uid, a left-over redirect sends its traffic into a dead forwarder, and a
-left-over CA in the zygote's mount namespace keeps a mitmproxy root in the
-system trust store of every app forked afterwards — on a shared phone that
-is a hole you do not want to leave open.
+REJECT), kills the forwarder, **unmounts the CA bind-mount and deletes the CA
+files**. The unmount matters twice over: a left-over `REJECT` rule silently
+breaks QUIC for that uid, a left-over redirect sends its traffic into a dead
+forwarder, and a left-over CA in the zygote's mount namespace keeps a
+mitmproxy root in the system trust store of every app forked afterwards — on
+a shared phone that is a hole you do not want to leave open. The CA *files*
+(`/data/local/tmp/*.0`) are removed for the same reason: a file on disk is a
+root waiting to be mounted again.
+
+```sh
+# a phone that is not on USB: the capture host must be reachable another way
+adb shell "su -c 'PKG=ru.oneme.app DNS_HIJACK=1 ADB_KEEPALIVE=1 \
+                   sh /data/local/tmp/setup_capture.sh start'"
+```
+
+* `DNS_HIJACK=1` — force DNS to 1.1.1.1 (routers that hijack DNS make the
+  app talk to the wrong host, and the capture looks like an app bug).
+* `ADB_KEEPALIVE=1` — accept inbound adb, which stock Android drops when
+  the USB host sleeps and which otherwise kills the capture mid-run.
 
 The CA mounts **stack**: every `start` adds another layer over
 `/apex/com.android.conscrypt/cacerts`, and a single `umount` only peels off
@@ -238,6 +256,59 @@ Two caveats, both important for the profile:
   `examples/profiles/`.
 * The websocket connection to the DevTools endpoint must not carry an
   `Origin` header — `websocket.create_connection(..., suppress_origin=True)`.
+
+## Driving the phone
+
+A capture is only worth something if the client did something. `adb shell
+input tap` is enough, but the coordinates break the moment the resolution
+or the app layout changes — so find the node instead of guessing:
+
+```sh
+export SERIAL=127.0.0.1:22221 OUT_DIR=/tmp/cap
+sh tools/phone/phone_ui_drive.sh wsize
+sh tools/phone/phone_ui_drive.sh shot before          # screenshot
+sh tools/phone/phone_ui_drive.sh uidump              # -> $OUT_DIR/ui.xml
+sh tools/phone/phone_ui_drive.sh tapid "button_play" # tap the node's centre
+sh tools/phone/phone_ui_drive.sh act "started playback"
+```
+
+`tapid` resolves the node by substring against a uiautomator dump and
+prefers clickable nodes (a container often carries the same text as the
+button inside it). Every action is appended to `$OUT_DIR/phone_actions.log`
+with a timestamp, so the capture and the actions can be correlated after
+the fact.
+
+## When the app pins the certificate
+
+Some apps pin their certificate and ignore the system store entirely. Two
+ways past it:
+
+1. **The patched APK** (`build_patched_apk.sh`) — the capture CA is embedded
+   in the app's *own* trust configuration, so the phone's system trust store
+   stays clean and nothing has to be mounted into zygote. The app must be
+   started by explicit component afterwards, because a re-signed build
+   breaks app-link verification.
+2. **A tunnel instead of a decryption** (`capture_ignore_hosts.sh`) — hosts
+   that pin outside the app bundle (an OIDC browser, Play services, an
+   obfuscated transport) are proxied but *not* decrypted:
+
+   ```sh
+   IGNORE_HOSTS=$(sh tools/phone/capture_ignore_hosts.sh)
+   mitmdump --mode socks5 --ignore-hosts "$IGNORE_HOSTS" ...
+   ```
+
+   Decrypting them anyway is what produces the "TLS handshake failed" spam
+   and the "we were MITM'd" telemetry. Do not put the target's own API hosts
+   in that list — a decrypted request to the host you are profiling is the
+   whole point.
+
+## The leg: adb reverse or SSH
+
+The normal leg is `adb reverse tcp:<port> tcp:<port>`, which needs a working
+USB/adb link. When the phone is on its own network, the capture host is
+reachable only if the phone dials it: `tproxy_leg.sh` raises a reverse SSH
+tunnel from the phone (Termux) and refuses to run while USB is attached, so
+the two legs never compete for the same port.
 
 ## Gotchas that cost time
 

@@ -20,6 +20,13 @@
 #   APP_UID     its uid; auto-detected from the package when possible
 #   SOCKS5      SOCKS5 upstream of the on-device forwarder (host:port)
 #   LISTEN_PORT local port of the forwarder (default 30886)
+#   DNS_HIJACK  set to 1 to force DNS to 1.1.1.1 (routers that hijack DNS
+#               break the capture; the app then resolves the wrong host)
+#   ADB_KEEPALIVE  set to 1 to keep the adb port reachable (some stock
+#               Android builds DROP inbound adb when the USB host sleeps)
+#   ADB_PORT    the adb port for ADB_KEEPALIVE (default 5555)
+#   PURGE_BINARIES  set to 1 to delete the forwarder binary and its log on
+#               stop (the CA files are always removed)
 #
 # Files that must exist on the device:
 #   /data/local/tmp/tproxyfwd   (build with: GOOS=linux GOARCH=arm64 \
@@ -31,6 +38,10 @@ ACTION="${1:-start}"
 PKG="${PKG:-ru.oneme.app}"
 LISTEN_PORT="${LISTEN_PORT:-30886}"
 SOCKS5="${SOCKS5:-127.0.0.1:1080}"
+DNS_HIJACK="${DNS_HIJACK:-0}"
+ADB_KEEPALIVE="${ADB_KEEPALIVE:-0}"
+ADB_PORT="${ADB_PORT:-5555}"
+PURGE_BINARIES="${PURGE_BINARIES:-0}"
 
 # The uid is the reliable selector: it also covers traffic of a browser
 # (com.android.chrome) and of helper processes of the app.
@@ -54,6 +65,16 @@ cleanup() {
     iptables -t nat -D OUTPUT -p tcp -m owner --uid-owner "$APP_UID" ! -d 127.0.0.0/8 -j REDIRECT --to-ports "$LISTEN_PORT" 2>/dev/null
     iptables -D OUTPUT -p udp -m owner --uid-owner "$APP_UID" --dport 443 -j REJECT 2>/dev/null
   fi
+  if [ "$DNS_HIJACK" = "1" ]; then
+    iptables -t nat -D OUTPUT -p udp --dport 53 -j DNAT --to-destination 1.1.1.1 2>/dev/null
+    iptables -t nat -D OUTPUT -p tcp --dport 53 -j DNAT --to-destination 1.1.1.1 2>/dev/null
+  fi
+  # leftovers of a TPROXY-based leg (an older capture shape) — harmless but
+  # they keep a fwmark route alive, so drop them too.
+  iptables -t mangle -D OUTPUT -m owner --uid-owner "$APP_UID" -p tcp -j MARK --set-mark 31/0x7f 2>/dev/null
+  iptables -t mangle -D PREROUTING -p tcp -m mark --mark 31/0x7f -j TPROXY --on-port "$LISTEN_PORT" --tproxy-mark 31/0x7f 2>/dev/null
+  ip rule del fwmark 31/0x7f table 100 2>/dev/null
+  ip route del local default dev lo table 100 2>/dev/null
   pkill -x tproxyfwd 2>/dev/null
 }
 
@@ -78,7 +99,17 @@ case "$ACTION" in
     cleanup
     echo "== CA bind-mount =="
     unmount_ca
-    echo CA_UNMOUNTED
+    echo "== CA files =="
+    # The CA must not survive the capture: a leftover <hash>.0 in
+    # /data/local/tmp is a mitm root waiting to be mounted again, and on a
+    # shared phone that is a hole you do not want to leave open.
+    rm -rf /data/local/tmp/cacerts 2>/dev/null
+    rm -f /data/local/tmp/*.0 2>/dev/null
+    echo "CA files left: $(ls /data/local/tmp/*.0 2>/dev/null | wc -l)"
+    if [ "$PURGE_BINARIES" = "1" ]; then
+      rm -f /data/local/tmp/tproxyfwd /data/local/tmp/tproxyfwd.log 2>/dev/null
+      echo "forwarder binary removed"
+    fi
     echo "== remaining rules for uid $APP_UID =="
     iptables -t nat -L OUTPUT -n -v | grep "owner --uid-owner $APP_UID" || echo "none"
     iptables -L OUTPUT -n -v | grep "owner --uid-owner $APP_UID" || echo "none"
@@ -99,6 +130,20 @@ case "$ACTION" in
     echo "== iptables =="
     iptables -t nat -A OUTPUT -p tcp -m owner --uid-owner "$APP_UID" ! -d 127.0.0.0/8 -j REDIRECT --to-ports "$LISTEN_PORT"
     iptables -A OUTPUT -p udp -m owner --uid-owner "$APP_UID" --dport 443 -j REJECT
+    if [ "$DNS_HIJACK" = "1" ]; then
+      # Some office routers hijack DNS for part of the zone. The app then
+      # talks to the wrong host and the capture looks like an app bug.
+      iptables -t nat -A OUTPUT -p udp --dport 53 -j DNAT --to-destination 1.1.1.1
+      iptables -t nat -A OUTPUT -p tcp --dport 53 -j DNAT --to-destination 1.1.1.1
+      echo "dns hijack: forced to 1.1.1.1"
+    fi
+    if [ "$ADB_KEEPALIVE" = "1" ]; then
+      # Stock Android DROPs inbound adb from non-loopback; when the USB host
+      # sleeps, adb dies mid-capture and the capture is lost.
+      iptables -C INPUT -p tcp --dport "$ADB_PORT" -j ACCEPT 2>/dev/null || \
+        iptables -I INPUT 1 -p tcp --dport "$ADB_PORT" -j ACCEPT
+      echo "adb keepalive: tcp/$ADB_PORT accepted"
+    fi
 
     echo "== forwarder =="
     chmod 700 /data/local/tmp/tproxyfwd

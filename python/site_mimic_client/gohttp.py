@@ -1,9 +1,14 @@
 """Minimal requests/httpx-style drop-in that routes HTTP through fetchd.
 
 CANONICAL COPY lives in this repo (site-mimic/python/site_mimic_client/gohttp.py),
-right next to the Go daemon it drives (cmd/fetchd). Mirrors in consumer
-repos are byte-copies produced by python/sync_to.sh; edit HERE, never in
-the mirror.
+right next to the Go daemon it drives (cmd/fetchd). Consumer repos install
+it as a git dependency pinned to a tag — there is no file copy to drift:
+
+    pip install "git+https://github.com/megamen32/site-mimic.git@python-vX.Y.Z#subdirectory=python"
+
+To change this file: edit it HERE, bump `version` in python/pyproject.toml,
+tag the commit, and re-pin the tag in the consumer. Never patch an installed
+copy — the next reinstall silently reverts it.
 
 Why: some CDN edges reject the stock Python TLS fingerprint while the
 Go uTLS transport (mimic, Chrome ClientHello) passes. This module is the
@@ -12,7 +17,7 @@ source of truth: the fetchd daemon.
 
 Usage (drop-in for the common requests calls):
 
-    import shared.gohttp as gohttp
+    from site_mimic_client import gohttp
 
     resp = gohttp.get("https://example.com/api/...", headers={...}, cookies={...})
     resp.raise_for_status()
@@ -55,8 +60,28 @@ def _daemon_url() -> str:
 
 
 def _site_mimic_dir() -> Path:
-    """Return the site-mimic checkout used to build/spawn fetchd."""
-    return Path(os.environ.get("SITE_MIMIC_DIR", str(Path.home() / "PycharmProjects" / "site-mimic")))
+    """Return the site-mimic checkout used to build/spawn fetchd.
+
+    Resolution order:
+      1. SITE_MIMIC_DIR (explicit, always wins);
+      2. a checkout this module is running from — walk up from __file__
+         until a directory with cmd/fetchd appears;
+      3. ~/site-mimic.
+
+    There is no machine-specific default baked in: a hard-coded path to one
+    developer's home directory is not a default, it is a bug waiting for the
+    next person who clones the repo elsewhere.
+    """
+    env_dir = os.environ.get("SITE_MIMIC_DIR")
+    if env_dir:
+        return Path(env_dir)
+
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        if (parent / "cmd" / "fetchd").is_dir():
+            return parent
+
+    return Path.home() / "site-mimic"
 
 
 def _daemon_binary() -> Path:
