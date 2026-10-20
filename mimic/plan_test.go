@@ -1,6 +1,7 @@
 package mimic
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -184,4 +185,31 @@ func TestRunPlanSessionConditionalRevalidation(t *testing.T) {
 			t.Fatalf("after validator-less 200s the entries must be dropped, request %d: %q", i, s)
 		}
 	}
+}
+
+// TestPageCacheIsSafeForConcurrentUse guards the session cache against a
+// data race: the entries map was written from store and read from
+// applyValidators with no lock, and a cache shared between sessions — the
+// exported type does not say it is single-goroutine — could hit Go's fatal
+// "concurrent map writes".
+//
+// The race detector finds it; without -race this test only checks that
+// nothing panics.
+func TestPageCacheIsSafeForConcurrentUse(t *testing.T) {
+	cache := NewPageCache()
+	var wg sync.WaitGroup
+	for worker := 0; worker < 8; worker++ {
+		wg.Add(1)
+		go func(worker int) {
+			defer wg.Done()
+			for i := 0; i < 64; i++ {
+				key := fmt.Sprintf("key-%d", i%7)
+				h := http.Header{}
+				h.Set("ETag", fmt.Sprintf("\"%d-%d\"", worker, i))
+				cache.applyValidators(h, key)
+				cache.store(key, h)
+			}
+		}(worker)
+	}
+	wg.Wait()
 }

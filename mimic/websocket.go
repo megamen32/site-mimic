@@ -56,7 +56,9 @@ func DialWebSocket(ctx context.Context, p Profile, rawURL string, opts ...Option
 
 	tcpDialer := applyTTL(chromeDialer(o.dialTimeout), effectiveTTL(o, p))
 	dialer.NetDialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
-		return dialUnderProxy(ctx, tcpDialer, o.proxyURL, network, addr)
+		// A pinned resolve applies to the WebSocket path too: only the
+		// address changes, the host stays the name that goes into the SNI.
+		return dialUnderProxy(ctx, tcpDialer, o.proxyURL, network, o.resolveAddr(addr))
 	}
 
 	if p.TLSClientHello == "chrome_exact" {

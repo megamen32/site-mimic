@@ -74,10 +74,44 @@ type fetchResponse struct {
 var (
 	mu      sync.Mutex
 	clients = map[string]*http.Client{}
+	// clientOrder remembers the insertion order of the pooled clients, so
+	// the oldest can be dropped when the pool grows past its bound. Without
+	// a bound the daemon would hold one client — its connections and its
+	// goroutines — for every distinct profile it ever saw.
+	clientOrder []string
 )
 
-// clientFor caches one mimic client per (profile, proxy, resolve) triple so
-// connections pool across calls instead of dialing per request.
+// maxPooledClients bounds the pooled clients. The pool exists so repeated
+// calls with the same profile reuse connections, not to keep every profile
+// the daemon has ever served alive.
+const maxPooledClients = 32
+
+// poolClient stores a client in the pool, dropping the oldest one when the
+// pool is full.
+func poolClient(key string, client *http.Client) {
+	if _, ok := clients[key]; !ok {
+		clientOrder = append(clientOrder, key)
+	}
+	clients[key] = client
+	for len(clientOrder) > maxPooledClients {
+		oldest := clientOrder[0]
+		clientOrder = clientOrder[1:]
+		old, ok := clients[oldest]
+		if !ok {
+			continue
+		}
+		delete(clients, oldest)
+		old.CloseIdleConnections()
+	}
+}
+
+// clientFor caches one mimic client per (profile, proxy, resolve, timeout)
+// tuple so connections pool across calls instead of dialing per request.
+//
+// The timeout belongs in the key: it is a per-request parameter of the
+// contract, and the client's timeout is fixed at creation. Without it in the
+// key the first call would decide the timeout of every later call — a
+// request asking for 10 s would be cut off after the 1 s of an earlier one.
 func clientFor(req fetchRequest) (*http.Client, error) {
 	resolveKey := ""
 	keys := make([]string, 0, len(req.Resolve))
@@ -88,7 +122,11 @@ func clientFor(req fetchRequest) (*http.Client, error) {
 	for _, h := range keys {
 		resolveKey += h + "=" + req.Resolve[h] + ","
 	}
-	cacheKey := req.Profile + "|" + req.Proxy + "|" + resolveKey
+	timeout := 30 * time.Second
+	if req.TimeoutS > 0 {
+		timeout = time.Duration(req.TimeoutS * float64(time.Second))
+	}
+	cacheKey := req.Profile + "|" + req.Proxy + "|" + resolveKey + "|" + timeout.String()
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -106,16 +144,12 @@ func clientFor(req fetchRequest) (*http.Client, error) {
 	if len(req.Resolve) > 0 {
 		opts = append(opts, mimic.WithResolve(req.Resolve))
 	}
-	timeout := 30 * time.Second
-	if req.TimeoutS > 0 {
-		timeout = time.Duration(req.TimeoutS * float64(time.Second))
-	}
 	client, err := mimic.New(profile, opts...)
 	if err != nil {
 		return nil, err
 	}
 	client.Timeout = timeout
-	clients[cacheKey] = client
+	poolClient(cacheKey, client)
 	return client, nil
 }
 

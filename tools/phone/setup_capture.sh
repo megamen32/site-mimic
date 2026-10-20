@@ -69,6 +69,11 @@ cleanup() {
     iptables -t nat -D OUTPUT -p udp --dport 53 -j DNAT --to-destination 1.1.1.1 2>/dev/null
     iptables -t nat -D OUTPUT -p tcp --dport 53 -j DNAT --to-destination 1.1.1.1 2>/dev/null
   fi
+  # The adb keepalive rule is an inbound ACCEPT — it must not survive the
+  # capture: the phone is a shared device and the rule outlives the work.
+  if [ "$ADB_KEEPALIVE" = "1" ]; then
+    iptables -D INPUT -p tcp --dport "$ADB_PORT" -j ACCEPT 2>/dev/null
+  fi
   # leftovers of a TPROXY-based leg (an older capture shape) — harmless but
   # they keep a fwmark route alive, so drop them too.
   iptables -t mangle -D OUTPUT -m owner --uid-owner "$APP_UID" -p tcp -j MARK --set-mark 31/0x7f 2>/dev/null

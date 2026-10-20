@@ -41,7 +41,7 @@ var errNoH2 = errors.New("mimic: server did not negotiate h2 via ALPN")
 // identical JA4 t13d1516h2_8daaf6152771_d8a2da3f94cd and per-connection
 // extension shuffling; see docs/phone-reference.md), "chrome_152" (custom
 // spec for current stable Chrome 152: post-quantum signature algorithms +
-// extension 0xCA24 — wire reference t13d1517h2_8daaf6152771_cb7bf5808d99;
+// extension 0xCA34 — wire reference t13d1517h2_8daaf6152771_cb7bf5808d99;
 // resolved through newUConn, the returned ID is only the spec base),
 // "node_24" (custom spec for the Node.js 24 / Electron 42 ClientHello —
 // BoringSSL shape, ALPN http/1.1 only; wire reference JA4
@@ -284,6 +284,21 @@ func chromeDialer(timeout time.Duration) *net.Dialer {
 	return &net.Dialer{Timeout: timeout, KeepAlive: -1}
 }
 
+// resolveAddr maps the host part of addr through the pinned resolve table,
+// keeping the port. Only the address we dial changes: the host stays the
+// name that goes into the SNI and into the certificate check.
+func (o transportOptions) resolveAddr(addr string) string {
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return addr
+	}
+	ip, ok := o.resolve[host]
+	if !ok {
+		return addr
+	}
+	return net.JoinHostPort(ip, port)
+}
+
 // dialProfileTLS opens a TLS connection that speaks the profile's
 // ClientHello. alpn, when set, replaces the ALPN list of the hello — the
 // WebSocket path needs "http/1.1" only, because the upgrade request is an
@@ -295,10 +310,7 @@ func dialProfileTLS(ctx context.Context, o transportOptions, p Profile, network,
 	if err != nil {
 		return nil, err
 	}
-	dialAddr := addr
-	if ip, ok := o.resolve[host]; ok {
-		dialAddr = net.JoinHostPort(ip, portOf(addr))
-	}
+	dialAddr := o.resolveAddr(addr)
 	rawConn, err := dialUnderProxy(ctx, dialer, o.proxyURL, network, dialAddr)
 	if err != nil {
 		return nil, err
@@ -380,7 +392,12 @@ func proxyConnect(ctx context.Context, dialer *net.Dialer, proxy *url.URL, host,
 	if err != nil {
 		return nil, fmt.Errorf("mimic: proxy dial %s: %w", proxy.Host, err)
 	}
-	_ = conn.SetDeadline(time.Now().Add(30 * time.Second))
+	// The CONNECT exchange shares the dial timeout: WithDialTimeout bounds
+	// the TCP dial + CONNECT + TLS handshake window, so a slow proxy must
+	// not be able to hold the connection open past it.
+	if dialer.Timeout > 0 {
+		_ = conn.SetDeadline(time.Now().Add(dialer.Timeout))
+	}
 	target := net.JoinHostPort(host, port)
 	req := "CONNECT " + target + " HTTP/1.1\r\nHost: " + target + "\r\n"
 	if proxy.User != nil {

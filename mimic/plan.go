@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 )
 
@@ -117,6 +118,10 @@ type cacheEntry struct {
 // produces a wire request, so verification stands keep seeing the full
 // session instead of silent cache hits.
 type PageCache struct {
+	// mu guards entries. A cache can be shared between sessions — the
+	// exported type does not say it is single-goroutine — and an unguarded
+	// map is a fatal "concurrent map writes" at the worst moment.
+	mu      sync.Mutex
 	entries map[string]cacheEntry
 }
 
@@ -132,6 +137,8 @@ func (c *PageCache) applyValidators(h http.Header, key string) {
 	if c == nil {
 		return
 	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	e, ok := c.entries[key]
 	if !ok {
 		return
@@ -152,6 +159,8 @@ func (c *PageCache) store(key string, h http.Header) {
 		return
 	}
 	e := cacheEntry{etag: h.Get("ETag"), lastMod: h.Get("Last-Modified")}
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if e.etag == "" && e.lastMod == "" {
 		delete(c.entries, key)
 		return

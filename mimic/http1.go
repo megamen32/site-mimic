@@ -106,12 +106,23 @@ func (rt *wireRoundTripper) RoundTrip(req *http.Request) (*http.Response, error)
 	}
 
 	br := bufio.NewReader(conn)
+	// The response read blocks on the socket, and neither the request context
+	// nor the client's timeout reaches it on its own: a stalled server would
+	// hang the caller forever and leak the connection. The deadline covers
+	// the header read and the body read that follows it, and a cancelled
+	// context (the client's timeout cancels it) unblocks the read by closing
+	// the connection.
+	if deadline, ok := ctx.Deadline(); ok {
+		_ = conn.SetDeadline(deadline)
+	}
+	stop := context.AfterFunc(ctx, func() { _ = conn.Close() })
 	resp, err := http.ReadResponse(br, req)
 	if err != nil {
+		stop()
 		_ = conn.Close()
 		return nil, fmt.Errorf("mimic: wire read response: %w", err)
 	}
-	resp.Body = &wireBody{ReadCloser: resp.Body, conn: conn}
+	resp.Body = &wireBody{ReadCloser: resp.Body, conn: conn, stop: stop}
 	return decodeWireResponse(resp), nil
 }
 
@@ -120,10 +131,16 @@ func (rt *wireRoundTripper) RoundTrip(req *http.Request) (*http.Response, error)
 type wireBody struct {
 	io.ReadCloser
 	conn net.Conn
+	// stop ends the context watcher that closes the connection when the
+	// request context is cancelled.
+	stop func() bool
 }
 
 func (b *wireBody) Close() error {
 	err := b.ReadCloser.Close()
+	if b.stop != nil {
+		b.stop()
+	}
 	if b.conn != nil {
 		_ = b.conn.Close()
 	}

@@ -1,11 +1,14 @@
 package mimic
 
 import (
+	"context"
+	"crypto/tls"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 // TestWireOrder_SecondRequestDoesNotPanic guards the resumption trap: a
@@ -96,5 +99,75 @@ func TestWireOrder_HeaderOrderAndCasing(t *testing.T) {
 	_ = resp.Body.Close()
 	if seen != "case-sensitive-value" {
 		t.Fatalf("header value: got %q", seen)
+	}
+}
+
+// TestWireOrder_HonoursTheRequestContext guards the deadlock of the wire
+// order transport: the response read blocked on the socket, and neither the
+// request context nor the client's timeout reached it. A server that
+// completes the handshake and then stalls kept the caller waiting forever,
+// and the connection leaked with it.
+//
+// The request must come back with an error once the context is done.
+func TestWireOrder_HonoursTheRequestContext(t *testing.T) {
+	// A TLS server that accepts the handshake and never answers.
+	certServer := httptest.NewTLSServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	certificate := certServer.TLS.Certificates[0]
+	certServer.Close()
+	ln, err := tls.Listen("tcp", "127.0.0.1:0", &tls.Config{
+		Certificates: []tls.Certificate{certificate},
+		NextProtos:   []string{"http/1.1"},
+	})
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	defer ln.Close()
+	go func() {
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			// Keep the connection open and silent.
+			go func() {
+				io.Copy(io.Discard, conn)
+			}()
+		}
+	}()
+
+	profile := Profile{
+		Name:            "node_24-stall",
+		TLSClientHello:  node24HelloName,
+		UserAgent:       "MiniMaxAgent",
+		HTTP1WireOrder:  true,
+		WireHeaderOrder: []string{"accept", "user-agent"},
+		Headers:         map[string]string{"accept": "application/json"},
+	}
+	client, err := New(profile, WithInsecureTLS())
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	defer client.CloseIdleConnections()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://"+ln.Addr().String()+"/", nil)
+	if err != nil {
+		t.Fatalf("request: %v", err)
+	}
+
+	done := make(chan error, 1)
+	go func() {
+		_, err := client.Do(req)
+		done <- err
+	}()
+
+	select {
+	case err := <-done:
+		if err == nil {
+			t.Fatal("the request succeeded against a server that never answered")
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("the request did not return: the context never reached the response read")
 	}
 }

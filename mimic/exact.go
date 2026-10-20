@@ -17,7 +17,12 @@ import (
 func newExactRoundTripper(o transportOptions, p Profile) (http.RoundTripper, error) {
 	dialer := applyTTL(chromeDialer(o.dialTimeout), effectiveTTL(o, p))
 	dialContext := func(ctx context.Context, network, addr string) (net.Conn, error) {
-		return dialUnderProxy(ctx, dialer, o.proxyURL, network, addr)
+		// The pinned resolve applies here too: the exact path is the one
+		// most often used, and a site whose edge host is hidden from public
+		// DNS must not be dialed by name. The SNI stays the hostname — the
+		// headless transport derives it from the address it was given, not
+		// from the address the connection actually went to.
+		return dialUnderProxy(ctx, dialer, o.proxyURL, network, o.resolveAddr(addr))
 	}
 	tlsRT := headless.ChromeWindows.Transport(headless.TLSOptions{
 		DialContext:        dialContext,
