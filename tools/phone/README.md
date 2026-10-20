@@ -176,6 +176,14 @@ adb shell "su -c 'PKG=ru.oneme.app sh /data/local/tmp/setup_capture.sh stop'"
 device-lease release <lease-id>
 ```
 
+**Only the certificate has to go.** That is the whole rule: the CA is a root
+of trust in the device's trust store, and the apps that read the store (bank
+and payment clients, anti-fraud SDKs) start failing on it — so the CA and
+its mounts are removed when a capture ends. Everything else may stay: the
+helper scripts, the forwarder binary, the logs. They trust nothing, they
+are re-pushable in a second, and on a shared phone they belong to whoever
+uses the device next.
+
 `stop` removes both iptables rules (the TCP redirect and the UDP/443
 REJECT), kills the forwarder, **unmounts the CA bind-mount and deletes the CA
 files**. The unmount matters twice over: a left-over `REJECT` rule silently
