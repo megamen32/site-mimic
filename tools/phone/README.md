@@ -84,15 +84,16 @@ a VPN.
 
 ### 0. Get onto the device
 
-The phone is a shared resource. Take a lease first (it is the only thing
-that keeps two agents from fighting over the same iptables rules). If your
-site wraps `adb` in a guard, the lease id is what the guard asks for:
+The phone is a shared resource. Reserve it with its owner before you touch
+it (it is the only thing that keeps two agents from fighting over the same
+iptables rules). How you reserve it is site-specific; whatever tool you use
+should hand you a reservation id, and if your site wraps `adb` in a guard
+that id is what the guard asks for:
 
 ```sh
-# whatever your site calls it — the point is that the device is reserved
-device-lease acquire --owner "$USER" --minutes 60 --purpose "capture <app> traffic"
-# -> lease id; export it and pass it to every adb call
-export LEASE_ID=<lease-id>
+# reserve the device with its owner (the exact command is site-specific)
+# -> reservation id; export it and pass it to every adb call
+export RESERVATION_ID=<reservation-id>
 ```
 
 Connect over adb (TCP link to the host that has the phone, or USB):
@@ -173,7 +174,7 @@ compute — not a third-party implementation's.
 ```sh
 adb shell "su -c 'PKG=ru.oneme.app sh /data/local/tmp/setup_capture.sh stop'"
 # -> CA_UNMOUNTED, CLEANED
-device-lease release <lease-id>
+# release the device reservation when the capture is done
 ```
 
 **Only the certificate has to go.** That is the whole rule: the CA is a root

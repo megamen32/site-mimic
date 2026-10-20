@@ -1,7 +1,11 @@
 # MiniMax: managed-шлюз против публичного Anthropic-эндпоинта
 
 Дата замеров: 2026-10-19, macOS arm64, MiniMax Code 3.1.4 (Electron 42.8.0,
-Node 24.18.0), стенд `test.auto-gram.ru` (fpd).
+Node 24.18.0), публичный стенд `test.auto-gram.ru` (fpd). Стенд — это
+опубликованная точка проверки: его собственный адрес и топология приватны,
+а воспроизвести такой же стенд локально можно по рецепту в
+`docs/receiver-stand.md` (LAN-вариант) — все замеры ниже получаются на нём
+точно так же.
 
 Вопрос, который закрывает этот документ: **чем отличается «просто curl к
 Anthropic-эндпоинту MiniMax» от запроса через приложение MiniMax Code** —
@@ -51,8 +55,8 @@ Code (`~/.minimax/auth/prod/en/mcode-public/auth.json`).
 
 ## Транспорт: curl против приложения
 
-Замер сделан на стенде `https://test.auto-gram.ru/fp` — он показывает то,
-что видит сервер.
+Замер сделан на публичном стенде `https://test.auto-gram.ru/fp` — он
+показывает то, что видит сервер.
 
 | Характеристика | curl 8.7.1 (macOS) | MiniMax Code (Node 24 / undici) | mimic (`node_24`) |
 |---|---|---|---|
@@ -148,6 +152,8 @@ MINIMAX_MANAGED_TOKEN=mmoat_… go run .
 
 # отпечаток транспорта: сравнить с приложением
 go run . -fingerprint https://test.auto-gram.ru/fp
+# любой свой стенд даёт тот же результат:
+# go run . -fingerprint https://<stand-host>/fp
 
 # raw ClientHello → JA3/JA4
 go run . -dump ch.json

@@ -80,6 +80,12 @@ func bpfTCPDst(port uint16) []unix.SockFilter {
 }
 
 func (s *sniffer) run() {
+	if s.iface == "" {
+		// No interface was named: the TTL/SYN probe stays off instead of
+		// failing on an empty interface name.
+		fmt.Println("fpd: sniffer: no interface given (-iface), the TTL/SYN probe is off")
+		return
+	}
 	ifi, err := net.InterfaceByName(s.iface)
 	if err != nil {
 		fmt.Printf("fpd: sniffer: interface %s: %v\n", s.iface, err)

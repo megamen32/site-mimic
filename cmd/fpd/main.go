@@ -50,7 +50,7 @@ func main() {
 	certFile := flag.String("cert", "/etc/letsencrypt/live/fp.example.test/fullchain.pem", "TLS certificate")
 	keyFile := flag.String("key", "/etc/letsencrypt/live/fp.example.test/privkey.pem", "TLS key")
 	upstream := flag.String("upstream", "http://127.0.0.1:8477", "receiver base URL for pass-through paths")
-	iface := flag.String("iface", "enp28s0f2np2", "WAN interface for the TTL/SYN sniffer")
+	iface := flag.String("iface", "", "WAN interface for the TTL/SYN sniffer (empty: no interface sniffer)")
 	sport := flag.Int("sport", 443, "client destination TCP port the TTL/SYN sniffer BPF filters on (must match -listen's port as seen by clients)")
 	selftest := flag.Bool("selftest", false, "run a local PPv2+TLS probe against -listen and print /fp")
 	flag.Parse()

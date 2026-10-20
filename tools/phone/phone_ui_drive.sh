@@ -21,7 +21,7 @@
 #   ADB       adb binary (default: adb)
 #   SERIAL    device serial (default: single attached device)
 #   OUT_DIR   where shots/dumps/logs go (default: ./phone-capture)
-#   LEASE_ID  lease id of the shared device, if your adb wrapper needs it
+#   RESERVATION_ID  reservation id of the shared device, if your adb wrapper needs it
 set -euo pipefail
 
 ADB=${ADB:-adb}

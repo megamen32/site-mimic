@@ -14,7 +14,9 @@
 # option ORDER stays the Linux kernel order (mss,sack,wscale vs Windows'
 # mss,wscale,sack). Per-connection order control needs raw-SYN — roadmap.
 set -euo pipefail
-IFACE=${IFACE:-enp28s0f2np2}
+# The interface to hang the macvlan off. Name the one you want:
+#   IFACE=eth0 tools/win-netns.sh up
+IFACE=${IFACE:?set IFACE to the interface the macvlan should hang off (e.g. IFACE=eth0)}
 NS=${NS:-mimic-win}
 NS_IP=${NS_IP:-198.51.100.150/24}
 GW=${GW:-198.51.100.1}
