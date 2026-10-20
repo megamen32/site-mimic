@@ -28,6 +28,36 @@ set and its order, the IP TTL, and an optional resource plan that turns a
 single hit into a browser-like session. `mimic.New` takes options for the
 proxy, DNS pinning, TLS verification, dial timeout and SNI override.
 
+### WebSocket
+
+`mimic.DialWebSocket` opens a WebSocket that carries the profile's identity:
+the same ClientHello, and an upgrade request in the shape the profile's
+client sends.
+
+```go
+conn, err := mimic.DialWebSocket(ctx, profile, "wss://example.com/socket")
+if err != nil { ... }
+defer conn.Close()
+
+_ = conn.WriteMessage(websocket.TextMessage, []byte("ping"))
+typ, data, err := conn.ReadMessage()
+```
+
+The connection type is `*websocket.Conn` from
+`github.com/megamen32/headless-client/websocket` — the vendored, Chrome
+patched build of the same client library.
+
+Two things are not obvious:
+
+* **The connection negotiates ALPN "http/1.1" only.** The upgrade request
+  is an HTTP/1.1 request, and a connection that became h2 could not carry
+  it. Chrome does the same. The rest of the ClientHello stays the captured
+  one.
+* **A browser and a native client send different headers on the upgrade.**
+  Chrome sends no client hints there and adds the cache headers it does
+  send; a native client profile keeps its own headers. The profile decides,
+  by its `tls_client_hello`.
+
 ### Python
 
 The Python side is one module, `site_mimic_client.gohttp`, that speaks to the
@@ -61,7 +91,7 @@ The client supervises the daemon: if `/healthz` is unreachable it starts
 | spec | client it imitates | wire reference (JA4) | notes |
 | --- | --- | --- | --- |
 | `chrome_auto` (default) | Chrome, auto-detected | `t13d1516h2_8daaf6152771_d8a2da3f94cd` | uTLS built-in |
-| `android_149` | Android Chrome 149 (S21) | same as above | mobile reference |
+| `android_149` | Android Chrome 149 | same as above | mobile reference |
 | `chrome_152` | Chrome 152 desktop / 155 mobile | `t13d1517h2_8daaf6152771_cb7bf5808d99` | custom spec: post-quantum signature algorithms + extension 0xCA24 |
 | `chrome_152_psk` | the same, with resumption | — | adds the PSK binder |
 | `node_24` | Node.js 24 / Electron 42 (BoringSSL) | `t13d1812h1_5d04281c6031_ef7df7f74e48` | ALPN `http/1.1` only |
@@ -124,6 +154,29 @@ it was captured) a resource plan. Load one with
 
 The full sequence, with the reasoning behind each step, is in
 [`skill/SKILL.md`](../skill/SKILL.md).
+
+## Borrowed from the headless client
+
+`github.com/megamen32/headless-client` is a dependency, not a copy: the
+transport of the `chrome_exact` profile, the WebSocket upgrade handshake and
+the Chrome header tables come from it.
+
+What we took:
+
+* the **WebSocket upgrade handshake** — its vendored `websocket` package
+  writes the upgrade request in Chrome's header order and verifies the
+  accept key;
+* the **Chrome WebSocket header table** (`DestWebSocket`): the cache
+  headers Chrome sends, the permessage-deflate offer, and the absence of
+  client hints on the upgrade;
+* the **TCP keep-alive behaviour**: Chrome sends no keep-alive probes and
+  neither do we. Go's dialer turns them on by default, so the interval is
+  negative — `mimic/keepalive_test.go` guards it, with a second test that
+  proves the guard can fail.
+
+What is still on the table: the QUIC and WebTransport dialers (Chrome's two
+QUIC ClientHellos, the WebTransport CONNECT header block), and the
+per-destination header tables beyond the four the library defines.
 
 ## Rules of the road
 

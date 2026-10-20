@@ -38,7 +38,7 @@ func TestReadProxyV2HeaderDirectConnection(t *testing.T) {
 	tlsFront := append([]byte{0x16, 0x03, 0x01}, bytes.Repeat([]byte{0xAA}, 20)...)
 	raw := bytes.NewReader(tlsFront)
 	br := bufio.NewReader(raw)
-	fallback := &net.TCPAddr{IP: net.ParseIP("192.168.2.4"), Port: 51234}
+	fallback := &net.TCPAddr{IP: net.ParseIP("192.0.2.4"), Port: 51234}
 	a, ok, err := readProxyV2Header(br, fallback)
 	if err != nil {
 		t.Fatalf("direct conn rejected: %v", err)
@@ -46,7 +46,7 @@ func TestReadProxyV2HeaderDirectConnection(t *testing.T) {
 	if ok {
 		t.Fatal("ok=true on a connection without the proxy signature")
 	}
-	if a.IP.String() != "192.168.2.4" || a.Port != 51234 {
+	if a.IP.String() != "192.0.2.4" || a.Port != 51234 {
 		t.Fatalf("fallback addr=%v:%d", a.IP, a.Port)
 	}
 	got, _ := br.ReadBytes(0)

@@ -42,7 +42,7 @@ var errNoH2 = errors.New("mimic: server did not negotiate h2 via ALPN")
 // Recognized names: "" / "chrome_auto" (default — tracks the latest Chrome
 // spec bundled with uTLS and is the right choice for most sites),
 // "android_149" (explicit alias of chrome_auto, wire-verified field-for-field
-// against a real Android Chrome 149 — Samsung S21 Ultra, m.vk.ru capture:
+// against a real Android Chrome 149 on a phone, m.vk.ru capture:
 // identical JA4 t13d1516h2_8daaf6152771_d8a2da3f94cd and per-connection
 // extension shuffling; see docs/phone-reference.md), "chrome_152" (custom
 // spec for current stable Chrome 152: post-quantum signature algorithms +
@@ -90,6 +90,18 @@ type transportOptions struct {
 	// for sites whose edge hosts have no public A records: the CDN edge
 	// IP serves them by SNI alone.
 	resolve map[string]string
+	// wsHeader carries extra headers for a WebSocket upgrade request
+	// (Origin, cookies, a subprotocol). It is only read by DialWebSocket.
+	wsHeader http.Header
+}
+
+// WithWebSocketHeader adds headers to the WebSocket upgrade request.
+// The upgrade request is written by the Chrome handshake writer, so the
+// headers keep Chrome's order. "Host", "Upgrade", "Connection",
+// "Sec-WebSocket-Key" and "Sec-WebSocket-Version" are set by the client
+// and cannot be overridden.
+func WithWebSocketHeader(header http.Header) Option {
+	return func(o *transportOptions) { o.wsHeader = header }
 }
 
 // WithProxy routes traffic through an HTTP CONNECT proxy
@@ -187,52 +199,8 @@ func New(p Profile, opts ...Option) (*http.Client, error) {
 	}
 	_ = helloID // only a validity check; newUConn resolves the actual client
 
-	dialer := applyTTL(&net.Dialer{Timeout: o.dialTimeout, KeepAlive: 30 * time.Second}, effectiveTTL(o, p))
 	dial := func(ctx context.Context, network, addr string, requireH2 bool) (net.Conn, error) {
-		host, _, err := net.SplitHostPort(addr)
-		if err != nil {
-			return nil, err
-		}
-		dialAddr := addr
-		if ip, ok := o.resolve[host]; ok {
-			dialAddr = net.JoinHostPort(ip, portOf(addr))
-		}
-		rawConn, err := dialUnderProxy(ctx, dialer, o.proxyURL, network, dialAddr)
-		if err != nil {
-			return nil, err
-		}
-		sni := host
-		if o.serverName != "" {
-			sni = o.serverName
-		}
-		cfg := &utls.Config{
-			ServerName:         sni,
-			InsecureSkipVerify: o.insecureTLS,
-			ClientSessionCache: clientSessionCache,
-			OmitEmptyPsk:       true,
-			// A ClientHelloSpec without a pre_shared_key extension (node_24,
-			// chrome_152) cannot carry a resumption ticket. uTLS panics in
-			// that case once the session cache holds a ticket for the host,
-			// so resumption is skipped instead — the hello stays exactly the
-			// captured one.
-			PreferSkipResumptionOnNilExtension: true,
-		}
-		uConn, err := newUConn(rawConn, cfg, p.TLSClientHello)
-		if err != nil {
-			_ = rawConn.Close()
-			return nil, fmt.Errorf("mimic: utls client for %s: %w", p.TLSClientHello, err)
-		}
-		_ = rawConn.SetDeadline(time.Now().Add(o.dialTimeout))
-		if err := uConn.HandshakeContext(ctx); err != nil {
-			_ = rawConn.Close()
-			return nil, fmt.Errorf("mimic: utls handshake to %s: %w", addr, err)
-		}
-		_ = rawConn.SetDeadline(time.Time{})
-		if requireH2 && uConn.ConnectionState().NegotiatedProtocol != "h2" {
-			_ = uConn.Close()
-			return nil, errNoH2
-		}
-		return uConn, nil
+		return dialProfileTLS(ctx, o, p, network, addr, requireH2, nil)
 	}
 
 	dialTLSH2 := func(ctx context.Context, network, addr string, _ *tls.Config) (net.Conn, error) {
@@ -308,6 +276,73 @@ func (rt *roundTripper) markH1Only(host string) {
 	rt.mu.Lock()
 	defer rt.mu.Unlock()
 	rt.h1Only[host] = true
+}
+
+// chromeDialer returns the TCP dialer with Chrome's TCP behaviour.
+//
+// The keep-alive probes are off: Chrome does not enable them, and a
+// connection that sends TCP keep-alive packets every 15 seconds is a
+// different client from one that never does. Go's default for a zero
+// KeepAlive is "on, every 15 seconds", so the interval has to be negative
+// to turn it off.
+func chromeDialer(timeout time.Duration) *net.Dialer {
+	return &net.Dialer{Timeout: timeout, KeepAlive: -1}
+}
+
+// dialProfileTLS opens a TLS connection that speaks the profile's
+// ClientHello. alpn, when set, replaces the ALPN list of the hello — the
+// WebSocket path needs "http/1.1" only, because the upgrade request is an
+// HTTP/1.1 request and a connection that became h2 could not carry it.
+// requireH2 rejects a connection whose server picked anything but h2.
+func dialProfileTLS(ctx context.Context, o transportOptions, p Profile, network, addr string, requireH2 bool, alpn []string) (net.Conn, error) {
+	dialer := applyTTL(chromeDialer(o.dialTimeout), effectiveTTL(o, p))
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return nil, err
+	}
+	dialAddr := addr
+	if ip, ok := o.resolve[host]; ok {
+		dialAddr = net.JoinHostPort(ip, portOf(addr))
+	}
+	rawConn, err := dialUnderProxy(ctx, dialer, o.proxyURL, network, dialAddr)
+	if err != nil {
+		return nil, err
+	}
+	sni := host
+	if o.serverName != "" {
+		sni = o.serverName
+	}
+	cfg := &utls.Config{
+		ServerName:         sni,
+		InsecureSkipVerify: o.insecureTLS,
+		ClientSessionCache: clientSessionCache,
+		OmitEmptyPsk:       true,
+		// A ClientHelloSpec without a pre_shared_key extension (node_24,
+		// chrome_152) cannot carry a resumption ticket. uTLS panics in
+		// that case once the session cache holds a ticket for the host,
+		// so resumption is skipped instead — the hello stays exactly the
+		// captured one.
+		PreferSkipResumptionOnNilExtension: true,
+	}
+	uConn, err := newUConn(rawConn, cfg, p.TLSClientHello)
+	if err != nil {
+		_ = rawConn.Close()
+		return nil, fmt.Errorf("mimic: utls client for %s: %w", p.TLSClientHello, err)
+	}
+	if len(alpn) > 0 {
+		narrowALPN(uConn, alpn)
+	}
+	_ = rawConn.SetDeadline(time.Now().Add(o.dialTimeout))
+	if err := uConn.HandshakeContext(ctx); err != nil {
+		_ = rawConn.Close()
+		return nil, fmt.Errorf("mimic: utls handshake to %s: %w", addr, err)
+	}
+	_ = rawConn.SetDeadline(time.Time{})
+	if requireH2 && uConn.ConnectionState().NegotiatedProtocol != "h2" {
+		_ = uConn.Close()
+		return nil, errNoH2
+	}
+	return uConn, nil
 }
 
 // dialUnderProxy dials addr, tunnelling through the configured CONNECT proxy

@@ -6,6 +6,7 @@
 > expects from a real browser — TLS ClientHello (JA3/JA4), ALPN, HTTP/2 and
 > the captured header set. Stock Go TLS is trivially distinguishable, and
 > ClientHello-level signatures are exactly what DPI middleboxes block first.
+> The same identity works over a WebSocket.
 
 site-mimic packages a production-proven uTLS transport plus the methodology
 that makes browser-fitting repeatable: an AI-agent skill that walks a new
@@ -18,7 +19,7 @@ fully worked examples.
 |---|---|---|
 | uTLS `chrome_auto` | `t13d1516h2_8daaf6152771_d8a2da3f94cd` | 200 OK over HTTP/2; near-match (extension set differs) |
 | `chrome_exact` (delegates TLS to [headless-client](https://github.com/kulikov0/headless-client)) | `t13d1516h2_8daaf6152771_806a8c22fdea` | **byte-exact JA4 match with the browser** |
-| Real phone (Samsung S21 Ultra) Chrome **149** | `t13d1516h2_8daaf6152771_d8a2da3f94cd` ([phone reference](docs/phone-reference.md)) | mobile reference; `android_149` profile matches field-for-field |
+| Real phone, Android Chrome **149** | `t13d1516h2_8daaf6152771_d8a2da3f94cd` ([phone reference](docs/phone-reference.md)) | mobile reference; `android_149` profile matches field-for-field |
 | Real phone Chrome **152** (updated 2026-09-01) | `t13d1518h2_8daaf6152771_e2d80978ab2e` — ML-DSA + 0xCA24 on mobile | newest mobile reference |
 | Desktop Chrome 152 stable | `t13d1517h2_8daaf6152771_cb7bf5808d99` | desktop 152 reference |
 | Windows Chrome 151 headed (AdGuard on) | `t13d1516h2_8daaf6152771_806a8c22fdea`, TTL 128 | `examples/vk-ru-windows` |

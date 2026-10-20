@@ -4,7 +4,7 @@ Tooling for taking a site-mimic profile off a real phone: the app's own
 ClientHello and headers (MAX / `ru.oneme.app` was the reference case) and the
 web version of the same service (`web.max.ru` in the phone browser).
 
-Everything here is proven end to end on a Samsung SM-G998B / Android 15 with
+Everything here is proven end to end on a rooted Android 15 phone with
 root; the measured numbers live in `docs/max-oneme.ru.md`.
 
 | file | where it runs | what it does |
@@ -43,7 +43,7 @@ and the first character of the address — mitmdump then reports
 the capture stays empty, and the error text points at DNS instead of at the
 encoder. `cmd/tproxyfwd/socks5_test.go` locks the wire format.
 
-Validated on a rooted S21 against `ru.oneme.app` on 2026-10-20 with this
+Validated on a rooted Android phone against `ru.oneme.app` on 2026-10-20 with this
 tooling: the capture reproduced the committed fingerprint exactly —
 JA3 md5 `fb1972c15d60b7be0427edfbd00affde`, JA4
 `t13d171100_5b57614c22b0_40271e0a5736`, 17 cipher suites, 11 extensions, no
@@ -85,19 +85,21 @@ a VPN.
 ### 0. Get onto the device
 
 The phone is a shared resource. Take a lease first (it is the only thing
-that keeps two agents from fighting over the same iptables rules):
+that keeps two agents from fighting over the same iptables rules). If your
+site wraps `adb` in a guard, the lease id is what the guard asks for:
 
 ```sh
-s21-lease acquire --owner "$USER" --minutes 60 --purpose "capture <app> traffic"
+# whatever your site calls it — the point is that the device is reserved
+device-lease acquire --owner "$USER" --minutes 60 --purpose "capture <app> traffic"
 # -> lease id; export it and pass it to every adb call
-export S21_LEASE_ID=<lease-id>
+export LEASE_ID=<lease-id>
 ```
 
 Connect over adb (TCP link to the host that has the phone, or USB):
 
 ```sh
-adb -s 127.0.0.1:22221 shell 'id'   # remote adb
-adb devices                        # local USB
+adb -s <host>:<port> shell 'id'   # remote adb
+adb devices                       # local USB
 ```
 
 ### 1. Find the uid and the package
@@ -148,7 +150,7 @@ mitmdump --mode socks5 --listen-host 0.0.0.0 --listen-port 31896 \
 
 ```sh
 adb push tools/phone/setup_capture.sh /data/local/tmp/setup_capture.sh
-adb shell "su -c 'PKG=ru.oneme.app SOCKS5=100.65.58.36:31896 \
+adb shell "su -c 'PKG=ru.oneme.app SOCKS5=<capture-host>:31896 \
                    sh /data/local/tmp/setup_capture.sh start'"
 # -> CA_MOUNTED, LISTENER_OK, SETUP_DONE
 ```
@@ -171,7 +173,7 @@ compute — not a third-party implementation's.
 ```sh
 adb shell "su -c 'PKG=ru.oneme.app sh /data/local/tmp/setup_capture.sh stop'"
 # -> CA_UNMOUNTED, CLEANED
-s21-lease release <lease-id>
+device-lease release <lease-id>
 ```
 
 `stop` removes both iptables rules (the TCP redirect and the UDP/443
@@ -264,7 +266,7 @@ input tap` is enough, but the coordinates break the moment the resolution
 or the app layout changes — so find the node instead of guessing:
 
 ```sh
-export SERIAL=127.0.0.1:22221 OUT_DIR=/tmp/cap
+export SERIAL=<host>:<port> OUT_DIR=/tmp/cap
 sh tools/phone/phone_ui_drive.sh wsize
 sh tools/phone/phone_ui_drive.sh shot before          # screenshot
 sh tools/phone/phone_ui_drive.sh uidump              # -> $OUT_DIR/ui.xml

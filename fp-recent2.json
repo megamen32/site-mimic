@@ -2,7 +2,7 @@
   {
     "time": "2026-09-10T00:03:06.670910123Z",
     "client": {
-      "ip": "192.168.2.1",
+      "ip": "192.0.2.1",
       "port": 59766,
       "proxy_note": "address from the haproxy proxy-v2 header (real client)"
     },
@@ -202,7 +202,7 @@
   {
     "time": "2026-09-10T00:03:04.800079455Z",
     "client": {
-      "ip": "192.168.2.1",
+      "ip": "192.0.2.1",
       "port": 59710,
       "proxy_note": "address from the haproxy proxy-v2 header (real client)"
     },
@@ -363,7 +363,7 @@
   {
     "time": "2026-09-10T00:03:04.741242511Z",
     "client": {
-      "ip": "192.168.2.1",
+      "ip": "192.0.2.1",
       "port": 59708,
       "proxy_note": "address from the haproxy proxy-v2 header (real client)"
     },
@@ -524,7 +524,7 @@
   {
     "time": "2026-09-10T00:02:55.554863574Z",
     "client": {
-      "ip": "192.168.2.1",
+      "ip": "192.0.2.1",
       "port": 59663,
       "proxy_note": "address from the haproxy proxy-v2 header (real client)"
     },
@@ -810,7 +810,7 @@
   {
     "time": "2026-09-09T23:24:45.241373483Z",
     "client": {
-      "ip": "192.168.2.1",
+      "ip": "192.0.2.1",
       "port": 56140,
       "proxy_note": "address from the haproxy proxy-v2 header (real client)"
     },

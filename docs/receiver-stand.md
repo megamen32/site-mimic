@@ -15,7 +15,7 @@ to this host yet — see "Remaining steps".
 
 ```
 client ──► Cloudflare edge (orange, TLS #1) ──► router :443 DNAT
-        ──► haproxy 192.168.2.100:443 (TCP, SNI router, PASSTHROUGH)
+        ──► haproxy 192.0.2.100:443 (TCP, SNI router, PASSTHROUGH)
         ├─ sni test.auto-gram.ru ──► fpd (Go, systemd fpd.service, 127.0.0.1:8478,
         │                               send-proxy-v2, TLS #2 = Go crypto/tls, h2)
         │                               └─ every path except /fp proxied to receiver
@@ -67,8 +67,8 @@ client ──► Cloudflare edge (orange, TLS #1) ──► router :443 DNAT
   client-side self-dump of the same profile (pipeline consistency).
 - External reachability: check-host.net nodes (DE/IR/RU) all got HTTP 200
   from `https://test.auto-gram.ru/capture` direct to `95.165.165.65` after
-  the DNS-only flip. The router DNAT `wan:443 → 192.168.2.100:443` was
-  verified live on OpenWRT (`root@192.168.2.1`, uci firewall) — no router
+  the DNS-only flip. The router DNAT `wan:443 → 192.0.2.100:443` was
+  verified live on OpenWRT (`root@192.0.2.1`, uci firewall) — no router
   changes were needed.
 - TLS/h2 through Cloudflare: peet.ws view of our `chrome_exact` client shows
   the Go `x/net/http2` SETTINGS fingerprint
@@ -116,7 +116,7 @@ client ──► Cloudflare edge (orange, TLS #1) ──► router :443 DNAT
    or, as a LAN fallback: enable Wi-Fi on the phone temporarily
    (`svc wifi enable`, restore `svc wifi disable` after) — the phone's
    TCP/IP stack (TTL/TCP options) is identical on Wi-Fi, only the radio path
-   differs. Then point Chrome at `https://192.168.2.100/capture` (the
+   differs. Then point Chrome at `https://192.0.2.100/capture` (the
    handshake completes on the default cert; the SYN/TCP layer is what we
    capture).
 3. **Capture (sudo, while the client runs):**
@@ -155,14 +155,14 @@ port >30000, no haproxy/DNS needed:
 # 1. self-signed cert for the stand
 openssl req -x509 -newkey rsa:2048 -nodes -days 2 \
   -subj "/CN=fp.example.test" \
-  -addext "subjectAltName=DNS:fp.example.test,IP:192.168.2.100" \
+  -addext "subjectAltName=DNS:fp.example.test,IP:192.0.2.100" \
   -keyout fpd-key.pem -out fpd-cert.pem
 
 # 2. receiver (upstream for pass-through paths) + fpd (root: AF_PACKET)
 go build -o bin/receiver ./cmd/receiver && go build -o bin/fpd ./cmd/fpd
 bin/receiver -listen 127.0.0.1:31778 -log receiver-access.jsonl &
 sudo env FPD_KEYLOG=$PWD/sslkeylog.txt bin/fpd \
-  -listen 192.168.2.100:31777 -cert fpd-cert.pem -key fpd-key.pem \
+  -listen 192.0.2.100:31777 -cert fpd-cert.pem -key fpd-key.pem \
   -iface enp28s0f2np2 -sport 31777 -upstream http://127.0.0.1:31778 &
 
 # 3. wire capture (independent ground truth for SYN/TTL/ClientHello)

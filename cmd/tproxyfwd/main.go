@@ -24,7 +24,7 @@
 // The forwarder is self-contained: it speaks SOCKS5 itself (no proxy
 // library), and the platform-specific getsockopt(SO_ORIGINAL_DST) call
 // lives in dst_linux.go so the command still builds on a macOS
-// workstation. Validated on a rooted S21 against ru.oneme.app on
+// workstation. Validated on a rooted Android phone against ru.oneme.app on
 // 2026-10-20: the capture reproduced the committed fingerprint (JA3 md5
 // fb1972c15d60b7be0427edfbd00affde) byte for byte.
 //

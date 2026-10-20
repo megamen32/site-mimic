@@ -1,6 +1,6 @@
 # MAX (ru.oneme.app) и web.max.ru: профили приложения и веба
 
-Дата замеров: 2026-10-19, Samsung SM-G998B (Android 15, root), приложение
+Дата замеров: 2026-10-19, рутованный телефон на Android 15, приложение
 MAX 26.35.1 (`ru.oneme.app`) и мобильный Chrome 155 на том же телефоне.
 Захват: `nat REDIRECT` → `tproxyfwd` → SOCKS5 → `mitmdump --mode socks5`
 (подробно — `tools/phone/README.md`).

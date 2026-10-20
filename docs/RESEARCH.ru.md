@@ -42,7 +42,7 @@
 
 | Устройство | Браузер | JA4 | TTL |
 |---|---|---|---|
-| Телефон Android (S21 Ultra) | Chrome 149 | `t13d1516h2_8daaf6152771_d8a2da3f94cd` | 64 |
+| Телефон Android | Chrome 149 | `t13d1516h2_8daaf6152771_d8a2da3f94cd` | 64 |
 | Тот же телефон после обновления | Chrome 152 | `t13d1518h2_8daaf6152771_e2d80978ab2e` | 64 |
 | Linux-компьютер | Chrome 152 | `t13d1517h2_8daaf6152771_cb7bf5808d99` | 64 |
 | Windows 11 | Chrome 151 (AdGuard ВКЛ) | `t13d1516h2_8daaf6152771_806a8c22fdea` | **128** |

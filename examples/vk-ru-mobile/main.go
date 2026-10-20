@@ -3,7 +3,7 @@
 // field-for-field against a real Android Chrome 149 — identical JA4
 // t13d1516h2_8daaf6152771_d8a2da3f94cd and per-connection extension
 // shuffling, see docs/phone-reference.md) and the header set captured from
-// a real Android Chrome 149 navigation on a phone (Samsung S21 Ultra,
+// a real Android Chrome 149 navigation on a phone (
 // mobile 4G). Expected result: HTTP 200 with the mobile welcome HTML.
 //
 // Unlike the desktop profiles, this one carries the browser's full

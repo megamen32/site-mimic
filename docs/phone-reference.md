@@ -25,7 +25,7 @@ python3 tools/ja4_from_pcap.py \
   ./captures/vk-site-mimic/probe.pcap
 ```
 
-## Mobile — Samsung S21 Ultra (SM-G998B), Android Chrome 149, mobile 4G
+## Mobile — a rooted Android phone, Chrome 149, mobile 4G
 
 Source: PCAPdroid pcap-file capture, `phone-vk.pcap` (Chrome navigated to
 m.vk.ru). Per-connection extension shuffling is why per-connection JA3 moves;

@@ -2,7 +2,7 @@
   {
     "time": "2026-09-09T23:24:45.241373483Z",
     "client": {
-      "ip": "192.168.2.1",
+      "ip": "192.0.2.1",
       "port": 56140,
       "proxy_note": "address from the haproxy proxy-v2 header (real client)"
     },

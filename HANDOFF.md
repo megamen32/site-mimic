@@ -19,7 +19,7 @@ against `kulikov0/headless-client`.
     `t13d1516h2_8daaf6152771_806a8c22fdea` — byte-exact match with the
     browser. VERIFIED on the stand.** This is now the recommended profile
     value.
-- Real-phone reference capture (Samsung S21 Ultra SM-G998B, Android Chrome
+- Real-phone reference capture (a rooted Android phone, Android Chrome
   149, mobile 4G, PcapDroid pcap + adb-reverse header logger):
   - Android Chrome header reference captured, exact order: Host,
     Connection, sec-ch-ua, sec-ch-ua-mobile, sec-ch-ua-platform,

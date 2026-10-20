@@ -27,6 +27,33 @@ resp, err := client.Get("https://example.com/")
 превращает один запрос в браузерную сессию. Опции `mimic.New` — прокси,
 пиннинг DNS, проверка TLS, таймаут соединения, подмена SNI.
 
+### WebSocket
+
+`mimic.DialWebSocket` открывает WebSocket с той же личностью, что и профиль:
+тот же ClientHello и апгрейд-запрос в форме, которую шлёт клиент профиля.
+
+```go
+conn, err := mimic.DialWebSocket(ctx, profile, "wss://example.com/socket")
+if err != nil { ... }
+defer conn.Close()
+
+_ = conn.WriteMessage(websocket.TextMessage, []byte("ping"))
+typ, data, err := conn.ReadMessage()
+```
+
+Тип соединения — `*websocket.Conn` из `github.com/megamen32/headless-client/websocket`
+(вендоренный и пропатченный под Chrome вариант того же клиента).
+
+Два момента, которые не видны сразу:
+
+* **Соединение договаривается только об ALPN `http/1.1`.** Апгрейд-запрос —
+  это HTTP/1.1-запрос, и соединение, ставшее h2, его не понесёт. Chrome
+  поступает так же. Остальной ClientHello остаётся захваченным.
+* **Браузер и нативный клиент шлют разные заголовки апгрейда.** Chrome не
+  шлёт client hints на апгрейде и добавляет свои cache-заголовки; профиль
+  нативного клиента сохраняет свои. Что именно — решает профиль, по полю
+  `tls_client_hello`.
+
 ### Python
 
 В Python всё делает один модуль — `site_mimic_client.gohttp`, он говорит с
@@ -60,7 +87,7 @@ print(r.status, r.text)
 | спека | кого имитирует | эталон на проводе (JA4) | примечания |
 | --- | --- | --- | --- |
 | `chrome_auto` (по умолчанию) | Chrome, автоопределение | `t13d1516h2_8daaf6152771_d8a2da3f94cd` | встроенная в uTLS |
-| `android_149` | мобильный Chrome 149 (S21) | тот же | мобильный эталон |
+| `android_149` | мобильный Chrome 149 | тот же | мобильный эталон |
 | `chrome_152` | Chrome 152 на десктопе / 155 на телефоне | `t13d1517h2_8daaf6152771_cb7bf5808d99` | своя спека: постквантовые алгоритмы подписи + расширение 0xCA24 |
 | `chrome_152_psk` | то же, но с resumption | — | добавляет PSK binder |
 | `node_24` | Node.js 24 / Electron 42 (BoringSSL) | `t13d1812h1_5d04281c6031_ef7df7f74e48` | ALPN только `http/1.1` |
@@ -122,6 +149,29 @@ print(r.status, r.text)
 
 Полная последовательность с обоснованием каждого шага — в
 [`skill/SKILL.md`](../skill/SKILL.md).
+
+## Что заимствовано у headless-клиента
+
+`github.com/megamen32/headless-client` — это зависимость, а не копия:
+транспорт профиля `chrome_exact`, хендшейк апгрейда WebSocket и таблицы
+заголовков Chrome приходят оттуда.
+
+Что взяли:
+
+* **хендшейк апгрейда WebSocket** — его вендоренный пакет `websocket`
+  пишет апгрейд-запрос в порядке заголовков Chrome и проверяет accept key;
+* **таблицу заголовков Chrome для WebSocket** (`DestWebSocket`): cache-заголовки,
+  которые Chrome шлёт, предложение permessage-deflate и отсутствие client
+  hints на апгрейде;
+* **поведение TCP keep-alive**: Chrome не шлёт keep-alive-пакеты — и мы
+  тоже. Дефолтный dialer Go их включает, поэтому интервал отрицательный;
+  сторожит это `mimic/keepalive_test.go`, а второй тест в нём доказывает,
+  что сторож вообще может упасть.
+
+Что осталось на столе: диалеры QUIC и WebTransport (два ClientHello, которые
+Chrome шлёт по QUIC, и CONNECT-заголовок WebTransport), и таблицы
+заголовков по назначению запроса за пределами четырёх, определённых
+библиотекой.
 
 ## Правила, без которых работа превращается в выдумку
 

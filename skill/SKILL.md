@@ -159,7 +159,7 @@ guessed from a browser profile. Full procedure and toolchain:
 
 ```sh
 # 0. the phone is a shared resource — take a lease first
-s21-lease acquire --owner "$USER" --minutes 60 --purpose "capture <app>"
+device-lease acquire --owner "$USER" --minutes 60 --purpose "capture <app>"
 
 # 1. capture host: SOCKS5 mitmproxy that records ClientHello bytes + headers
 mitmdump --mode socks5 --listen-host 0.0.0.0 --listen-port 31896 \
@@ -178,7 +178,7 @@ go run ./cmd/hellofp /tmp/capture.jsonl
 
 # 4. TEAR DOWN — the rules are per-uid and stay on the phone
 adb shell "su -c 'PKG=ru.oneme.app sh /data/local/tmp/setup_capture.sh stop'"
-s21-lease release <lease-id>
+device-lease release <lease-id>
 ```
 
 What matters and why (each of these cost a full capture attempt):

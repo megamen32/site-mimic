@@ -46,7 +46,7 @@ const maxAppPSKPayloadHex = "00d600d0a2c812bea6d88883a169d1d0dba074f0a57f7a5b6f8
 //     last. The rsa_pss_pss_* family (Chrome's post-quantum-capable set) is
 //     absent.
 //
-// Wire reference — MAX 26.35.1 on Samsung SM-G998B / Android 15, captured
+// Wire reference — MAX 26.35.1 on an Android 15 phone, captured
 // 2026-10-19 from the app's own connection to api2.oneme.ru:
 //
 //	JA3  771-4865,4866,4867,49195,49196,52393,49199,49200,52392,49161,49162,
