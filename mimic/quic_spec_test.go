@@ -2,7 +2,6 @@ package mimic
 
 import (
 	"context"
-	"encoding/binary"
 	"encoding/hex"
 	"strings"
 	"testing"
@@ -146,6 +145,17 @@ func TestChrome152QUICMatchesTCPSchemes(t *testing.T) {
 
 // TestChrome152QUICTransportParameters checks the transport parameters against
 // the values captured from a real Android Chrome QUIC hello.
+// TestChrome152QUICTransportParameters pins the transport parameters to the
+// bytes of a real Chrome 152.
+//
+// The expected values are written out as the hex they take on the wire, not
+// as references to the implementation's constants. The previous version of
+// this test compared the implementation against a copy of its own constants,
+// so it passed whatever both said — change a value and both sides moved
+// together. Here a changed value breaks the test.
+//
+// The values are the ones decoded from the phone capture, in the QUIC
+// variable-length encoding: 30000 is 80 00 75 30, 1472 is 45 c0, and so on.
 func TestChrome152QUICTransportParameters(t *testing.T) {
 	spec, err := chrome152QUICSpec()
 	if err != nil {
@@ -156,52 +166,108 @@ func TestChrome152QUICTransportParameters(t *testing.T) {
 		t.Fatal("no quic transport parameters extension")
 	}
 
-	varints := map[uint64]uint64{}
-	raw := map[uint64][]byte{}
-	for _, p := range params.TransportParameters {
-		raw[p.ID()] = p.Value()
-		if v, ok := decodeVarint(p.Value()); ok {
-			varints[p.ID()] = v
+	raw := params.TransportParameters.Marshal()
+	got := map[uint64]string{}
+	var greaseID uint64
+	for id, value := range decodeTransportParameters(t, raw) {
+		if isGREASETransportParamID(id) {
+			greaseID = id
+			continue
 		}
+		got[id] = hex.EncodeToString(value)
 	}
-	for id, want := range map[uint64]uint64{
-		0x01: quicChromeMaxIdleTimeoutMS,     // max_idle_timeout
-		0x03: quicChromeMaxUDPPayloadSize,    // max_udp_payload_size
-		0x04: quicChromeInitialMaxData,       // initial_max_data
-		0x05: quicChromeStreamWindow,         // initial_max_stream_data_bidi_local
-		0x06: quicChromeStreamWindow,         // initial_max_stream_data_bidi_remote
-		0x07: quicChromeStreamWindow,         // initial_max_stream_data_uni
-		0x08: quicChromeMaxStreamsBidi,       // initial_max_streams_bidi
-		0x09: quicChromeMaxStreamsUni,        // initial_max_streams_uni
-		0x20: quicChromeMaxDatagramFrameSize, // max_datagram_frame_size
-	} {
-		got, ok := varints[id]
+
+	want := map[uint64]string{
+		0x01:   "80007530",                 // max_idle_timeout = 30000 ms
+		0x03:   "45c0",                     // max_udp_payload_size = 1472
+		0x04:   "80f00000",                 // initial_max_data = 15 MiB
+		0x05:   "80600000",                 // initial_max_stream_data_bidi_local = 6 MiB
+		0x06:   "80600000",                 // initial_max_stream_data_bidi_remote = 6 MiB
+		0x07:   "80600000",                 // initial_max_stream_data_uni = 6 MiB
+		0x08:   "4064",                     // initial_max_streams_bidi = 100
+		0x09:   "4067",                     // initial_max_streams_uni = 103
+		0x0f:   "",                         // initial_source_connection_id — empty on purpose
+		0x11:   "0000000100000001dada2a0a", // version_information: chosen 1, available [1, GREASE]
+		0x20:   "80010000",                 // max_datagram_frame_size = 64 KiB
+		0x3128: "4f5249474543435049573258", // google_connection_options = "ORIGECCPIW2X"
+	}
+	if len(got) != len(want) {
+		t.Errorf("%d transport parameters, want %d (%v)", len(got), len(want), got)
+	}
+	for id, wantHex := range want {
+		gotHex, ok := got[id]
 		if !ok {
 			t.Errorf("transport parameter 0x%02x missing", id)
 			continue
 		}
-		if got != want {
-			t.Errorf("transport parameter 0x%02x = %d, want %d", id, got, want)
+		if gotHex != wantHex {
+			t.Errorf("transport parameter 0x%02x = %s, want %s", id, gotHex, wantHex)
 		}
 	}
-	if got := string(raw[quicChromeGoogleConnOptionsID]); got != string(quicChromeGoogleConnOptions) {
-		t.Errorf("google_connection_options = %q, want %q", got, quicChromeGoogleConnOptions)
-	}
-	// The version_information parameter (RFC 9368): the chosen version 1.
-	if got := raw[0x11]; len(got) < 4 || binary.BigEndian.Uint32(got[:4]) != 1 {
-		t.Errorf("version_information = %x, want chosen version 1", got)
-	}
+
 	// The GREASE transport parameter: a random id, the captured 6-byte value.
-	var greaseID uint64
-	for id := range raw {
-		if isGREASETransportParamID(id) {
-			greaseID = id
-		}
-	}
 	if greaseID == 0 {
 		t.Error("no GREASE transport parameter")
-	} else if got := raw[greaseID]; string(got) != string(quicChromeGREASEValue) {
-		t.Errorf("GREASE transport parameter value = %x, want %x", got, quicChromeGREASEValue)
+	} else if v := hex.EncodeToString(decodeTransportParameters(t, raw)[greaseID]); v != "7063534da942" {
+		t.Errorf("GREASE transport parameter value = %s, want 7063534da942", v)
+	}
+}
+
+// decodeTransportParameters reads a marshalled transport parameter list into
+// id -> value bytes.
+func decodeTransportParameters(t *testing.T, raw []byte) map[uint64][]byte {
+	t.Helper()
+	out := map[uint64][]byte{}
+	for pos := 0; pos < len(raw); {
+		id, n, ok := readVarint(raw[pos:])
+		if !ok {
+			t.Fatalf("truncated parameter id at %d", pos)
+		}
+		pos += n
+		length, n, ok := readVarint(raw[pos:])
+		if !ok {
+			t.Fatalf("truncated parameter length at %d", pos)
+		}
+		pos += n
+		if pos+int(length) > len(raw) {
+			t.Fatalf("parameter 0x%02x claims %d bytes, only %d left", id, length, len(raw)-pos)
+		}
+		out[id] = raw[pos : pos+int(length)]
+		pos += int(length)
+	}
+	return out
+}
+
+// readVarint reads a QUIC variable-length integer and returns its value and
+// the number of bytes it took.
+func readVarint(b []byte) (uint64, int, bool) {
+	if len(b) == 0 {
+		return 0, 0, false
+	}
+	switch b[0] >> 6 {
+	case 0:
+		return uint64(b[0]), 1, true
+	case 1:
+		if len(b) < 2 {
+			return 0, 0, false
+		}
+		return uint64(b[0]&0x3f)<<8 | uint64(b[1]), 2, true
+	case 2:
+		if len(b) < 4 {
+			return 0, 0, false
+		}
+		return uint64(b[0]&0x3f)<<24 | uint64(b[1])<<16 | uint64(b[2])<<8 | uint64(b[3]), 4, true
+	default:
+		if len(b) < 8 {
+			return 0, 0, false
+		}
+		// Big-endian accumulation, then drop the two length bits the
+		// marker occupies.
+		var v uint64
+		for i := 0; i < 8; i++ {
+			v = v<<8 | uint64(b[i])
+		}
+		return v & 0x3fffffffffffffff, 8, true
 	}
 }
 
@@ -289,28 +355,6 @@ func transportParameters(spec *utls.ClientHelloSpec) *utls.QUICTransportParamete
 		}
 	}
 	return nil
-}
-
-// decodeVarint decodes a QUIC variable-length integer.
-func decodeVarint(b []byte) (uint64, bool) {
-	if len(b) == 0 {
-		return 0, false
-	}
-	switch {
-	case b[0]>>6 == 0:
-		return uint64(b[0]), true
-	case b[0]>>6 == 1 && len(b) >= 2:
-		return uint64(b[0]&0x3f)<<8 | uint64(b[1]), true
-	case b[0]>>6 == 2 && len(b) >= 4:
-		return uint64(b[0]&0x3f)<<24 | uint64(b[1])<<16 | uint64(b[2])<<8 | uint64(b[3]), true
-	case b[0]>>6 == 3 && len(b) >= 8:
-		var v uint64
-		for i := 0; i < 8; i++ {
-			v = v<<8 | uint64(b[i])
-		}
-		return v, true
-	}
-	return 0, false
 }
 
 // isGREASETransportParamID reports whether the id is a GREASE transport

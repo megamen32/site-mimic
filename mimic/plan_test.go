@@ -13,15 +13,15 @@ import (
 // navigation-only headers; referer chains must resolve against the site.
 func TestStepRequestImageShape(t *testing.T) {
 	p := Profile{
-		Name:     "t",
+		Name:      "t",
 		UserAgent: "Mozilla/5.0 test",
 		Headers: map[string]string{
-			"Accept":                      "text/html,application/xhtml+xml",
-			"Sec-Fetch-Site":              "none",
-			"Sec-Fetch-User":              "?1",
-			"Upgrade-Insecure-Requests":   "1",
-			"Sec-Fetch-Dest":              "document",
-			"Sec-Fetch-Mode":              "navigate",
+			"Accept":                    "text/html,application/xhtml+xml",
+			"Sec-Fetch-Site":            "none",
+			"Sec-Fetch-User":            "?1",
+			"Upgrade-Insecure-Requests": "1",
+			"Sec-Fetch-Dest":            "document",
+			"Sec-Fetch-Mode":            "navigate",
 		},
 		HeaderOrder: []string{"User-Agent", "Accept"},
 	}
@@ -113,9 +113,9 @@ func TestRunPlanSessionConditionalRevalidation(t *testing.T) {
 	defer srv.Close()
 
 	p := Profile{
-		Name:     "t",
+		Name:      "t",
 		UserAgent: "Mozilla/5.0 test",
-		Headers:  map[string]string{"Accept": "text/html"},
+		Headers:   map[string]string{"Accept": "text/html"},
 		ResourcePlan: []ResourceStep{
 			{Path: "/", ResourceType: "document"},
 			{Path: "/logo.png", ResourceType: "image", Referer: "/"},

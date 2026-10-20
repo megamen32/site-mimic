@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strconv"
 	"time"
 
 	quic "github.com/refraction-networking/uquic"
@@ -22,8 +23,8 @@ import (
 //
 // The profile's headers are applied the same way as with New: build the
 // request with Profile.Request (or set the User-Agent yourself) and hand it
-// to the client. The client sets the profile's user agent when the request
-// carries none.
+// to the client. The client sets the profile's user agent and accept-language
+// when the request carries neither.
 //
 // The returned client's Transport is an io.Closer — close it to release the
 // UDP socket and the QUIC connections it holds.
@@ -71,7 +72,7 @@ func NewHTTP3(p Profile, opts ...Option) (*http.Client, error) {
 	urt := http3.GetURoundTripper(rt, spec, uTransport)
 	urt.Dial = http3Dialer(o, uTransport)
 	return &http.Client{
-		Transport: &http3Transport{rt: urt, ua: p.UserAgent},
+		Transport: &http3Transport{rt: urt, ua: p.UserAgent, acceptLanguage: p.AcceptLanguage},
 		Jar:       p.CookieJar,
 	}, nil
 }
@@ -113,7 +114,7 @@ func http3Dialer(o transportOptions, uTransport *quic.UTransport) func(context.C
 		if ip, ok := o.resolve[host]; ok {
 			host = ip
 		}
-		udpAddr, err := net.ResolveUDPAddr("udp", net.JoinHostPort(host, port))
+		udpAddr, err := resolveUDPAddr(ctx, host, port)
 		if err != nil {
 			return nil, fmt.Errorf("mimic: http3: resolve %s: %w", host, err)
 		}
@@ -121,20 +122,59 @@ func http3Dialer(o transportOptions, uTransport *quic.UTransport) func(context.C
 	}
 }
 
+// resolveUDPAddr resolves the host with the caller's context, so a slow or
+// hung resolver cannot outlive the request. net.ResolveUDPAddr takes no
+// context and would block past the deadline.
+func resolveUDPAddr(ctx context.Context, host, port string) (*net.UDPAddr, error) {
+	p, err := strconv.Atoi(port)
+	if err != nil {
+		return nil, fmt.Errorf("port %q: %w", port, err)
+	}
+	if ip := net.ParseIP(host); ip != nil {
+		return &net.UDPAddr{IP: ip, Port: p}, nil
+	}
+	ips, err := net.DefaultResolver.LookupIPAddr(ctx, host)
+	if err != nil {
+		return nil, err
+	}
+	if len(ips) == 0 {
+		return nil, fmt.Errorf("no address for %s", host)
+	}
+	return &net.UDPAddr{IP: ips[0].IP, Port: p}, nil
+}
+
 // http3Transport is the round tripper behind NewHTTP3's client.
 type http3Transport struct {
 	rt *http3.URoundTripper
 	ua string
+	// acceptLanguage is the profile's accept-language value, applied only
+	// when the request carries none.
+	acceptLanguage string
 }
 
 func (t *http3Transport) RoundTrip(req *http.Request) (*http.Response, error) {
-	if t.ua != "" && req.Header != nil && req.Header.Get("User-Agent") == "" {
-		// A round tripper must not touch the caller's request, so the
-		// header goes onto a copy.
-		req = req.Clone(req.Context())
-		req.Header.Set("User-Agent", t.ua)
+	if req.Header != nil {
+		needUA := t.ua != "" && req.Header.Get("User-Agent") == ""
+		needLang := t.acceptLanguage != "" && req.Header.Get("Accept-Language") == ""
+		if needUA || needLang {
+			// A round tripper must not touch the caller's request, so the
+			// headers go onto a copy.
+			req = req.Clone(req.Context())
+			if needUA {
+				req.Header.Set("User-Agent", t.ua)
+			}
+			if needLang {
+				req.Header.Set("Accept-Language", t.acceptLanguage)
+			}
+		}
 	}
-	if u, err := http.ProxyFromEnvironment(req); err == nil && u != nil {
+	u, err := http.ProxyFromEnvironment(req)
+	if err != nil {
+		// A malformed proxy setting is a configuration error, not a
+		// reason to connect directly behind the user's back.
+		return nil, fmt.Errorf("mimic: http3: proxy setting: %w", err)
+	}
+	if u != nil {
 		return nil, fmt.Errorf("mimic: http3: proxy %s cannot carry QUIC", u.Host)
 	}
 	return t.rt.RoundTrip(req)

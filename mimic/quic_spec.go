@@ -29,10 +29,15 @@ const (
 const chrome152CA34ExtID = 0xCA34
 
 // The QUIC transport parameters of a real Android Chrome 152, decoded from the
-// 94 raw bytes of extension 0x0039 in a phone capture (phone-vk.pcap, full
-// handshake, 2026-08-30) and mapped onto uquic's typed transport-parameter
-// classes by examples/uquic-probe. The same values keep the hello in the
-// 11-extension QUIC form recorded in docs/RESEARCH-STATUS.ru.md.
+// raw bytes of extension 0x0039 in a phone capture (full handshake, 2026-08-30)
+// and mapped onto uquic's typed transport-parameter classes by
+// examples/uquic-probe. The same values keep the hello in the 11-extension
+// QUIC form recorded in docs/RESEARCH-STATUS.ru.md.
+//
+// What is captured: the parameter values below. What is not: the total length
+// on the wire — the GREASE parameter's id is randomised per connection, and it
+// is the id that decides how many bytes the parameter list takes. So the list
+// is as long as the capture's, but not necessarily the same number of bytes.
 const (
 	// quicChromeMaxUDPPayloadSize is max_udp_payload_size (0x03): the IPv4
 	// MTU-sized payload Chrome asks for.
@@ -135,6 +140,21 @@ func patchChrome152Hello(spec *utls.ClientHelloSpec) {
 // patchChromeTransportParams replaces the preset's transport parameters with
 // the ones a real Chrome 152 sends. uquic writes the list verbatim
 // (ClientOverride), so the wire bytes are exactly the captured ones.
+//
+// The order is shuffled, like the preset's own list: Chrome randomises the
+// order of the transport parameters, and a fixed order is a tell. uquic
+// shuffles when it builds the spec, not per connection, so the order is
+// stable for the lifetime of one client — a known deviation, not a secret.
+//
+// The connection id stays empty, and that is deliberate. Chrome uses 8-byte
+// connection ids, but the id has to be echoed in the transport parameter
+// initial_source_connection_id (0x0f) or the server rejects the connection
+// (RFC 9000 section 7.2; uquic's own server does exactly this check), and
+// uquic generates the id inside the transport, after the ClientHello spec is
+// built. There is no hook to put the generated id into the parameter, so the
+// only self-consistent choice is an empty id in both places. The cost is
+// visible: the id length is plaintext, and a zero-length one says "not a
+// browser" as loudly as a wrong one would.
 func patchChromeTransportParams(spec *utls.ClientHelloSpec) {
 	for i, ext := range spec.Extensions {
 		qtp, ok := ext.(*utls.QUICTransportParametersExtension)
@@ -143,7 +163,7 @@ func patchChromeTransportParams(spec *utls.ClientHelloSpec) {
 		}
 		qtp.TransportParameters = utls.TransportParameters{
 			utls.MaxUDPPayloadSize(quicChromeMaxUDPPayloadSize),
-			utls.InitialSourceConnectionID{}, // uquic injects the real cid
+			utls.InitialSourceConnectionID{}, // must stay empty: see the comment above
 			utls.InitialMaxStreamsUni(quicChromeMaxStreamsUni),
 			utls.InitialMaxStreamDataUni(quicChromeStreamWindow),
 			utls.InitialMaxStreamDataBidiLocal(quicChromeStreamWindow),
@@ -156,7 +176,7 @@ func patchChromeTransportParams(spec *utls.ClientHelloSpec) {
 			quicChromeVersionInformation(),
 			&utls.FakeQUICTransportParameter{Id: quicChromeGoogleConnOptionsID, Val: quicChromeGoogleConnOptions},
 		}
-		spec.Extensions[i] = qtp
+		spec.Extensions[i] = quic.ShuffleQUICTransportParameters(qtp)
 		return
 	}
 }
