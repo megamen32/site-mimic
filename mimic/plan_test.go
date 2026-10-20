@@ -31,7 +31,7 @@ func TestStepRequestImageShape(t *testing.T) {
 		Path:         "/favicon.ico",
 		ResourceType: "image",
 		Referer:      "/fp",
-	}, base)
+	}, base, "https://fp.example.test/fp")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +65,7 @@ func TestStepRequestDocumentQuery(t *testing.T) {
 		Path:         "/fp?format=json",
 		ResourceType: "xhr",
 		Referer:      "/fp",
-	}, base)
+	}, base, "https://fp.example.test/fp")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -212,4 +212,142 @@ func TestPageCacheIsSafeForConcurrentUse(t *testing.T) {
 		}(worker)
 	}
 	wg.Wait()
+}
+
+// TestSecFetchSiteFollowsTheInitiator pins the Sec-Fetch-Site value to the
+// relation between the initiator and the target.
+//
+// It used to be a constant: every subresource of every plan said
+// "same-origin", including the ones a plan sends to another host — a value
+// no browser produces. The value is now computed the way Chrome computes
+// it: same origin, same site, cross site, or none when nothing initiated
+// the request.
+func TestSecFetchSiteFollowsTheInitiator(t *testing.T) {
+	cases := []struct {
+		name      string
+		initiator string
+		target    string
+		captured  string
+		want      string
+	}{
+		{
+			name:      "same origin",
+			initiator: "https://fp.example.test/fp",
+			target:    "https://fp.example.test/logo.png",
+			want:      "same-origin",
+		},
+		{
+			name:      "same site, another host",
+			initiator: "https://fp.example.test/fp",
+			target:    "https://cdn.example.test/logo.png",
+			want:      "same-site",
+		},
+		{
+			name:      "cross site",
+			initiator: "https://fp.example.test/fp",
+			target:    "https://cdn.other.test/logo.png",
+			want:      "cross-site",
+		},
+		{
+			name:      "no initiator",
+			initiator: "",
+			target:    "https://fp.example.test/logo.png",
+			want:      "none",
+		},
+		{
+			name:      "a captured navigation keeps its captured value",
+			initiator: "",
+			target:    "https://fp.example.test/fp",
+			captured:  "cross-site",
+			want:      "cross-site",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := stepSecFetchSite(tc.initiator, tc.target, tc.captured)
+			if got != tc.want {
+				t.Fatalf("sec-fetch-site = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+// TestStepRequestSecFetchSiteIsComputed checks the header on the request
+// itself, not only the helper: a subresource of a document on another host
+// must not claim to be same-origin.
+func TestStepRequestSecFetchSiteIsComputed(t *testing.T) {
+	p := Profile{
+		Name:    "t",
+		Headers: map[string]string{"Accept": "text/html"},
+	}
+	base, _ := url.Parse("https://fp.example.test/fp")
+	req, err := p.stepRequest(ResourceStep{
+		Path:         "https://cdn.other.test/logo.png",
+		ResourceType: "image",
+	}, base, "https://fp.example.test/fp")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := req.Header.Get("Sec-Fetch-Site"); got != "cross-site" {
+		t.Fatalf("sec-fetch-site = %q, want cross-site", got)
+	}
+}
+
+// TestRunPlanSessionSecFetchSiteFollowsTheDocument checks the wiring in the
+// session runner, not only the helper: a subresource is judged against the
+// document the plan opened.
+//
+// The three values come from three relations. The navigation was typed, so
+// nothing initiated it ("none"). The first subresource sits on another port
+// of the same host ("same-site" — a site ignores the port). The second sits
+// on another host ("cross-site").
+func TestRunPlanSessionSecFetchSiteFollowsTheDocument(t *testing.T) {
+	var mu sync.Mutex
+	var seen []string
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		seen = append(seen, r.URL.Host+r.URL.Path+" sec-fetch-site="+r.Header.Get("Sec-Fetch-Site"))
+		mu.Unlock()
+		w.Write([]byte("body"))
+	})
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+	other := httptest.NewServer(handler)
+	defer other.Close()
+	// The same machine, another name: a different site.
+	elsewhere := strings.Replace(other.URL, "127.0.0.1", "localhost", 1)
+
+	p := Profile{
+		Name:      "t",
+		UserAgent: "Mozilla/5.0 test",
+		Headers:   map[string]string{"Accept": "text/html"},
+		ResourcePlan: []ResourceStep{
+			{Path: "/", ResourceType: "document"},
+			{Path: other.URL + "/logo.png", ResourceType: "image"},
+			{Path: elsewhere + "/x.png", ResourceType: "image"},
+		},
+	}
+	base, err := url.Parse(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := p.RunPlanSession(srv.Client(), base, NewPageCache()); err != nil {
+		t.Fatal(err)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	want := []string{
+		" sec-fetch-site=none",
+		" sec-fetch-site=same-site",
+		" sec-fetch-site=cross-site",
+	}
+	if len(seen) != len(want) {
+		t.Fatalf("want %d requests, saw %d: %v", len(want), len(seen), seen)
+	}
+	for i, suffix := range want {
+		if !strings.HasSuffix(seen[i], suffix) {
+			t.Fatalf("request %d = %q, want it to end with %q", i, seen[i], suffix)
+		}
+	}
 }

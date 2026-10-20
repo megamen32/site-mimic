@@ -5,8 +5,11 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
+
+	headless "github.com/megamen32/headless-client"
 )
 
 // ResourceStep is one request of a browser-like session: a navigation
@@ -27,44 +30,84 @@ type ResourceStep struct {
 // matrix. document keeps the captured navigation headers of the profile;
 // subresources drop navigation-only headers (sec-fetch-user,
 // upgrade-insecure-requests) and carry a referer.
+//
+// The Sec-Fetch-Site value is not in this table: it depends on the relation
+// between the initiator and the target, so it is computed per step — see
+// stepSecFetchSite.
 var resourceTypeHeaders = map[string][][2]string{
 	"document": {},
 	"image": {
 		{"Accept", "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"},
 		{"Sec-Fetch-Dest", "image"},
 		{"Sec-Fetch-Mode", "no-cors"},
-		{"Sec-Fetch-Site", "same-origin"},
 	},
 	"xhr": {
 		{"Accept", "*/*"},
 		{"Sec-Fetch-Dest", "empty"},
 		{"Sec-Fetch-Mode", "cors"},
-		{"Sec-Fetch-Site", "same-origin"},
 	},
 	"font": {
 		{"Accept", "*/*"},
 		{"Sec-Fetch-Dest", "font"},
 		{"Sec-Fetch-Mode", "cors"},
-		{"Sec-Fetch-Site", "same-origin"},
 	},
 	"style": {
 		{"Accept", "text/css,*/*;q=0.1"},
 		{"Sec-Fetch-Dest", "style"},
 		{"Sec-Fetch-Mode", "no-cors"},
-		{"Sec-Fetch-Site", "same-origin"},
 	},
 	"script": {
 		{"Accept", "*/*"},
 		{"Sec-Fetch-Dest", "script"},
 		{"Sec-Fetch-Mode", "no-cors"},
-		{"Sec-Fetch-Site", "same-origin"},
 	},
+}
+
+// capturedHeader returns the profile's captured value for a header.
+//
+// The name is matched the way HTTP names headers, not by map key: a profile
+// that came from a capture tool holds "sec-fetch-site", one written by hand
+// holds "Sec-Fetch-Site", and both are the same header.
+func capturedHeader(headers map[string]string, name string) string {
+	if v, ok := headers[name]; ok {
+		return v
+	}
+	for k, v := range headers {
+		if strings.EqualFold(k, name) {
+			return v
+		}
+	}
+	return ""
+}
+
+// stepSecFetchSite computes the Sec-Fetch-Site value of a request from the
+// relation between the initiator and the target, the way a browser does.
+//
+// The initiator is the page that caused the request: the referring document
+// for a navigation, the embedding document for a subresource. With no
+// initiator the request was typed by the user and the value is "none" —
+// which is also what Chrome sends for a fresh navigation.
+//
+// A navigation that the profile captured keeps the captured value when the
+// plan does not name a referer: the capture is a measurement of a real
+// cross-site navigation, and modelling it would need the page it came from.
+func stepSecFetchSite(initiator, target, captured string) string {
+	if initiator == "" {
+		if captured != "" {
+			return captured
+		}
+		return headless.SecFetchSite("", target)
+	}
+	return headless.SecFetchSite(initiator, target)
 }
 
 // stepRequest builds the request for one plan step: the profile's captured
 // navigation headers, reshaped for the resource type, then per-step
 // overrides.
-func (p Profile) stepRequest(step ResourceStep, base *url.URL) (*http.Request, error) {
+//
+// The initiator is the page that caused this request; it is what
+// Sec-Fetch-Site is computed from.
+func (p Profile) stepRequest(step ResourceStep, base *url.URL, initiator string) (*http.Request, error) {
 	method := step.Method
 	if method == "" {
 		method = http.MethodGet
@@ -97,6 +140,13 @@ func (p Profile) stepRequest(step ResourceStep, base *url.URL) (*http.Request, e
 	if step.Referer != "" {
 		req.Header.Set("Referer", base.Scheme+"://"+base.Host+step.Referer)
 	}
+	// The captured value is the one the profile recorded for a navigation;
+	// a subresource has no captured value of its own.
+	captured := ""
+	if step.ResourceType == "document" {
+		captured = capturedHeader(p.Headers, "sec-fetch-site")
+	}
+	req.Header.Set("Sec-Fetch-Site", stepSecFetchSite(initiator, req.URL.String(), captured))
 	for name, value := range step.Headers {
 		req.Header.Set(name, value)
 	}
@@ -186,6 +236,9 @@ func (p Profile) RunPlanSession(client *http.Client, base *url.URL, cache *PageC
 		return nil, fmt.Errorf("mimic: profile %q has no resource_plan", p.Name)
 	}
 	var out []string
+	// documentURL is the page currently open: the initiator of every
+	// subresource the plan requests.
+	documentURL := ""
 	for i, step := range p.ResourcePlan {
 		if i > 0 || step.DelayMinMs > 0 {
 			lo, hi := step.DelayMinMs, step.DelayMaxMs
@@ -200,9 +253,21 @@ func (p Profile) RunPlanSession(client *http.Client, base *url.URL, cache *PageC
 				time.Sleep(d)
 			}
 		}
-		req, err := p.stepRequest(step, base)
+		// The initiator of the step: the referring page for a navigation,
+		// the embedding document for a subresource.
+		initiator := ""
+		switch {
+		case step.Referer != "":
+			initiator = base.Scheme + "://" + base.Host + step.Referer
+		case step.ResourceType != "document":
+			initiator = documentURL
+		}
+		req, err := p.stepRequest(step, base, initiator)
 		if err != nil {
 			return out, fmt.Errorf("step %d (%s): %w", i, step.Path, err)
+		}
+		if step.ResourceType == "document" {
+			documentURL = req.URL.String()
 		}
 		key := req.URL.String()
 		cache.applyValidators(req.Header, key)

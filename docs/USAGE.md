@@ -29,6 +29,13 @@ set and its order, the IP TTL, and an optional resource plan that turns a
 single hit into a browser-like session. `mimic.New` takes options for the
 proxy, DNS pinning, TLS verification, dial timeout and SNI override.
 
+In a plan, `Sec-Fetch-Site` is computed, not fixed: the value follows the
+relation between the page that caused the request and the page it asks for —
+`same-origin`, `same-site`, `cross-site`, or `none` when the user typed the
+address. A navigation without a referer keeps the value the profile
+captured, because the capture is a measurement of a real cross-site
+navigation.
+
 Sessions resume on their own: the client keeps TLS session tickets between
 connections, so the second connection to a host presents a real
 `pre_shared_key` offer instead of a fresh handshake. The ticket store is
@@ -245,8 +252,16 @@ The full sequence, with the reasoning behind each step, is in
 ## Borrowed from the headless client
 
 `github.com/megamen32/headless-client` is a dependency, not a copy: the
-transport of the `chrome_exact` profile, the WebSocket upgrade handshake and
-the Chrome header tables come from it.
+transport of the `chrome_exact` profile, the WebSocket upgrade handshake,
+the Chrome header tables and the whole QUIC stack come from it.
+
+The dependency is pinned to the fork's tag `v0.2.0` (2026-10-21), not to a
+pseudo-version: a tag is a thing a reader can check, and a pseudo-version
+of a fork says only "some commit of somebody's branch". The fork is
+[our fork of kulikov0's](https://github.com/kulikov0/headless-client);
+the Chrome 152 TLS change (the unregistered 0xCA34 extension) is [an open
+pull request against upstream](https://github.com/kulikov0/headless-client/pull/1),
+so the fork can become the upstream's tag when it is merged.
 
 What we took:
 
