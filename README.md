@@ -71,7 +71,7 @@ new site with [skill/SKILL.md](skill/SKILL.md).
 
 ## Learn more
 
-- [How to use site-mimic: the ready-made profiles, Go and Python (EN)](docs/USAGE.md) · [(RU)](docs/USAGE.ru.md)
+- [How to use site-mimic: the ready-made profiles, Go, Python and TypeScript (EN)](docs/USAGE.md) · [(RU)](docs/USAGE.ru.md)
 - [Исследование простыми словами (RU)](docs/RESEARCH.ru.md)
 - [Статус мимикрии: что совпадает байт-в-байт, что нет (RU, 2026-09-02)](docs/RESEARCH-STATUS.ru.md)
 - [Fit-a-site methodology (AI-agent skill)](skill/SKILL.md)

@@ -12,6 +12,7 @@ site-mimic из Go и из Python и какие правила нужны, чт�
 | --- | --- | --- |
 | Go | `mimic.New(profile, opts...)` | `*http.Client` с uTLS-транспортом, всё в процессе |
 | Python | `site_mimic_client.gohttp` | клиент в форме `requests`, ходит в демон `fetchd` |
+| TypeScript / JavaScript | `site-mimic` (npm) | тот же демон, тот же контракт, ESM-пакет без рантайм-зависимостей |
 | ИИ-агент | [`skill/SKILL.md`](../skill/SKILL.md) | маршрут «захват → профиль → проверка» |
 
 ### Go
@@ -26,6 +27,31 @@ resp, err := client.Get("https://example.com/")
 заголовков, TTL исходящего IP и опциональный план ресурсов, который
 превращает один запрос в браузерную сессию. Опции `mimic.New` — прокси,
 пиннинг DNS, проверка TLS, таймаут соединения, подмена SNI.
+
+### TypeScript / JavaScript
+
+npm-пакет в `js/` — близнец питон-клиента: тот же демон, то же поведение на
+проводе, те же переменные окружения.
+
+```sh
+npm install site-mimic
+```
+
+```ts
+import { get } from "site-mimic";
+
+const response = await get("https://example.com/api", {
+  headers: { "User-Agent": "…" },
+  cookies: { session: "…" },
+  profile: "/abs/path/profile.json",
+});
+console.log(response.statusCode, response.text);
+```
+
+Без рантайм-зависимостей: глобальный `fetch` из Node 18 относит запрос к
+демону, а TLS делает демон. Клиент надзирает за демоном так же, как
+питон-версия: `healthz` перед вызовом, один запуск и один повтор, если
+демон мёртв. `GOHTTPD_AUTOSTART=0` запрещает запуск вовсе.
 
 ### WebSocket
 
@@ -227,6 +253,7 @@ Chrome шлёт по QUIC, и CONNECT-заголовок WebTransport), и та�
 | `examples/profiles/` | готовые JSON-профили |
 | `examples/` | разобранные примеры, по одному на сайт |
 | `python/site_mimic_client/` | канонический питон-клиент |
+| `js/` | TypeScript/JavaScript-клиент (npm) |
 | `tools/phone/`, `tools/win/`, `tools/avd/` | инструменты захвата под каждую платформу |
 | `tools/parse_clienthello.py`, `tools/ja4_from_pcap.py` | разбор отпечатков |
 | `docs/` | методика, исследовательские заметки, документация по сайтам |

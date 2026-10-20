@@ -1,0 +1,48 @@
+{
+  "name": "site-mimic",
+  "version": "0.1.0",
+  "description": "TypeScript/JavaScript client for the site-mimic fetchd daemon (uTLS browser-fingerprint HTTP)",
+  "keywords": [
+    "site-mimic",
+    "fetchd",
+    "http-client",
+    "tls-fingerprint",
+    "utls",
+    "ja3",
+    "ja4"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/megamen32/site-mimic.git",
+    "directory": "js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build",
+    "typecheck": "tsc -p tsconfig.test.json --noEmit",
+    "test": "tsc -p tsconfig.test.json && cd .test-dist && node --test"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.0",
+    "typescript": "^5.9.3"
+  }
+}

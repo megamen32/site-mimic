@@ -31,6 +31,24 @@ jobs:
       - run: pip install pytest ./python
       - run: pytest python/tests -q
 
+  # JS client: the same shape as the Python job — install the subdirectory
+  # package the way a consumer does and run its test suite. The tests stub
+  # fetch, so no daemon, no Go and no network are needed.
+  js-client:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+        working-directory: js
+      - run: npm run build
+        working-directory: js
+      - run: npm test
+        working-directory: js
+
   # Real-site canary: exactly ONE request to vk.ru per push to main
   # (rate-limited by design — no loops, no retries). May flake if vk.ru is
   # down; that is intended signal, not noise to paper over.

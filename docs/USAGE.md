@@ -13,6 +13,7 @@ already here.
 | --- | --- | --- |
 | writing Go | `mimic.New(profile, opts...)` | an `*http.Client` with a uTLS transport — in-process, no daemon |
 | writing Python | `site_mimic_client.gohttp` | a `requests`-shaped client that talks to the `fetchd` daemon |
+| writing TypeScript / JavaScript | `site-mimic` (npm) | the same daemon and the same contract, an ESM package with no runtime dependencies |
 | an AI agent | [`skill/SKILL.md`](../skill/SKILL.md) | the capture → profile → verify workflow |
 
 ### Go
@@ -27,6 +28,31 @@ resp, err := client.Get("https://example.com/")
 set and its order, the IP TTL, and an optional resource plan that turns a
 single hit into a browser-like session. `mimic.New` takes options for the
 proxy, DNS pinning, TLS verification, dial timeout and SNI override.
+
+### TypeScript / JavaScript
+
+The npm package in `js/` is the twin of the Python client: the same daemon,
+the same wire behaviour, the same environment variables.
+
+```sh
+npm install site-mimic
+```
+
+```ts
+import { get } from "site-mimic";
+
+const response = await get("https://example.com/api", {
+  headers: { "User-Agent": "…" },
+  cookies: { session: "…" },
+  profile: "/abs/path/profile.json",
+});
+console.log(response.statusCode, response.text);
+```
+
+No runtime dependencies: Node 18's global `fetch` carries the request to the
+daemon, and the daemon does the TLS. The client supervises the daemon the
+same way the Python one does — `healthz` before the call, one start and one
+retry when the daemon is down. `GOHTTPD_AUTOSTART=0` forbids the start.
 
 ### WebSocket
 
@@ -232,6 +258,7 @@ per-destination header tables beyond the four the library defines.
 | `examples/profiles/` | the ready-to-load JSON profiles |
 | `examples/` | worked examples, one per site |
 | `python/site_mimic_client/` | the canonical Python client |
+| `js/` | the TypeScript/JavaScript client (npm) |
 | `tools/phone/`, `tools/win/`, `tools/avd/` | capture tooling per platform |
 | `tools/parse_clienthello.py`, `tools/ja4_from_pcap.py` | fingerprint readers |
 | `docs/` | methodology, research notes, per-site documentation |
