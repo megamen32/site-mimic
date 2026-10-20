@@ -35,6 +35,10 @@ import (
 //
 // The Node stack speaks HTTP/1.1, so a profile using this spec must not be
 // sent over the HTTP/2 transport — see clientHelloIsHTTP1Only.
+//
+// The spec above is the full-handshake form. The resumed form — the hello a
+// Node client sends once the server has issued a ticket — is
+// node24ResumptionSpec.
 func node24Spec() (*utls.ClientHelloSpec, error) {
 	return &utls.ClientHelloSpec{
 		TLSVersMin: utls.VersionTLS12,
@@ -99,6 +103,45 @@ func node24Spec() (*utls.ClientHelloSpec, error) {
 			&utls.UtlsPaddingExtension{GetPaddingLen: utls.BoringPaddingStyle},
 		},
 	}, nil
+}
+
+// node24ResumptionSpec returns the Node 24 spec with uTLS's managed
+// pre_shared_key placeholder appended — the hello the Node stack sends once
+// the server has issued it a ticket.
+//
+// The shape is measured, not guessed: it comes from a live Node 24.18.0
+// (Electron 42.8.0, BoringSSL) client resuming against a loopback server
+// that issues TLS 1.3 tickets. The capture is
+// testdata/node24_clienthello_resumed.json.
+//
+// What the measurement showed:
+//
+//   - pre_shared_key (0x0029) is the LAST extension, after the padding —
+//     RFC 8446 puts it last, and BoringSSL does not reorder it.
+//   - The hello stays 512 bytes long: the padding gives way to the PSK. The
+//     padding shrinks by exactly the size of the pre_shared_key extension
+//     (its 4-byte header plus its payload), so the total does not move. In
+//     the captured hello the padding payload is 90 bytes and the pre_shared_key
+//     extension is 152 bytes — 242 - 152 = 90, the padding the full handshake
+//     carried.
+//   - Everything else is unchanged: the same 12 extensions in the same order,
+//     the same ciphers, the same 32-byte session id.
+//
+// uTLS reproduces this by itself: the padding length is computed from the
+// length of the hello without the padding, and the managed placeholder's
+// length is part of that sum — so the padding gives way to the PSK the way
+// BoringSSL's does. Without a ticket the placeholder contributes nothing (its
+// length is zero) and is concealed, so the first hello stays the captured
+// full-handshake form, byte for byte.
+func node24ResumptionSpec() (*utls.ClientHelloSpec, error) {
+	spec, err := node24Spec()
+	if err != nil {
+		return nil, err
+	}
+	// The placeholder has to be the last extension of the hello: RFC 8446
+	// puts pre_shared_key last, and uTLS asserts that it is.
+	withResumptionPSK(spec)
+	return spec, nil
 }
 
 // node24HelloName is the profile value that selects the Node 24 ClientHello.

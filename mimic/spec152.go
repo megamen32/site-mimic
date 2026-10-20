@@ -136,7 +136,13 @@ func shuffleExtensions(exts []utls.TLSExtension) []utls.TLSExtension {
 // ParseClientHelloID.
 func newUConn(rawConn net.Conn, cfg *utls.Config, helloName string) (*utls.UConn, error) {
 	if helloName == node24HelloName {
-		spec, err := node24Spec()
+		// The resumption form, not the plain one: it carries uTLS's
+		// managed pre_shared_key placeholder, which is concealed while
+		// there is no ticket (the hello then stays the captured
+		// full-handshake form) and carries a proper PSK offer from the
+		// second connection on. The spec is built per connection, so the
+		// binder is computed over the hello it is sent with.
+		spec, err := node24ResumptionSpec()
 		if err != nil {
 			return nil, err
 		}

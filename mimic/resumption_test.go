@@ -57,6 +57,24 @@ func (l *resumptionRecorder) Accept() (net.Conn, error) {
 	return rec, nil
 }
 
+// rawHellos returns the raw ClientHello record of every connection, in the
+// order the server accepted them. The parsed form does not keep the record's
+// length, and the length is part of the measurement: the hello is padded to
+// 512 bytes.
+func (l *resumptionRecorder) rawHellos(t *testing.T) [][]byte {
+	t.Helper()
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	out := make([][]byte, 0, len(l.conns))
+	for i, c := range l.conns {
+		if len(c.hello) == 0 {
+			t.Fatalf("connection %d: no ClientHello was read", i)
+		}
+		out = append(out, c.hello)
+	}
+	return out
+}
+
 // hellos returns the ClientHello of every connection, in the order the
 // server accepted them.
 func (l *resumptionRecorder) hellos(t *testing.T) []*ClientHello {

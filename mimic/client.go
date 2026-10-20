@@ -320,12 +320,12 @@ func dialProfileTLS(ctx context.Context, o transportOptions, p Profile, network,
 		// full-handshake form. With a ticket, uTLS fills the extension and
 		// computes the binder over the hello it is about to send.
 		OmitEmptyPsk: true,
-		// A ClientHelloSpec without a pre_shared_key extension (node_24)
-		// or with a captured one instead of the managed placeholder
-		// (chrome_152_psk, max_app_psk) cannot carry a resumption ticket.
-		// uTLS panics in that case once the session cache holds a ticket
-		// for the host, so resumption is skipped instead — the hello stays
-		// exactly the captured one.
+		// A ClientHelloSpec with a captured pre_shared_key extension
+		// instead of the managed placeholder (chrome_152_psk,
+		// max_app_psk) cannot carry a resumption ticket. uTLS panics in
+		// that case once the session cache holds a ticket for the host, so
+		// resumption is skipped instead — the hello stays exactly the
+		// captured one.
 		PreferSkipResumptionOnNilExtension: true,
 	}
 	uConn, err := newUConn(rawConn, cfg, p.TLSClientHello)
