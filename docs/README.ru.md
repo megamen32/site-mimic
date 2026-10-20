@@ -72,7 +72,8 @@ python3 ../../tools/parse_clienthello.py ch.json   # JA3/JA4 нашего Client
 
 С `chrome_exact` TLS-слой байт-в-байт; с uTLS-профилями — почти-матч.
 Значения и состав заголовков точны, порядок на проводе и фрейминг HTTP/2
-SETTINGS — гошные; QUIC/DTLS не покрыты — подробности в
+SETTINGS — гошные; DTLS не покрыт, QUIC покрыт (`mimic.NewHTTP3`) —
+подробности в
 [methodology.md](methodology.md). JS-челленджи антиботов сознательно вне
 скоупа. Порядок заголовков на проводе воспроизводится только в режиме
 `http1_wire_order` (профили Node/HTTP-1.1), см.

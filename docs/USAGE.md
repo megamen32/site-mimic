@@ -29,6 +29,24 @@ set and its order, the IP TTL, and an optional resource plan that turns a
 single hit into a browser-like session. `mimic.New` takes options for the
 proxy, DNS pinning, TLS verification, dial timeout and SNI override.
 
+### HTTP/3
+
+`mimic.NewHTTP3` is the same client on a QUIC wire: the same profile, the
+same options, HTTP/3 instead of HTTP/2.
+
+```go
+profile := mimic.MustLoadProfile("profile.json")
+client, err := mimic.NewHTTP3(profile)   // h3 over QUIC
+if err != nil { ... }
+defer client.Transport.(io.Closer).Close()   // releases the UDP socket
+```
+
+The QUIC handshake carries the Chrome 152 ClientHello — post-quantum
+signature algorithms and the 0xCA34 extension — and the transport
+parameters a real Chrome sends (94 bytes on the wire). The profile's user
+agent is applied the same way as on the TCP path. A CONNECT proxy is an
+error here, not a fallback: QUIC does not travel through one.
+
 ### TypeScript / JavaScript
 
 The npm package in `js/` is the twin of the Python client: the same daemon,
@@ -200,8 +218,8 @@ What we took:
   negative — `mimic/keepalive_test.go` guards it, with a second test that
   proves the guard can fail.
 
-What is still on the table: the QUIC and WebTransport dialers (Chrome's two
-QUIC ClientHellos, the WebTransport CONNECT header block), and the
+What is still on the table: the WebTransport dialer (the CONNECT header
+block Chrome sends with it), the resumed QUIC ClientHello shape, and the
 per-destination header tables beyond the four the library defines.
 
 ## Rules of the road
@@ -241,8 +259,10 @@ per-destination header tables beyond the four the library defines.
 * **IP TTL is a hint.** It is stamped per connection, but a hairpin hop or
   a middlebox changes what the server sees. `128` is the Windows default;
   `64` is the Linux/Android one.
-* **No QUIC.** The transport is HTTP/1.1 and HTTP/2. A site that only speaks
-  HTTP/3 needs a different tool.
+* **QUIC is a separate constructor.** `mimic.New` speaks HTTP/1.1 and
+  HTTP/2 over TCP. HTTP/3 is `mimic.NewHTTP3` — the same profile and the
+  same options, a QUIC wire instead of a TCP one. Its QUIC ClientHello is
+  the Chrome 152 one and does not follow the profile's `tls_client_hello`.
 * **A profile is one client, one site.** The header set of a browser on one
   origin does not transfer to another origin unchanged.
 
@@ -252,6 +272,7 @@ per-destination header tables beyond the four the library defines.
 | --- | --- |
 | `mimic/` | the library: transport, specs, profile handling, fingerprinting |
 | `mimic/spec_*.go` | the ClientHello specs; `mimic/testdata/` holds the captured fixtures |
+| `mimic/http3.go`, `mimic/quic_spec.go` | the QUIC transport and its Chrome 152 fingerprint |
 | `cmd/fetchd` | the daemon for non-Go callers |
 | `cmd/hello-tap`, `cmd/hellofp` | capture and fingerprint tooling |
 | `cmd/tproxyfwd` | the on-device transparent forwarder for a rooted phone |
@@ -260,6 +281,7 @@ per-destination header tables beyond the four the library defines.
 | `python/site_mimic_client/` | the canonical Python client |
 | `js/` | the TypeScript/JavaScript client (npm) |
 | `tools/phone/`, `tools/win/`, `tools/avd/` | capture tooling per platform |
+| `tools/mac/` | the rootless macOS capture path — no root, no CA in the keychain |
 | `tools/parse_clienthello.py`, `tools/ja4_from_pcap.py` | fingerprint readers |
 | `docs/` | methodology, research notes, per-site documentation |
 | `skill/SKILL.md` | the agent workflow for fitting a new site |

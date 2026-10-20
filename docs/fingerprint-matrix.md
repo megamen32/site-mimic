@@ -34,7 +34,7 @@ Mimic profiles map to these references 1:1.
 | Android/Windows Chrome 152 | built-in | `chrome_152` (custom spec: PQ sig algs 0x0904-0906 + GREASE, 0xCA34, pre_shared_key; JA4 `t13d1518h2_8daaf6152771_e2d80978ab2e` wire-verified 2026-09-01) — **stale since 2026-09-02**: Google switched the Finch experiment off; current real value is the 17-ext desktop set `cb7bf5808d99` (= use `chrome_exact` with an up-to-date Chromium until the spec is rebuilt) | — |
 | Windows Chrome 151 | `examples/vk-ru-windows/profile.json` | `chrome_exact` | 128 |
 | macOS Chrome 153 (Mac mini reference) | `examples/profiles/mac-chrome153.json` | `chrome_exact` — JA4 `t13i1516h2_8daaf6152771_cb7bf5808d99` byte-equal to the real fresh variant (LAN stand, 2026-10-12); resumed PSK shape not covered (see row 9b) | — (native 64 on macOS) |
-| QUIC/h3 (Chrome-QUIC class) | prototype in `.tmp/uquic-probe/` (uQUIC + Chrome 115 QUIC preset) | wire-verified `q13d0310h3_55b375c5d22e_cd85d2d88918`; exact-152 QUIC preset pending | — |
+| QUIC/h3 (Chrome-QUIC class) | `mimic.NewHTTP3` — Chrome 152 QUIC spec, measured transport parameters | `q13d0311h3_55b375c5d22e_8dd94ab2d40e` — JA4_a/b equal to the reference `7ae7f4a1bb73`, JA4_c differs (no ECH GREASE) | — |
 
 ## Facts that hold across the matrix
 

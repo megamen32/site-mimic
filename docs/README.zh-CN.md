@@ -67,7 +67,7 @@ python3 ../../tools/parse_clienthello.py ch.json   # 我们 ClientHello 的 JA3/
 
 使用 `chrome_exact` 时 TLS 层逐字节一致；使用 uTLS 配置时为近似匹配。请求
 头的值与集合是精确的，但线上字节顺序与 HTTP/2 SETTINGS 帧结构仍是 Go 默认
-实现；QUIC/DTLS 暂未覆盖——详见
+实现；DTLS 暂未覆盖，QUIC 已覆盖（`mimic.NewHTTP3`）——详见
 [methodology.md](methodology.md)。反爬 JavaScript 挑战在设计上不在范围内。
 
 MIT 许可证。与 VK 或 Wildberries 无关联。

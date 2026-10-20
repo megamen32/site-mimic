@@ -28,6 +28,24 @@ resp, err := client.Get("https://example.com/")
 превращает один запрос в браузерную сессию. Опции `mimic.New` — прокси,
 пиннинг DNS, проверка TLS, таймаут соединения, подмена SNI.
 
+### HTTP/3
+
+`mimic.NewHTTP3` — тот же клиент на QUIC-проводе: тот же профиль, те же
+опции, HTTP/3 вместо HTTP/2.
+
+```go
+profile := mimic.MustLoadProfile("profile.json")
+client, err := mimic.NewHTTP3(profile)   // h3 поверх QUIC
+if err != nil { ... }
+defer client.Transport.(io.Closer).Close()   // освобождает UDP-сокет
+```
+
+QUIC-рукопожатие несёт ClientHello Chrome 152 — PQ-алгоритмы подписи и
+расширение 0xCA34 — и транспортные параметры настоящего Chrome (94 байта
+на проводе). User-Agent профиля подставляется так же, как на TCP-пути.
+CONNECT-прокси здесь — ошибка, а не запасной путь: QUIC через него не
+идёт.
+
 ### TypeScript / JavaScript
 
 npm-пакет в `js/` — близнец питон-клиента: тот же демон, то же поведение на
@@ -194,8 +212,8 @@ print(r.status, r.text)
   сторожит это `mimic/keepalive_test.go`, а второй тест в нём доказывает,
   что сторож вообще может упасть.
 
-Что осталось на столе: диалеры QUIC и WebTransport (два ClientHello, которые
-Chrome шлёт по QUIC, и CONNECT-заголовок WebTransport), и таблицы
+Что осталось на столе: диалер WebTransport (CONNECT-заголовок, который
+Chrome шлёт с ним), возобновлённая форма QUIC-ClientHello и таблицы
 заголовков по назначению запроса за пределами четырёх, определённых
 библиотекой.
 
@@ -236,8 +254,10 @@ Chrome шлёт по QUIC, и CONNECT-заголовок WebTransport), и та�
 * **TTL — подсказка, а не гарантия.** Он проставляется на соединение, но
   hairpin--hop или middlebox меняют то, что видит сервер. `128` — дефолт
   Windows, `64` — Linux/Android.
-* **QUIC нет.** Транспорт — HTTP/1.1 и HTTP/2. Сайту, который говорит
-  только по HTTP/3, нужен другой инструмент.
+* **QUIC — отдельный конструктор.** `mimic.New` говорит по TCP: HTTP/1.1
+  и HTTP/2. HTTP/3 — это `mimic.NewHTTP3`: тот же профиль и те же опции,
+  QUIC-провод вместо TCP. Его QUIC-ClientHello — всегда Chrome 152, он не
+  следует за `tls_client_hello` профиля.
 * **Профиль — это один клиент на одном сайте.** Набор заголовков браузера
   на одном origin не переносится на другой origin без правок.
 
@@ -247,6 +267,7 @@ Chrome шлёт по QUIC, и CONNECT-заголовок WebTransport), и та�
 | --- | --- |
 | `mimic/` | библиотека: транспорт, спеки, работа с профилями, фингерпринтинг |
 | `mimic/spec_*.go` | спеки ClientHello; в `mimic/testdata/` — фикстуры захватов |
+| `mimic/http3.go`, `mimic/quic_spec.go` | QUIC-транспорт и его отпечаток Chrome 152 |
 | `cmd/fetchd` | демон для не-Go потребителей |
 | `cmd/hello-tap`, `cmd/hellofp` | инструменты захвата и подсчёта отпечатков |
 | `cmd/tproxyfwd` | прозрачный форвардер на рутованном телефоне |
@@ -255,6 +276,7 @@ Chrome шлёт по QUIC, и CONNECT-заголовок WebTransport), и та�
 | `python/site_mimic_client/` | канонический питон-клиент |
 | `js/` | TypeScript/JavaScript-клиент (npm) |
 | `tools/phone/`, `tools/win/`, `tools/avd/` | инструменты захвата под каждую платформу |
+| `tools/mac/` | захват на macOS без root и без CA в keychain |
 | `tools/parse_clienthello.py`, `tools/ja4_from_pcap.py` | разбор отпечатков |
 | `docs/` | методика, исследовательские заметки, документация по сайтам |
 | `skill/SKILL.md` | агентный маршрут подгонки нового сайта |

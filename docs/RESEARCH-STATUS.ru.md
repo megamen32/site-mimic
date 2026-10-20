@@ -56,7 +56,7 @@ Windows и Android. Google выключил Finch-флаг за ночь. Выв
 | «Живые» эталоны | `tools/canary.sh` — суточный канарей: триггерит реальный Chrome на Windows-машине, гоняет наши 3 варианта через стенд, сравнивает МНОЖЕСТВО JA4-вариантов реального браузера за день; расписание — ежедневно 12:00 (отчёт в Telegram) | первый же прогон поймал переключение варианта реального Chrome |
 | Session resumption | общий `utls.ClientSessionCache` + `OmitEmptyPsk` + `UtlsPreSharedKeyExtension`; chrome_exact возобновляет через upstream sessionCache | первое соединение — полный handshake (17 exts), второе — resumption с 0x0029 на проводе |
 | TCP SYN per-profile | `tools/win-netns.sh` + `tools/rawsyn`: изолированный netns (macvlan, свой LAN IP, без TCP timestamps, wscale 8, TTL 128) без изменения хостовых sysctl; NFQUEUE-демон `rawsyn` переставляет опции исходящего SYN в Windows-порядок с пересчётом контрольных сумм | на проводе SYN = `mss 1460,wscale 8,sackOK` — байт-в-байт как у реального Windows Chrome (стенд, 2026-09-02) |
-| QUIC 152 | `examples/uquic-probe` — uQUIC-пресет 115, обновлённый до 152-поля (PQ-подписи + 0xCA34) | tshark с провода: JA4 `q13d0311h3_55b375c5d22e_7ae7f4a1bb73`, в hello `ca34` + `0x0904-0906` + ECH |
+| QUIC 152 | `mimic.NewHTTP3` (`mimic/quic_spec.go`) — QUIC-спека Chrome 152: PQ-подписи 0x0904-0906 + 0xCA34, транспортные параметры — 94 измеренных байта Chrome | наш JA4 `q13d0311h3_55b375c5d22e_8dd94ab2d40e`: JA4_a и JA4_b совпадают с эталоном `7ae7f4a1bb73`, расходится JA4_c (нет ECH GREASE) |
 | accept-language | поле `accept_language` в профиле — подмена значения без правки таблиц заголовков | go test |
 
 Уточнение механики «живых» фингерпринтов: чередование `t13d1517h2_cb7bf5808d99` (свежий полный handshake) и `t13d1518h2_e2d80978ab2e` (resumption-форма с pre_shared_key) — это не Finch-флаги, а полная/возобновлённая форма hello реального Chrome. Наша мимикрия теперь покрывает обе формы: свежую (chrome_exact / chrome_152) и resumption (cache + chrome_152_psk).
@@ -144,7 +144,8 @@ PageCache — HTTP-семантика, ревалидирует; на /fp/dot.pn
    набор; автоматический «canary»: раз в сутки реальный браузер и наш
    клиент ходят на стенд, diff JA4/заголовков/TTL публикуется.
 3. Per-connection TCP SYN (netns + raw) — порядок опций и TS.
-4. QUIC 152-exact пресет (uQUIC `QUICSpec`) + h3.
+4. ~~QUIC 152-exact пресет (uQUIC `QUICSpec`) + h3.~~ ЗАКРЫТО 2026-10-20:
+   `mimic.NewHTTP3`, JA4_a/b совпадают с эталоном, расходится JA4_c.
 5. Session resumption (переиспользование tickets).
 6. Параметризация пользовательских полей (accept-language и пр.).
 

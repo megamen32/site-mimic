@@ -88,7 +88,8 @@ new site with [skill/SKILL.md](skill/SKILL.md).
 With `chrome_exact` the TLS layer is byte-exact, and the header wire order
 plus Chrome-shaped HTTP/2 framing come from headless-client too (see
 [docs/methodology.md](docs/methodology.md) for what is closed vs still
-Go-shaped on the uTLS-only path). QUIC/DTLS are not covered. Anti-bot
+Go-shaped on the uTLS-only path). DTLS is not covered; QUIC is — see
+`mimic.NewHTTP3` for HTTP/3 with a Chrome 152 handshake. Anti-bot
 JavaScript challenges are out of scope by design — replay support for
 browser-harvested cookies is in [docs/anti-bot.md](docs/anti-bot.md).
 
