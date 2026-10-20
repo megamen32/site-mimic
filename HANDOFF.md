@@ -110,8 +110,10 @@ All seven items from the original handoff are complete:
    deselect the app in the picker at ~(655,205)), tap the play button at
    ~(517,99), navigate Chrome to the target, tap stop at ~(517,99), then
    `adb pull /sdcard/Download/PCAPdroid/<file>.pcap`.
-4. Parse: `PYTHONPATH=tools/rutube-replay client/.venv/bin/python
-   tools/rutube-replay/transport_parity/pcap_parser.py captures/phone.pcap`.
+4. Parse: `python3 tools/ja4_from_pcap.py captures/phone.pcap` → FoxIO JA4
+   per ClientHello (standard library only, no venv needed). One raw
+   ClientHello record → `python3 tools/parse_clienthello.py hello.json`
+   (JSON envelope from `mimic.WriteClientHelloJSON`).
 5. Chrome on 4G ignores Android's global `http_proxy` setting after the
    first process start — do not waste time on it; use (2) instead.
 
