@@ -39,7 +39,8 @@ never offered under another.
 ### HTTP/3
 
 `mimic.NewHTTP3` is the same client on a QUIC wire: the same profile, the
-same options, HTTP/3 instead of HTTP/2.
+same options, HTTP/3 instead of HTTP/2. It is a Go API — the Python and
+TypeScript clients go through `fetchd`, which speaks TCP.
 
 ```go
 profile := mimic.MustLoadProfile("profile.json")
@@ -48,11 +49,38 @@ if err != nil { ... }
 defer client.Transport.(io.Closer).Close()   // releases the UDP socket
 ```
 
-The QUIC handshake carries the Chrome 152 ClientHello — post-quantum
-signature algorithms and the 0xCA34 extension — and the transport
-parameters a real Chrome sends (94 bytes on the wire). The profile's user
-agent is applied the same way as on the TCP path. A CONNECT proxy is an
-error here, not a fallback: QUIC does not travel through one.
+The QUIC handshake carries the **Chrome QUIC** ClientHello, which is a
+different shape from the Chrome TCP one: 11 extensions and 3 cipher suites
+against 20 and 16 on TCP. Chrome's two hellos differ, so ours do too — a
+server that fingerprints the extension list sees the QUIC one. The base is
+uquic's Chrome 115 QUIC preset with Chrome 152's novelties added (the
+post-quantum signature algorithms and the 0xCA34 extension), and the
+transport parameters a real Chrome sends: the values are the captured ones.
+The total length on the wire is not the same as the capture's, because the
+GREASE parameter's id is random and our connection id is empty where
+Chrome's is 8 bytes (uquic generates the id after the hello is built, and
+a mismatch against transport parameter 0x0f is a handshake error — see
+`mimic/quic_spec.go`). The profile's user agent is applied the same way as
+on the TCP path. A CONNECT proxy is an error here, not a fallback: QUIC
+does not travel through one.
+
+Measured on the wire (2026-10-20): JA4
+`q13d0311h3_55b375c5d22e_8dd94ab2d40e`. The real phone's Chrome QUIC
+fingerprint is `q13d0311h3_55b375c5d22e_653d80c3fe9d`
+(`docs/phone-reference.md`): the JA4_a and JA4_b parts are equal, the
+JA4_c part is not — the repository keeps no raw QUIC capture fixture, so
+the reason is not claimed here.
+
+One consequence worth knowing: the SNI rides along when the target is a
+hostname, and RFC 6066 forbids an SNI for an IP address — against an IP
+the extension leaves the hello and the same fingerprint reads
+`q13i0310h3_…`. That is the correct form for an IP target, not a defect.
+
+The QUIC wire always carries that one QUIC fingerprint, so the profile's
+`tls_client_hello` must name a Chrome identity — `chrome_auto`,
+`android_149`, `chrome_152` or `chrome_152_psk`. `chrome_exact` is refused:
+it is a byte-exact Chrome *TCP* TLS layer, and over QUIC that layer is
+not applied.
 
 ### TypeScript / JavaScript
 

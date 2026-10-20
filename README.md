@@ -77,7 +77,7 @@ new site with [skill/SKILL.md](skill/SKILL.md).
 - [Fit-a-site methodology (AI-agent skill)](skill/SKILL.md)
 - [How it works, limits, roadmap](docs/methodology.md)
 - [HANDOFF — verified state and remaining work](HANDOFF.md)
-- [vk.ru example](examples/vk-ru/) · [m.vk.ru mobile example](examples/vk-ru-mobile/) · [stream.wb.ru example](examples/stream-wb-ru/) · [MiniMax managed gateway example](examples/minimax-agent-gateway/) · [stand probe](examples/stand-probe/)
+- [vk.ru example](examples/vk-ru/) · [m.vk.ru mobile example](examples/vk-ru-mobile/) · [stream.wb.ru example](examples/stream-wb-ru/) · [MiniMax managed gateway example](examples/minimax-agent-gateway/) · [stand probe](examples/stand-probe/) · [HTTP/3 over QUIC example](examples/http3/)
 - [Anti-bot boundary & cookie replay](docs/anti-bot.md) · [Desktop/phone JA4 references](docs/phone-reference.md) · [Safari on macOS wire reference](docs/safari-macos.md) · [MiniMax managed gateway vs the public Anthropic endpoint (RU)](docs/minimax-agent-gateway.ru.md)
 - [MAX app + web.max.ru: profiles taken off a rooted Android phone (RU)](docs/max-oneme.ru.md) · [Rooted-Android capture toolkit](tools/phone/README.md)
 - [Windows capture (real Chrome, real headers)](tools/win/README.md) · [Android emulator capture](tools/avd/README.md)

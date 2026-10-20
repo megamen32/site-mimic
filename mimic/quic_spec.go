@@ -8,11 +8,25 @@ import (
 	utls "github.com/refraction-networking/utls"
 )
 
-// The QUIC ClientHello carries the same TLS extensions as the TCP one, so the
-// Chrome 152 novelties the TCP path applies (mimic/spec152.go) are applied
-// here as well: the post-quantum signature algorithms behind a GREASE value
-// and the unregistered 0xCA34 extension. The values are the captured ones —
-// the same literals spec152.go puts on the wire — not invented here.
+// The QUIC ClientHello is the Chrome QUIC shape, not the Chrome TCP one.
+// Chrome's QUIC hello carries 11 extensions and 3 cipher suites where its TCP
+// hello carries 20 and 16 — two different fingerprint classes — and so does
+// ours. The base is uquic's Chrome 115 QUIC preset; on top of it go the
+// Chrome 152 novelties the TCP path applies too (mimic/spec152.go): the
+// post-quantum signature algorithms behind a GREASE value and the
+// unregistered 0xCA34 extension. The values are the captured ones — the same
+// literals spec152.go puts on the wire — not invented here.
+//
+// Measured on the wire (2026-10-20, hostname target): JA4
+// q13d0311h3_55b375c5d22e_8dd94ab2d40e. The real phone's Chrome QUIC
+// fingerprint is q13d0311h3_55b375c5d22e_653d80c3fe9d
+// (docs/phone-reference.md): the JA4_a and JA4_b parts are equal, the JA4_c
+// part is not — the repo keeps no raw QUIC capture fixture, so the reason is
+// not decomposed here and is not claimed.
+//
+// The SNI rides along when the target is a hostname. Against an IP address
+// RFC 6066 forbids an SNI, the extension leaves the hello and the
+// fingerprint becomes q13i0310h3_… — a different, equally correct form.
 const (
 	// chrome152GREASESigAlg is the GREASE value Chrome puts in front of the
 	// post-quantum signature algorithms.

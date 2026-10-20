@@ -203,6 +203,42 @@ func TestHTTP3LocalServerWithResolve(t *testing.T) {
 	}
 }
 
+// TestHTTP3VerifiesCertificates checks that the h3 path verifies the
+// server's certificate by default. Every other h3 test turns verification
+// off, so nothing would notice a flipped default — and a client that stops
+// verifying is a client that accepts any certificate.
+//
+// The loopback server's certificate is self-signed, so the handshake must
+// fail without WithInsecureTLS.
+func TestHTTP3VerifiesCertificates(t *testing.T) {
+	pc, err := net.ListenPacket("udp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	srv := newTestH3Server(t)
+	go func() { _ = srv.Serve(pc) }()
+	defer srv.Close()
+
+	p := Profile{Name: "chrome-152-h3", TLSClientHello: "chrome_152", UserAgent: chrome152UA}
+	client, err := NewHTTP3(p) // no WithInsecureTLS: the certificate must be checked
+	if err != nil {
+		t.Fatalf("NewHTTP3: %v", err)
+	}
+	defer client.Transport.(io.Closer).Close()
+
+	url := "https://" + pc.LocalAddr().String() + "/"
+	req, err := p.Request(http.MethodGet, url, nil)
+	if err != nil {
+		t.Fatalf("build request: %v", err)
+	}
+	resp, err := client.Do(req)
+	if err == nil {
+		resp.Body.Close()
+		t.Fatal("the handshake succeeded against a self-signed certificate")
+	}
+	t.Logf("rejected as expected: %v", err)
+}
+
 // newTestH3Server starts an h3 server for the loopback tests.
 func newTestH3Server(t *testing.T) *http3.Server {
 	t.Helper()

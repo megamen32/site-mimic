@@ -17,9 +17,16 @@ import (
 // browser-shaped QUIC fingerprint. It takes the same profile and the same
 // options as New, so the caller code stays the same — only the wire changes:
 // instead of TCP + TLS + ALPN "h2" the client sends a QUIC Initial packet
-// carrying the Chrome 152 ClientHello (post-quantum signature algorithms and
-// the 0xCA34 extension) and the transport parameters a real Android Chrome
-// sends. See mimic/quic_spec.go.
+// carrying the Chrome QUIC ClientHello (the 11-extension shape a real
+// Android Chrome 152 sends, with the post-quantum signature algorithms and
+// the 0xCA34 extension) and the transport parameters captured from that
+// browser. See mimic/quic_spec.go.
+//
+// The QUIC wire always carries that one QUIC fingerprint: a QUIC hello is a
+// different shape from a TCP hello, and uquic has no per-profile QUIC
+// presets. The profile's tls_client_hello names the TCP identity, so it is
+// accepted only when it is a Chrome one — the profile must not claim a
+// browser the QUIC fingerprint does not match.
 //
 // The profile's headers are applied the same way as with New: build the
 // request with Profile.Request (or set the User-Agent yourself) and hand it
@@ -80,12 +87,16 @@ func NewHTTP3(p Profile, opts ...Option) (*http.Client, error) {
 // checkHTTP3Profile rejects profiles whose ClientHello has no Chrome-shaped
 // QUIC counterpart: the QUIC hello is the Chrome 152 one, so a profile of
 // another browser would be mimicked over QUIC by something else entirely.
+//
+// chrome_exact is refused on purpose: it is a byte-exact Chrome *TCP* TLS
+// layer, and over QUIC that layer is not applied — accepting it silently
+// would promise bytes the wire never carries.
 func checkHTTP3Profile(p Profile) error {
 	switch p.TLSClientHello {
-	case "", "chrome_auto", "android_149", "chrome_152", "chrome_152_psk", "chrome_exact":
+	case "", "chrome_auto", "android_149", "chrome_152", "chrome_152_psk":
 		return nil
 	}
-	return fmt.Errorf("mimic: http3: profile tls_client_hello %q has no Chrome QUIC fingerprint (want chrome_auto, chrome_152 or chrome_exact)", p.TLSClientHello)
+	return fmt.Errorf("mimic: http3: profile tls_client_hello %q has no Chrome QUIC fingerprint (want chrome_auto, android_149, chrome_152 or chrome_152_psk; the QUIC wire always carries the Chrome 152 QUIC hello)", p.TLSClientHello)
 }
 
 // http3ListenPacket opens the UDP socket the QUIC connections run over. One

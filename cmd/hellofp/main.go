@@ -1,10 +1,21 @@
 // Command hellofp parses ClientHello records captured by the site-mimic
 // capture pipeline and prints JA3/JA4 fingerprints.
 //
-// Input is a JSONL stream where each line is a capture record:
+// Two input shapes are accepted:
 //
-//	{"kind":"hello","sni":"...","alpn":[...],"raw_b64":"<base64 of the
-//	 raw ClientHello handshake bytes>"}
+//  1. A JSONL stream where each line is a capture record:
+//
+//     {"kind":"hello","sni":"...","alpn":[...],"raw_b64":"<base64 of the
+//     raw ClientHello handshake bytes>"}
+//
+//     The raw bytes are the bare handshake body, so the record header is
+//     rebuilt before parsing.
+//
+//  2. A JSON envelope as the repository's own fixtures use it:
+//
+//     {"target":"...","client_hello_b64":"<base64 of a full TLS record>"}
+//
+//     The bytes are already a record, so they are parsed as they are.
 //
 // The raw bytes are re-parsed with mimic.ParseClientHello, so the printed
 // fingerprints come from the same implementation the library uses — not
@@ -13,6 +24,7 @@
 // Usage:
 //
 //	hellofp capture.jsonl
+//	hellofp mimic/testdata/node24_clienthello_resumed.json
 package main
 
 import (
@@ -30,11 +42,14 @@ type capture struct {
 	SNI    string   `json:"sni"`
 	ALPN   []string `json:"alpn"`
 	RawB64 string   `json:"raw_b64"`
+	// ClientHelloB64 is the repository fixture shape: a full TLS record.
+	ClientHelloB64 string `json:"client_hello_b64"`
+	Target         string `json:"target"`
 }
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: hellofp <capture.jsonl>")
+		fmt.Fprintln(os.Stderr, "usage: hellofp <capture.jsonl|capture.json>")
 		os.Exit(2)
 	}
 	f, err := os.Open(os.Args[1])
@@ -46,27 +61,37 @@ func main() {
 
 	dec := json.NewDecoder(f)
 	seen := map[string]bool{}
+	parsed := 0
 	for {
 		var rec capture
 		if err := dec.Decode(&rec); err != nil {
 			break
 		}
-		if rec.Kind != "hello" || rec.RawB64 == "" {
+		// The two shapes differ in what the bytes are: a bare handshake body
+		// in the JSONL stream, a full record in the fixture envelope.
+		body, isRecord, ok := rec.payload()
+		if !ok {
 			continue
 		}
-		raw, err := base64.StdEncoding.DecodeString(rec.RawB64)
+		raw, err := base64.StdEncoding.DecodeString(body)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "hellofp: bad base64: %v\n", err)
 			continue
 		}
-		// mimic.ParseClientHello expects a TLS record: type 0x16, version,
-		// length, then the handshake message. The capture stores the bare
-		// handshake body, so wrap it into a synthetic record first.
-		ch, err := mimic.ParseClientHello(wrapRecord(raw))
+		record := raw
+		if !isRecord {
+			// mimic.ParseClientHello expects a TLS record: type 0x16,
+			// version, length, then the handshake message. The JSONL stream
+			// stores the bare handshake body, so wrap it into a synthetic
+			// record first.
+			record = wrapRecord(raw)
+		}
+		ch, err := mimic.ParseClientHello(record)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "hellofp: %v\n", err)
 			continue
 		}
+		parsed++
 		ja3, ja3md5 := ch.JA3()
 		ja4 := ch.JA4()
 		key := ch.SNI + "|" + ja4
@@ -88,6 +113,25 @@ func main() {
 		fmt.Printf("JA4R     %s\n", ch.JA4R())
 		fmt.Println()
 	}
+	// A file that yielded no fingerprint is a mistake, not an empty result:
+	// the caller asked for fingerprints and got silence. Say so, and fail.
+	if parsed == 0 {
+		fmt.Fprintf(os.Stderr, "hellofp: no ClientHello records found in %s\n", os.Args[1])
+		os.Exit(1)
+	}
+}
+
+// payload returns the base64 body of a record and whether it already is a
+// full TLS record. The second return value is false when the record carries
+// no ClientHello at all.
+func (c capture) payload() (body string, isRecord bool, ok bool) {
+	switch {
+	case c.RawB64 != "":
+		return c.RawB64, false, true
+	case c.ClientHelloB64 != "":
+		return c.ClientHelloB64, true, true
+	}
+	return "", false, false
 }
 
 // wrapRecord builds a TLS handshake record around the raw ClientHello bytes.

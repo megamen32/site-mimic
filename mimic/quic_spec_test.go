@@ -271,6 +271,38 @@ func readVarint(b []byte) (uint64, int, bool) {
 	}
 }
 
+// TestChrome152QUICShapeDiffersFromTCP pins the difference the docs used to
+// paper over: Chrome's QUIC hello and Chrome's TCP hello are two different
+// fingerprint classes, and ours are too. A server that fingerprints the
+// extension list sees the QUIC one — so the two must not be described as one
+// and the same hello.
+//
+// The counts are measurements, not a design goal: they are what the two
+// hellos actually carry. Changing one is a deliberate act, so the test says
+// so out loud.
+func TestChrome152QUICShapeDiffersFromTCP(t *testing.T) {
+	tcp, err := chrome152Spec()
+	if err != nil {
+		t.Fatalf("chrome152Spec: %v", err)
+	}
+	quicSpec, err := chrome152QUICSpec()
+	if err != nil {
+		t.Fatalf("chrome152QUICSpec: %v", err)
+	}
+	if got, want := len(tcp.Extensions), 20; got != want {
+		t.Errorf("TCP hello carries %d extensions, want %d", got, want)
+	}
+	if got, want := len(tcp.CipherSuites), 16; got != want {
+		t.Errorf("TCP hello offers %d cipher suites, want %d", got, want)
+	}
+	if got, want := len(quicSpec.ClientHelloSpec.Extensions), 11; got != want {
+		t.Errorf("QUIC hello carries %d extensions, want %d", got, want)
+	}
+	if got, want := len(quicSpec.ClientHelloSpec.CipherSuites), 3; got != want {
+		t.Errorf("QUIC hello offers %d cipher suites, want %d", got, want)
+	}
+}
+
 // TestChrome152QUICClientHelloFingerprint builds the ClientHello the QUIC
 // stack sends and fingerprints it the way a server would: the FoxIO JA4 in
 // its QUIC form. The extension count and the 0xCA34 / post-quantum payloads
@@ -311,6 +343,12 @@ func TestChrome152QUICClientHelloFingerprint(t *testing.T) {
 	if got, want := len(hello.CipherSuites), 3; got != want {
 		t.Errorf("hello offers %d cipher suites, want %d", got, want)
 	}
+	// The SNI rides along when the target is a hostname: the JA4_a segment
+	// carries a "d" (domain) in that place, and without it the same hello
+	// fingerprints as q13i0310h3_….
+	if got, want := hello.SNI, "quic.example"; got != want {
+		t.Errorf("hello SNI = %q, want %q", got, want)
+	}
 
 	ja4 := ja4QUIC(hello)
 	t.Logf("QUIC ClientHello JA4: %s", ja4)
@@ -318,6 +356,12 @@ func TestChrome152QUICClientHelloFingerprint(t *testing.T) {
 	// cipher suites, eleven extensions, ALPN h3.
 	if !strings.HasPrefix(ja4, "q13d0311h3_") {
 		t.Errorf("QUIC JA4 = %s, want the q13d0311h3_ form", ja4)
+	}
+	// The measured value, not a prefix: the JA4_b and JA4_c parts are the
+	// hash of the extension list and of the ALPN/signature/group part, so
+	// they only survive a change that keeps the hello the same.
+	if got, want := ja4, "q13d0311h3_55b375c5d22e_8dd94ab2d40e"; got != want {
+		t.Errorf("QUIC JA4 = %s, want %s", got, want)
 	}
 }
 
