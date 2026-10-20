@@ -9,12 +9,41 @@ root; the measured numbers live in `docs/max-oneme.ru.md`.
 
 | file | where it runs | what it does |
 | --- | --- | --- |
-| `setup_capture.sh` | on the phone (root) | iptables redirect of one uid's TCP + QUIC block, starts/stops the on-device forwarder |
+| `setup_capture.sh` | on the phone (root) | iptables redirect of one uid's TCP + QUIC block, CA mount, and the full teardown (rules, forwarder, CA unmount) |
 | `ca_mount.sh` | on the phone (root) | bind-mounts the mitmproxy CA into the conscrypt APEX view of zygote |
 | `mitm_capture_addon.py` | on the capture host | mitmproxy addon: writes ClientHello bytes and HTTP headers to JSONL |
 | `cdp_headers.py` | on your laptop | reads the browser's request headers over the DevTools protocol (no CA needed) |
 | `../cmd/tproxyfwd` | on the phone | transparent TCP → SOCKS5 forwarder (recovers the pre-REDIRECT destination) |
 | `../cmd/hello-tap` | on your laptop | plain TCP-level ClientHello tap — the cheap path when you only need JA3/JA4 |
+
+## The forwarder
+
+`../cmd/tproxyfwd` is the on-device half of the chain: a self-contained
+static binary (standard library only, it speaks SOCKS5 itself) that
+recovers the pre-REDIRECT destination and tunnels the connection upstream.
+
+```sh
+CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -ldflags='-s -w' \
+  -o /tmp/tproxyfwd ./cmd/tproxyfwd
+adb push /tmp/tproxyfwd /data/local/tmp/tproxyfwd
+adb shell "su -c 'chmod 700 /data/local/tmp/tproxyfwd'"
+```
+
+The one-byte domain length in the SOCKS5 CONNECT is not cosmetic. With a
+two-byte length the proxy reads the high byte (`0x00`) as the length, sees
+an empty host, and stitches the port together from the leftover length byte
+and the first character of the address — mitmdump then reports
+`Error in TCP connection to :3889` for the destination `155.212.204.150:7`
+(`0x0F` = length of the address, `0x31` = `'1'`). Every connection fails,
+the capture stays empty, and the error text points at DNS instead of at the
+encoder. `cmd/tproxyfwd/socks5_test.go` locks the wire format.
+
+Validated on a rooted S21 against `ru.oneme.app` on 2026-10-20 with this
+tooling: the capture reproduced the committed fingerprint exactly —
+JA3 md5 `fb1972c15d60b7be0427edfbd00affde`, JA4
+`t13d171100_5b57614c22b0_40271e0a5736`, 17 cipher suites, 11 extensions, no
+ALPN (`mimic/testdata/max_app_clienthello_full.json`).
+
 
 ## The chain
 
@@ -136,18 +165,28 @@ compute — not a third-party implementation's.
 
 ```sh
 adb shell "su -c 'PKG=ru.oneme.app sh /data/local/tmp/setup_capture.sh stop'"
-# -> CLEANED
+# -> CA_UNMOUNTED, CLEANED
 s21-lease release <lease-id>
 ```
 
 `stop` removes both iptables rules (the TCP redirect and the UDP/443
-REJECT) and kills the forwarder. A left-over REJECT rule silently breaks
-QUIC for that uid; a left-over redirect sends its traffic into a dead
-forwarder. Check with:
+REJECT), kills the forwarder **and unmounts the CA bind-mount**. The unmount
+matters twice over: a left-over `REJECT` rule silently breaks QUIC for that
+uid, a left-over redirect sends its traffic into a dead forwarder, and a
+left-over CA in the zygote's mount namespace keeps a mitmproxy root in the
+system trust store of every app forked afterwards — on a shared phone that
+is a hole you do not want to leave open.
+
+The CA mounts **stack**: every `start` adds another layer over
+`/apex/com.android.conscrypt/cacerts`, and a single `umount` only peels off
+the top one. `stop` unmounts in a loop until the mount is gone, then the
+check must show zero CA files in the zygote view:
 
 ```sh
 adb shell "su -c 'iptables -t nat -L OUTPUT -n -v'"
 adb shell "su -c 'iptables -L OUTPUT -n -v'"
+adb shell "su -c 'pidof tproxyfwd || echo none'"
+adb shell "su -c 'nsenter -t \$(pidof zygote64) -m -- ls /apex/com.android.conscrypt/cacerts | grep -c c8750f0d'"
 ```
 
 ## The web version: why CDP, not MITM

@@ -57,9 +57,28 @@ cleanup() {
   pkill -x tproxyfwd 2>/dev/null
 }
 
+# Unmount the CA bind-mount again.
+#
+# ca_mount.sh mounts /data/local/tmp/cacerts over the conscrypt APEX
+# directory in the zygote namespace (and in the running app), and every
+# `start` mounts it once more — the mounts stack up, so a single umount
+# only peels off the top layer and the CA stays in the system trust store
+# of every process forked after the capture.
+#
+# The system trust store is not a mount point of its own here, so
+# unmounting until it fails stops exactly at our own layers.
+unmount_ca() {
+  for P in $(pidof zygote64; pidof zygote; pidof "$PKG"); do
+    while nsenter -t "$P" -m -- umount /apex/com.android.conscrypt/cacerts 2>/dev/null; do :; done
+  done
+}
+
 case "$ACTION" in
   stop)
     cleanup
+    echo "== CA bind-mount =="
+    unmount_ca
+    echo CA_UNMOUNTED
     echo "== remaining rules for uid $APP_UID =="
     iptables -t nat -L OUTPUT -n -v | grep "owner --uid-owner $APP_UID" || echo "none"
     iptables -L OUTPUT -n -v | grep "owner --uid-owner $APP_UID" || echo "none"

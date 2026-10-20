@@ -21,6 +21,13 @@
 // is plaintext on the wire, so the capture side can read the fingerprint
 // without any CA on the phone at all (see cmd/hello-tap for that path).
 //
+// The forwarder is self-contained: it speaks SOCKS5 itself (no proxy
+// library), and the platform-specific getsockopt(SO_ORIGINAL_DST) call
+// lives in dst_linux.go so the command still builds on a macOS
+// workstation. Validated on a rooted S21 against ru.oneme.app on
+// 2026-10-20: the capture reproduced the committed fingerprint (JA3 md5
+// fb1972c15d60b7be0427edfbd00affde) byte for byte.
+//
 // Usage on the phone (root shell):
 //
 //	TPROXYFWD_LISTEN=127.0.0.1:30886 \
@@ -122,6 +129,32 @@ func copyConn(dst, src net.Conn) error {
 	return nil
 }
 
+// buildConnectRequest builds the SOCKS5 CONNECT request for a domain target
+// (RFC 1928 section 3).
+//
+// The domain length is ONE byte. A two-byte length silently breaks every
+// connection: the proxy reads the high byte (0x00) as the length, so the
+// host looks empty and the port is stitched together from the leftover
+// length byte and the first character of the host — mitmdump then reports
+// "Name or service not known" for a destination that looks like ":3889".
+// This exact bug shipped once here and was caught by a live run against a
+// real phone; socks5_test.go locks the wire format.
+func buildConnectRequest(host string, port int) ([]byte, error) {
+	if len(host) == 0 {
+		return nil, fmt.Errorf("socks5: empty host")
+	}
+	if len(host) > 255 {
+		return nil, fmt.Errorf("socks5: host too long (%d bytes)", len(host))
+	}
+	if port <= 0 || port > 65535 {
+		return nil, fmt.Errorf("socks5: bad port %d", port)
+	}
+	req := []byte{0x05, 0x01, 0x00, 0x03, byte(len(host))}
+	req = append(req, host...)
+	req = binary.BigEndian.AppendUint16(req, uint16(port))
+	return req, nil
+}
+
 // socks5Connect performs a no-auth SOCKS5 CONNECT to target.
 func socks5Connect(conn net.Conn, target string) error {
 	host, portStr, err := net.SplitHostPort(target)
@@ -145,11 +178,17 @@ func socks5Connect(conn net.Conn, target string) error {
 		return fmt.Errorf("socks5: unsupported auth method 0x%02x", reply[1])
 	}
 
-	// request: CONNECT, reserved, atyp=3 (domain), port, host
-	req := []byte{0x05, 0x01, 0x00, 0x03}
-	req = binary.BigEndian.AppendUint16(req, uint16(len(host)))
-	req = append(req, host...)
-	req = binary.BigEndian.AppendUint16(req, uint16(port))
+	// request: VER CMD RSV ATYP=3 (domain) | LEN(1 byte) | HOST | PORT(2 bytes)
+	//
+	// RFC 1928 encodes the length of a domain-name in ONE byte, not two.
+	// With a 2-byte length the proxy reads the high byte (0x00) as the
+	// length, so it sees an empty host and a port made of the remaining
+	// length byte plus the first host character — every CONNECT is
+	// rejected with "Name or service not known".
+	req, err := buildConnectRequest(host, port)
+	if err != nil {
+		return err
+	}
 	if _, err := conn.Write(req); err != nil {
 		return err
 	}
