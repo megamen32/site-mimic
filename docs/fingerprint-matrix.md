@@ -50,7 +50,7 @@ Mimic profiles map to these references 1:1.
 - **Insecure context (http)**: Chrome sends no client hints and no br/zstd —
   captures must use HTTPS.
 - **Chrome 149 → 152 changes**: post-quantum signature algorithms
-  (0x0904-0906), new unregistered extension 0xCA24 (51764), shuffled
+  (0x0904-0906), new unregistered extension 0xCA34 (51764), shuffled
   sec-ch-ua brand list; JA4 third segment shifts accordingly on every
   platform.
 - **Per-connection randomness** (extension order shuffle, GREASE values)

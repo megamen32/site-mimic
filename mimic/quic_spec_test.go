@@ -3,6 +3,7 @@ package mimic
 import (
 	"context"
 	"encoding/hex"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -210,6 +211,83 @@ func TestChrome152QUICTransportParameters(t *testing.T) {
 		t.Error("no GREASE transport parameter")
 	} else if v := hex.EncodeToString(decodeTransportParameters(t, raw)[greaseID]); v != "7063534da942" {
 		t.Errorf("GREASE transport parameter value = %s, want 7063534da942", v)
+	}
+}
+
+// TestChrome152QUICTransportParametersMatchTheCapture compares our transport
+// parameters with the bytes a real Chrome actually sent, committed as a
+// fixture.
+//
+// The sibling test above pins the values as hex literals — a transcription
+// of the capture, so a wrong transcription could hide behind it. This one
+// compares against the capture itself.
+//
+// The GREASE transport parameter's id is random per connection on both
+// sides, so the parameters are compared as id -> value pairs, with the
+// GREASE one matched by its value.
+func TestChrome152QUICTransportParametersMatchTheCapture(t *testing.T) {
+	captured, err := os.ReadFile("testdata/chrome_quic_transport_parameters.bin")
+	if err != nil {
+		t.Fatalf("read the captured transport parameters: %v", err)
+	}
+	spec, err := chrome152QUICSpec()
+	if err != nil {
+		t.Fatalf("chrome152QUICSpec: %v", err)
+	}
+	params := transportParameters(spec.ClientHelloSpec)
+	if params == nil {
+		t.Fatal("no quic transport parameters extension")
+	}
+	ours := decodeTransportParameters(t, params.TransportParameters.Marshal())
+	theirs := decodeTransportParameters(t, captured)
+
+	// The GREASE parameter of the capture, matched by value.
+	var capturedGREASE string
+	for id, value := range theirs {
+		if isGREASETransportParamID(id) {
+			capturedGREASE = hex.EncodeToString(value)
+		}
+	}
+	if capturedGREASE == "" {
+		t.Fatal("the captured transport parameters carry no GREASE parameter")
+	}
+
+	var oursGREASE string
+	for id, value := range ours {
+		if isGREASETransportParamID(id) {
+			if oursGREASE != "" {
+				t.Error("more than one GREASE transport parameter")
+			}
+			oursGREASE = hex.EncodeToString(value)
+		}
+	}
+	if oursGREASE != capturedGREASE {
+		t.Errorf("GREASE transport parameter = %s, want the captured %s", oursGREASE, capturedGREASE)
+	}
+
+	nonGREASE := func(m map[uint64][]byte) map[uint64]string {
+		out := map[uint64]string{}
+		for id, value := range m {
+			if isGREASETransportParamID(id) {
+				continue
+			}
+			out[id] = hex.EncodeToString(value)
+		}
+		return out
+	}
+	got, want := nonGREASE(ours), nonGREASE(theirs)
+	if len(got) != len(want) {
+		t.Errorf("%d transport parameters, want the captured %d (%v)", len(got), len(want), got)
+	}
+	for id, wantHex := range want {
+		gotHex, ok := got[id]
+		if !ok {
+			t.Errorf("transport parameter 0x%02x missing", id)
+			continue
+		}
+		if gotHex != wantHex {
+			t.Errorf("transport parameter 0x%02x = %s, want the captured %s", id, gotHex, wantHex)
+		}
 	}
 }
 

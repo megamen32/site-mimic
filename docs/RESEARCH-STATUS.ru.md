@@ -15,8 +15,8 @@ Chrome 152, Safari на macOS) заходит на `https://fp.example.test/fp` 
 
 | Уровень | Реальный Chrome 152 (Windows, headed) | site-mimic (chrome_exact) | Статус |
 |---|---|---|---|
-| h2 SETTINGS | `1=65536, 2=0, 4=6291456, 6=262144` | то же | ✅ совпадает |
-| h2 WINDOW_UPDATE (conn) | `inc=15663105` | `inc=15663105` | ✅ совпадает |
+| h2 SETTINGS | `1=65536, 2=0, 4=6291456, 6=262144` | то же | ✅ совпадает (`mimic/h2_settings_test.go`) |
+| h2 WINDOW_UPDATE (conn) | `inc=15663105` | `inc=15663105` | ✅ совпадает (`mimic/h2_settings_test.go`) |
 | h2 порядок заголовков | `:method,:authority,:scheme,:path` + sec-ch-ua → sec-ch-ua-mobile → sec-ch-ua-platform → upgrade-insecure-requests → user-agent → accept → sec-fetch-site → sec-fetch-mode → sec-fetch-user → sec-fetch-dest → accept-encoding → accept-language → priority | то же (13=13) | ✅ совпадает |
 | HTTP-заголовки, множество имён | 13 | 13 | ✅ совпадает |
 | IP TTL | 128 (на Windows), в hairpin-логе 127 | `ip_ttl: 128` → 127 | ✅ ставится из профиля |

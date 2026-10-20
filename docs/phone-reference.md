@@ -55,7 +55,7 @@ navigation header capture reproduced the existing
 re-captured**: m.vk.ru now
 `t13d1518h2_8daaf6152771_e2d80978ab2e` — 18 extensions (mobile set is
 wider than desktop's 17), **with** the post-quantum signature algorithms
-and 0xCA24. Headers: sec-ch-ua `"Chromium";v="152", "Not?A_Brand";v="24",
+and 0xCA34. Headers: sec-ch-ua `"Chromium";v="152", "Not?A_Brand";v="24",
 "Google Chrome";v="152"`, UA `Chrome/152.0.0.0 Mobile Safari/537.36`.
 The full cross-platform reference table lives in
 [fingerprint-matrix.md](fingerprint-matrix.md).
@@ -99,7 +99,7 @@ Differences vs Chrome 149 (the whole extension set is otherwise identical):
   appear in signature_algorithms; the 149 hello still offered the classic
   RSA/ECDSA/Ed25519 set only. This is the fingerprint-visible TLS novelty of
   the 150 line.
-- A new **unregistered extension `0xCA24` (51764)** carrying a structured
+- A new **unregistered extension `0xCA34` (51764)** carrying a structured
   multi-record payload (no public documentation found; IANA lists nothing) —
   it pushes the extension count 16 → 17 and changes the JA4 third segment.
 - Over HTTP the `sec-ch-ua` brand list is now shuffled per request
@@ -154,7 +154,7 @@ Captured passively on the wire while driving requests over SSH:
 | Linux/Go client (reference) | — | **ttl 64**, win 64240, `mss 1460,sackOK,TS,nop,wscale 7` |
 
 Windows Chrome 151 keeps the `806a8c22fdea` extension hash of the stand's
-Chromium class — the post-quantum + `0xCA24` shift arrives with the 152
+Chromium class — the post-quantum + `0xCA34` shift arrives with the 152
 line. The L3/L4 layer separates OS families cleanly: **TTL 128 (Windows)
 vs 64 (Linux/Android)** plus the TCP-options layout (no timestamps on this
 Windows box, wscale 8 vs 7). TTL is set by the kernel — site-mimic now

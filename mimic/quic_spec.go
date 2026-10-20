@@ -160,15 +160,25 @@ func patchChrome152Hello(spec *utls.ClientHelloSpec) {
 // shuffles when it builds the spec, not per connection, so the order is
 // stable for the lifetime of one client — a known deviation, not a secret.
 //
-// The connection id stays empty, and that is deliberate. Chrome uses 8-byte
-// connection ids, but the id has to be echoed in the transport parameter
-// initial_source_connection_id (0x0f) or the server rejects the connection
-// (RFC 9000 section 7.2; uquic's own server does exactly this check), and
-// uquic generates the id inside the transport, after the ClientHello spec is
-// built. There is no hook to put the generated id into the parameter, so the
-// only self-consistent choice is an empty id in both places. The cost is
-// visible: the id length is plaintext, and a zero-length one says "not a
-// browser" as loudly as a wrong one would.
+// The source connection id stays empty, and that is what Chrome sends. In
+// the captured phone hellos the transport parameter
+// initial_source_connection_id (0x0f) is empty in every one of them, and
+// the Initial packet carries a zero-length source connection id. uquic's
+// Chrome preset sets SrcConnIDLength to 0, so the id it generates is empty
+// as well, and the parameter stays equal to the packet — RFC 9000 section
+// 7.2 wants the two to match, and a server rejects the connection when they
+// differ.
+//
+// The transport parameters as a whole are byte-identical to the capture:
+// 94 bytes, every parameter the same value, the same set, and the same
+// GREASE parameter (its id is random per connection on both sides).
+//
+// The ClientHello is where this path still differs from the real browser.
+// The captured hello has the ALPS extension (0x44cd), Chrome's ECH GREASE
+// id (0xfe0d) instead of the preset's, no 0xCA34, the nine classic
+// signature algorithms instead of thirteen, and four supported groups
+// (X25519MLKEM768 first) instead of three. That is the JA4_c difference,
+// and it is not claimed away.
 func patchChromeTransportParams(spec *utls.ClientHelloSpec) {
 	for i, ext := range spec.Extensions {
 		qtp, ok := ext.(*utls.QUICTransportParametersExtension)
@@ -177,7 +187,7 @@ func patchChromeTransportParams(spec *utls.ClientHelloSpec) {
 		}
 		qtp.TransportParameters = utls.TransportParameters{
 			utls.MaxUDPPayloadSize(quicChromeMaxUDPPayloadSize),
-			utls.InitialSourceConnectionID{}, // must stay empty: see the comment above
+			utls.InitialSourceConnectionID{}, // empty, like Chrome's: see the comment above
 			utls.InitialMaxStreamsUni(quicChromeMaxStreamsUni),
 			utls.InitialMaxStreamDataUni(quicChromeStreamWindow),
 			utls.InitialMaxStreamDataBidiLocal(quicChromeStreamWindow),
