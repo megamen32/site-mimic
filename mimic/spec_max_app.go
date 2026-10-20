@@ -69,7 +69,40 @@ const maxAppPSKPayloadHex = "00d600d0a2c812bea6d88883a169d1d0dba074f0a57f7a5b6f8
 // remaining 3 were fresh full handshakes. max_app is the fresh shape,
 // max_app_psk the dominant resumption shape.
 func maxAppSpec() (*utls.ClientHelloSpec, error) {
-	return &utls.ClientHelloSpec{
+	spec := maxAppBaseSpec(true)
+	return &spec, nil
+}
+
+// maxAppPSKSpec is the resumption variant of the MAX app hello: the same
+// shape plus a pre_shared_key extension (0x0029) sent last, exactly like the
+// app does on reconnect. The ticket payload is a captured one, so the server
+// treats it as an unknown ticket and answers with a full handshake.
+//
+// The captured payload is kept verbatim so the wire bytes match the capture
+// byte for byte — the payload is not part of any fingerprint (JA3/JA4 hash
+// extension ids, not payloads). For a real resumption use max_app: its
+// binder is computed from the ticket the server actually issued.
+func maxAppPSKSpec() (*utls.ClientHelloSpec, error) {
+	// No resumption placeholder here: the captured payload is the only
+	// PSK-class extension of this hello, and utls asserts that the PSK
+	// extension is the last one.
+	spec := maxAppBaseSpec(false)
+	psk, err := hex.DecodeString(maxAppPSKPayloadHex)
+	if err != nil {
+		return nil, fmt.Errorf("mimic: max_app psk payload: %w", err)
+	}
+	// Must stay last AND must be the only PSK-class extension: utls asserts
+	// the pre_shared_key extension is the final extension of the hello.
+	spec.Extensions = append(spec.Extensions, &utls.GenericExtension{Id: 0x0029, Data: psk})
+	return &spec, nil
+}
+
+// maxAppBaseSpec builds the 11-extension Conscrypt shape. withResumption
+// adds utls's managed resumption placeholder: the app resumes on 113 of
+// every 116 connections, so the hello must carry a real PSK offer once the
+// client holds a ticket — and stay the captured shape while it does not.
+func maxAppBaseSpec(withResumption bool) utls.ClientHelloSpec {
+	spec := utls.ClientHelloSpec{
 		TLSVersMin: utls.VersionTLS12,
 		TLSVersMax: utls.VersionTLS13,
 		CipherSuites: []uint16{
@@ -129,26 +162,14 @@ func maxAppSpec() (*utls.ClientHelloSpec, error) {
 				utls.VersionTLS13, utls.VersionTLS12,
 			}},
 		},
-	}, nil
-}
-
-// maxAppPSKSpec is the resumption variant of the MAX app hello: the same
-// shape plus a pre_shared_key extension (0x0029) sent last, exactly like the
-// app does on reconnect. The ticket payload is a captured one, so the server
-// treats it as an unknown ticket and answers with a full handshake.
-func maxAppPSKSpec() (*utls.ClientHelloSpec, error) {
-	spec, err := maxAppSpec()
-	if err != nil {
-		return nil, err
 	}
-	psk, err := hex.DecodeString(maxAppPSKPayloadHex)
-	if err != nil {
-		return nil, fmt.Errorf("mimic: max_app psk payload: %w", err)
+	if withResumption {
+		// Conscrypt emits a fixed extension order, so the placeholder goes
+		// last: it is the only PSK-class extension of the hello and utls
+		// asserts that the PSK extension is the final one.
+		withResumptionPSK(&spec)
 	}
-	// Must stay last AND must be the only PSK-class extension: utls asserts
-	// the pre_shared_key extension is the final extension of the hello.
-	spec.Extensions = append(spec.Extensions, &utls.GenericExtension{Id: 0x0029, Data: psk})
-	return spec, nil
+	return spec
 }
 
 // maxAppHelloName is the profile value that selects the MAX app ClientHello.

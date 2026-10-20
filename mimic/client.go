@@ -28,11 +28,6 @@ import (
 	"golang.org/x/net/http2"
 )
 
-// clientSessionCache lets the uTLS transports resume TLS 1.3 sessions like
-// a real browser does: a fresh full handshake only on first contact with a
-// host, then ticket-based resumption (the hello then carries 0x0029).
-var clientSessionCache utls.ClientSessionCache = utls.NewLRUClientSessionCache(64)
-
 // errNoH2 is returned by the dialer when the server did not negotiate h2 via
 // ALPN; the round tripper then retries the request over HTTP/1.1.
 var errNoH2 = errors.New("mimic: server did not negotiate h2 via ALPN")
@@ -315,13 +310,22 @@ func dialProfileTLS(ctx context.Context, o transportOptions, p Profile, network,
 	cfg := &utls.Config{
 		ServerName:         sni,
 		InsecureSkipVerify: o.insecureTLS,
-		ClientSessionCache: clientSessionCache,
-		OmitEmptyPsk:       true,
-		// A ClientHelloSpec without a pre_shared_key extension (node_24,
-		// chrome_152) cannot carry a resumption ticket. uTLS panics in
-		// that case once the session cache holds a ticket for the host,
-		// so resumption is skipped instead — the hello stays exactly the
-		// captured one.
+		// The ticket store is shared by every client of this profile (a
+		// browser keeps its tickets between connections) but namespaced per
+		// profile: a ticket negotiated under one ClientHello identity must
+		// never be offered under another one.
+		ClientSessionCache: sessionCacheFor(p.TLSClientHello),
+		// Conceal the pre_shared_key extension when the client holds no
+		// ticket for the host — the hello then stays exactly the captured
+		// full-handshake form. With a ticket, uTLS fills the extension and
+		// computes the binder over the hello it is about to send.
+		OmitEmptyPsk: true,
+		// A ClientHelloSpec without a pre_shared_key extension (node_24)
+		// or with a captured one instead of the managed placeholder
+		// (chrome_152_psk, max_app_psk) cannot carry a resumption ticket.
+		// uTLS panics in that case once the session cache holds a ticket
+		// for the host, so resumption is skipped instead — the hello stays
+		// exactly the captured one.
 		PreferSkipResumptionOnNilExtension: true,
 	}
 	uConn, err := newUConn(rawConn, cfg, p.TLSClientHello)
