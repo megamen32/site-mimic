@@ -20,6 +20,12 @@ client identity (`profile.json`); the library reproduces its TLS + header
 shape. Follow the sequence below for every new site, in order. Do not skip
 the verification steps — each one is cheap and catches a different failure.
 
+> **This file is the canon for the method.** A local MiniMax Code plugin
+> (`site-mimic`) ships an agent-facing version of this procedure plus MCP tools
+> to measure, compare and apply fingerprints. It adapts this file, it does not
+> replace it: when the two disagree, this file is right. Change behaviour here
+> and the plugin follows; do not teach the same rule twice in two places.
+
 ## The sequence
 
 ### 1. Decide which client the site expects
