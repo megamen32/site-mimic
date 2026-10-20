@@ -74,6 +74,10 @@ wired in `mimic/exact.go`):
   connection WINDOW_UPDATE of 15663105, plus Chrome's priority scheduling
   (`internal/chromehttp2/chrome_fingerprint_test.go` asserts these values;
   `writesched_priority_rfc7540.go` / `rfc9218.go`, `client_priority_go126.go`).
+  This repository pins the same numbers on its own — `mimic/h2_settings_test.go`
+  reads the frames the client actually sends — so a fork bump that changed
+  the frame would fail here, not only in the dependency's suite, which this
+  repository's CI never runs.
 
 ## Known gaps (do not overclaim)
 
