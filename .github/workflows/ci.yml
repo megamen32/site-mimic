@@ -49,6 +49,29 @@ jobs:
       - run: npm test
         working-directory: js
 
+  # The two committed probe binaries must not carry the build paths of whoever
+  # compiled them: a Go build without -trimpath embeds the builder's module
+  # cache path, which leaks a private hostname into a public repository.
+  # Rebuild with:
+  #   CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath \
+  #     -ldflags='-s -w' -o <path> <package-dir>
+  no-local-build-paths:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Committed binaries carry no builder paths
+        run: |
+          failed=0
+          for bin in tools/rawsyn/rawsyn examples/uquic-probe/uquic-probe; do
+            if strings "$bin" | grep -qE '/(home|Users)/[A-Za-z0-9._-]+/(go/pkg/mod|sdk)'; then
+              echo "::error file=$bin::embedded builder path — rebuild with -trimpath"
+              failed=1
+            fi
+          done
+          [ "$failed" -eq 0 ] || exit 1
+          echo "committed binaries carry no builder paths"
+
   # Real-site canary: exactly ONE request to vk.ru per push to main
   # (rate-limited by design — no loops, no retries). May flake if vk.ru is
   # down; that is intended signal, not noise to paper over.
