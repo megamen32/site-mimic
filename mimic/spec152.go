@@ -9,6 +9,12 @@ import (
 	utls "github.com/refraction-networking/utls"
 )
 
+// chrome152CA34ExtID is the identifier of the unregistered extension Chrome
+// 152 sends next to the ECH GREASE pair. The QUIC hello does not carry it:
+// Chrome's QUIC hello and Chrome's TCP hello are two different shapes, and
+// only the TCP one has 0xCA34 (see mimic/quic_spec.go).
+const chrome152CA34ExtID = 0xCA34
+
 // chrome152CA34PayloadHex is the opaque data Chrome 152 sends in its
 // unregistered extension 0xCA34 next to the ECH GREASE pair (recaptured from
 // a real headed Windows Chrome 152.0.7977.64 via the verification stand,

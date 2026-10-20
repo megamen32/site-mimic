@@ -35,6 +35,7 @@ func main() {
 	target := flag.String("url", "https://example.com/", "target URL")
 	profilePath := flag.String("profile", "", "profile JSON (default: the Chrome 152 profile)")
 	timeout := flag.Duration("timeout", 30*time.Second, "request timeout")
+	insecure := flag.Bool("insecure", false, "skip TLS certificate verification (for a local test server)")
 	flag.Parse()
 
 	path := *profilePath
@@ -50,7 +51,11 @@ func main() {
 		log.Fatalf("load profile: %v", err)
 	}
 
-	client, err := mimic.NewHTTP3(profile)
+	var options []mimic.Option
+	if *insecure {
+		options = append(options, mimic.WithInsecureTLS())
+	}
+	client, err := mimic.NewHTTP3(profile, options...)
 	if err != nil {
 		log.Fatalf("build the HTTP/3 client: %v", err)
 	}

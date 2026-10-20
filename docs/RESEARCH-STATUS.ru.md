@@ -56,7 +56,7 @@ Windows и Android. Google выключил Finch-флаг за ночь. Выв
 | «Живые» эталоны | `tools/canary.sh` — суточный канарей: триггерит реальный Chrome на Windows-машине, гоняет наши 3 варианта через стенд, сравнивает МНОЖЕСТВО JA4-вариантов реального браузера за день; расписание — ежедневно 12:00 (отчёт в Telegram) | первый же прогон поймал переключение варианта реального Chrome |
 | Session resumption | `mimic/resumption.go`: хранилище тикетов общее, но именованное по (идентичность профиля, сервер) — `scopedSessionCache`; `chrome_auto` (дефолт), `max_app` и `node_24` получили управляемый плейсхолдер `pre_shared_key`; chrome_exact возобновляет через upstream sessionCache | первое соединение — полный handshake (17 exts), второе — resumption с 0x0029 на проводе; тикет не переходит между профилями (проверено в трёх направлениях) |
 | TCP SYN per-profile | `tools/win-netns.sh` + `tools/rawsyn`: изолированный netns (macvlan, свой LAN IP, без TCP timestamps, wscale 8, TTL 128) без изменения хостовых sysctl; NFQUEUE-демон `rawsyn` переставляет опции исходящего SYN в Windows-порядок с пересчётом контрольных сумм | на проводе SYN = `mss 1460,wscale 8,sackOK` — байт-в-байт как у реального Windows Chrome (стенд, 2026-09-02) |
-| QUIC 152 | `mimic.NewHTTP3` (`mimic/quic_spec.go`) — QUIC-форма Chrome QUIC (11 расширений, 3 набора шифров) на базе пресета Chrome 115 из uquic + PQ-подписи 0x0904-0906 + 0xCA34; транспортные параметры — захваченные значения | наш JA4 на проводе `q13d0311h3_55b375c5d22e_8dd94ab2d40e`, эталон телефона `q13d0311h3_55b375c5d22e_653d80c3fe9d`: JA4_a и JA4_b совпадают, JA4_c расходится (сырого QUIC-захвата в репо нет — причина не заявляется) |
+| QUIC 152 | `mimic.NewHTTP3` (`mimic/quic_spec.go`) — QUIC-стек headless-client: его ClientHello совпадает с Chrome'овским побайтово (11 расширений, 3 набора шифров, PQ key share, ALPS, ECH GREASE); транспортные параметры — захваченные значения (пустой source CID, `google_connection_options "ORIGECCPIW2X"`); настройки HTTP/3 — Chrome'овские, измерены на проводе | наш JA4 на проводе `q13d0311h3_55b375c5d22e_653d80c3fe9d` — **равен эталону телефона**, совпадают все три части JA4 (2026-10-21) |
 | accept-language | поле `accept_language` в профиле — подмена значения без правки таблиц заголовков | go test |
 
 Уточнение механики «живых» фингерпринтов: чередование `t13d1517h2_cb7bf5808d99` (свежий полный handshake) и `t13d1518h2_e2d80978ab2e` (resumption-форма с pre_shared_key) — это не Finch-флаги, а полная/возобновлённая форма hello реального Chrome. Наша мимикрия теперь покрывает обе формы: свежую (chrome_exact / chrome_152) и resumption (cache + chrome_152_psk).
@@ -68,18 +68,21 @@ Windows и Android. Google выключил Finch-флаг за ночь. Выв
    Видно на стенде: Windows шлёт `mss,wscale,sackOK`, наш Linux —
    `mss,sackOK,wscale`. Множество то же, порядок — Linux. Лечится
    отдельным netns с raw-SYN (или eBPF) на профиль.
-2. **QUIC/HTTP3, транспортные параметры**: ЗАКРЫТО 2026-09-02 (вечер).
-   Реальные 94 байта transport parameters Chrome (ext 0x0039 из capture'а
-   телефонного QUIC) смапплены в типизированную структуру
-   `TransportParameters` uQUIC — дефолтный hello теперь несёт браузерные
-   значения (max_udp 1472, окна 6 MiB / 15 MiB, idle 30000, streams 100/103,
-   datagram 64 KiB, google_connection_options "ORIGECCPIW2X", GREASE-пара с
-   рандомным ID) при сохранении 11-расширенной формы
-   `q13d0311h3_55b375c5d22e_7ae7f4a1bb73` (tshark-verified: форма не
-   уезжает в q13d0314h3). Это замер той пробы, на пресете Chrome 115 без
-   PQ-подписей; после добавления PQ-алгоритмов (Chrome 152) JA4_c стал
-   `8dd94ab2d40e` — см. строку «QUIC 152» выше. Длина списка на проводе
-   от захвата не зависит: id GREASE-параметра случаен.
+2. ~~**QUIC/HTTP3, транспортные параметры**~~ ЗАКРЫТО 2026-09-02 (вечер),
+   пересобрано 2026-10-21. Реальные 94 байта transport parameters Chrome
+   (ext 0x0039 из capture'а телефонного QUIC) едут на проводе как есть:
+   тот же набор из тринадцати параметров с теми же значениями (max_udp 1472,
+   окна 6 MiB / 15 MiB, idle 30000, streams 100/103, datagram 64 KiB,
+   google_connection_options "ORIGECCPIW2X", version_information, GREASE-пара
+   с рандомным ID), пустой source connection id и в пакете, и в параметре
+   0x0f. Длина списка на проводе от захвата не зависит: id GREASE-параметра
+   случаен. С 2026-10-21 h3 работает на QUIC-стеке headless-client: его
+   ClientHello совпадает с Chrome'овским побайтово, JA4 на проводе
+   `q13d0311h3_55b375c5d22e_653d80c3fe9d` — ровно как у телефона. Настройки
+   HTTP/3 тоже Chrome'овские (QPACK 65536 / field section 262144 / blocked
+   100 / H3_DATAGRAM 1 + GREASE), измерены на проводе против локального
+   сервера, печатавшего control stream клиента. Прежняя запись
+   (`8dd94ab2d40e`, пресет Chrome 115 из uquic) больше не актуальна.
 3. ~~**TLS session resumption**~~ ЗАКРЫТО 2026-10-20: клиент возобновляет
    сессию — тикет живёт в общем хранилище, но именован по (идентичность
    профиля, сервер), поэтому тикет не переходит между профилями. Свежие
@@ -154,8 +157,9 @@ PageCache — HTTP-семантика, ревалидирует; на /fp/dot.pn
    набор; автоматический «canary»: раз в сутки реальный браузер и наш
    клиент ходят на стенд, diff JA4/заголовков/TTL публикуется.
 3. Per-connection TCP SYN (netns + raw) — порядок опций и TS.
-4. ~~QUIC 152-exact пресет (uQUIC `QUICSpec`) + h3.~~ ЗАКРЫТО 2026-10-20:
-   `mimic.NewHTTP3`, JA4_a/b совпадают с эталоном, расходится JA4_c.
+4. ~~QUIC 152-exact пресет + h3.~~ ЗАКРЫТО 2026-10-21: `mimic.NewHTTP3` на
+   QUIC-стеке headless-client; JA4 на проводе равен эталону телефона —
+   `q13d0311h3_55b375c5d22e_653d80c3fe9d`.
 5. Session resumption (переиспользование tickets).
 6. Параметризация пользовательских полей (accept-language и пр.).
 

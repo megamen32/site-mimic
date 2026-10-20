@@ -54,6 +54,40 @@ This loop is the same one used to close a measured JA3 gap in a production
 traffic-replay engine: baseline capture → engine self-dump → field-by-field
 diff → fix → re-diff.
 
+### Reading the QUIC wire: the same loop, one layer down
+
+The QUIC path has the same loop, and the first flight is enough for it. A
+QUIC Initial packet is protected, but RFC 9001 derives the Initial keys
+from the client's destination connection id — no secret material involved,
+so the ClientHello inside a captured Initial can be read offline (the same
+trick `tools/quic_initial.py` uses on a phone capture).
+
+`mimic/h3_wire_test.go` does exactly that against our own client: it sends a
+QUIC Initial to a socket that answers nothing, decrypts the packet, rebuilds
+the TLS handshake stream from the CRYPTO frames and fingerprints the hello
+the way a server would. The result is checked against the phone capture
+committed as `mimic/testdata/chrome_quic_transport_parameters.bin`, so the
+transport parameters are compared with the bytes a real Chrome sent, not
+with a copy of our own constants.
+
+The HTTP/3 settings need the other end of the connection: they live in the
+control stream, inside the encrypted 1-RTT streams. The measurement
+(2026-10-21, Google Chrome 155 on macOS) therefore ran a server that
+prints the client's control stream — `cmd/h3probe` in this repository does
+the same for any client — and read the SETTINGS frame off the wire:
+
+```
+0x01 QPACK_MAX_TABLE_CAPACITY = 65536
+0x06 MAX_FIELD_SECTION_SIZE   = 262144
+0x07 QPACK_BLOCKED_STREAMS    = 100
+0x33 H3_DATAGRAM              = 1
+```
+
+plus a GREASE setting with a random id and a random value, a GREASE frame
+and a PRIORITY_UPDATE frame ("u=0, i"). The values above are the ones the
+client sends; `mimic/h3_wire_test.go` reads them back off a live connection
+and fails if the frame goes back to being empty.
+
 ## Header wire order and HTTP/2 frames: what `chrome_exact` closes
 
 Two gaps below were closed by delegating the transport to

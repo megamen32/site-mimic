@@ -52,28 +52,32 @@ defer client.Transport.(io.Closer).Close()   // releases the UDP socket
 The QUIC handshake carries the **Chrome QUIC** ClientHello, which is a
 different shape from the Chrome TCP one: 11 extensions and 3 cipher suites
 against 19 and 16 on TCP. Chrome's two hellos differ, so ours do too — a
-server that fingerprints the extension list sees the QUIC one. The base is
-uquic's Chrome 115 QUIC preset with Chrome 152's novelties added (the
-post-quantum signature algorithms and the 0xCA34 extension).
+server that fingerprints the extension list sees the QUIC one. The hello
+comes from the headless-client QUIC stack, whose ClientHello is Chrome's
+byte for byte: the post-quantum key share, ALPS, the ECH GREASE pair and the
+nine classic signature algorithms.
 
-The transport parameters are byte-identical to the real Chrome's: 94 bytes,
-every parameter the same value, the same set, the same GREASE parameter (its
-id is random per connection on both sides), and an empty source connection id
-in both the packet and parameter 0x0f — which is what the captured phone
-hellos send, not an 8-byte id. The ClientHello is where this path still
-differs: the captured hello has the ALPS extension (0x44cd), Chrome's ECH
-GREASE id (0xfe0d) instead of the preset's, no 0xCA34, the nine classic
-signature algorithms instead of thirteen, and four supported groups
-(X25519MLKEM768 first) instead of three. The profile's user agent is applied
-the same way as on the TCP path. A CONNECT proxy is an error here, not a
-fallback: QUIC does not travel through one.
+The transport parameters are the real Chrome's: the same thirteen
+parameters with the same values, an empty source connection id in both the
+packet and parameter 0x0f — which is what the captured phone hellos send,
+not an 8-byte id — and the GREASE parameter with a random id and payload, as
+on the browser's side. The one value the stack gets wrong is
+google_connection_options, which it sends as "ORIG"; the captured Chrome
+sends "ORIGECCPIW2X", and that is what goes on the wire.
 
-Measured on the wire (2026-10-20): JA4
-`q13d0311h3_55b375c5d22e_8dd94ab2d40e`. The real phone's Chrome QUIC
-fingerprint is `q13d0311h3_55b375c5d22e_653d80c3fe9d`
-(`docs/phone-reference.md`): the JA4_a and JA4_b parts are equal, the
-JA4_c part is not — and the reason is known, it is the signature algorithms
-and the supported groups listed above.
+The HTTP/3 settings are Chrome's too, measured on the wire against a local
+server that printed the client's control stream: QPACK_MAX_TABLE_CAPACITY
+65536, MAX_FIELD_SECTION_SIZE 262144, QPACK_BLOCKED_STREAMS 100,
+H3_DATAGRAM 1, plus the GREASE setting and the GREASE frame around them.
+The profile's user agent is applied the same way as on the TCP path. A
+CONNECT proxy is an error here, not a fallback: QUIC does not travel through
+one.
+
+Measured on the wire (2026-10-21): JA4
+`q13d0311h3_55b375c5d22e_653d80c3fe9d` — the same value the real phone's
+Chrome QUIC fingerprint reads (`docs/phone-reference.md`). All three parts
+of the JA4 match, so the QUIC hello is no longer merely the same shape as
+the browser's: it is the same fingerprint.
 
 One consequence worth knowing: the SNI rides along when the target is a
 hostname, and RFC 6066 forbids an SNI for an IP address — against an IP
