@@ -118,13 +118,13 @@ The client supervises the daemon: if `/healthz` is unreachable it starts
 | --- | --- | --- | --- |
 | `chrome_auto` (default) | Chrome, auto-detected | `t13d1516h2_8daaf6152771_d8a2da3f94cd` | uTLS built-in |
 | `android_149` | Android Chrome 149 | same as above | mobile reference |
-| `chrome_152` | Chrome 152 desktop / 155 mobile | `t13d1517h2_8daaf6152771_cb7bf5808d99` | custom spec: post-quantum signature algorithms + extension 0xCA24 |
+| `chrome_152` | Chrome 152 desktop / 155 mobile | `t13d1517h2_8daaf6152771_cb7bf5808d99` | custom spec: post-quantum signature algorithms + extension 0xCA34 |
 | `chrome_152_psk` | the same, with resumption | — | adds the PSK binder |
 | `node_24` | Node.js 24 / Electron 42 (BoringSSL) | `t13d1812h1_5d04281c6031_ef7df7f74e48` | ALPN `http/1.1` only |
 | `max_app` | MAX messenger app (`ru.oneme.app`) | `t13d171100_5b57614c22b0_40271e0a5736` | Conscrypt/OkHttp shape, **no ALPN at all**, 17 cipher suites |
 | `max_app_psk` | the same, with resumption | `t13d171200_5b57614c22b0_352634941f3a` | 113 of 116 real connections carried a PSK |
 | `firefox_auto`, `ios_auto`, `random`, `random_alpn` | Firefox, iOS, random | — | uTLS built-ins |
-| `chrome_exact` | real Chrome, byte-for-byte | `t13d1516h2_8daaf6152771_806a8c22fdea` | not a uTLS spec: the transport is delegated to [headless-client](https://github.com/kulikov0/headless-client), which is measured against the current stable Chrome |
+| `chrome_exact` | real Chrome, byte-for-byte | `t13d1517h2_8daaf6152771_cb7bf5808d99` | not a uTLS spec: the transport is delegated to [headless-client](https://github.com/megamen32/headless-client) (a fork of [kulikov0's](https://github.com/kulikov0/headless-client)), whose ClientHello is measured against the current stable Chrome. Since the 2026-10-20 fork sync it speaks the same fingerprint as the `chrome_152` spec and our own capture |
 
 `max_app` is the only spec **without ALPN**: it can only speak HTTP/1.1.
 A profile that sets it must also set `http1_wire_order` and

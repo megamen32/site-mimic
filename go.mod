@@ -3,16 +3,16 @@ module github.com/megamen32/site-mimic
 go 1.26.1
 
 require (
-	github.com/megamen32/headless-client v0.0.0-20260902120803-9d1cd5515e96
+	github.com/megamen32/headless-client v0.0.0-20261020114635-7efcc459e12d
 	github.com/refraction-networking/utls v1.8.2
 	golang.org/x/net v0.57.0
 	golang.org/x/sys v0.47.0
 )
 
 require (
-	github.com/andybalholm/brotli v1.1.0 // indirect
+	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/klauspost/compress v1.17.8 // indirect
+	github.com/klauspost/compress v1.17.11 // indirect
 	github.com/pion/datachannel v1.6.0 // indirect
 	github.com/pion/dtls/v3 v3.1.2 // indirect
 	github.com/pion/interceptor v0.1.44 // indirect

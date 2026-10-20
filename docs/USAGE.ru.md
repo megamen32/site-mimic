@@ -114,13 +114,13 @@ print(r.status, r.text)
 | --- | --- | --- | --- |
 | `chrome_auto` (по умолчанию) | Chrome, автоопределение | `t13d1516h2_8daaf6152771_d8a2da3f94cd` | встроенная в uTLS |
 | `android_149` | мобильный Chrome 149 | тот же | мобильный эталон |
-| `chrome_152` | Chrome 152 на десктопе / 155 на телефоне | `t13d1517h2_8daaf6152771_cb7bf5808d99` | своя спека: постквантовые алгоритмы подписи + расширение 0xCA24 |
+| `chrome_152` | Chrome 152 на десктопе / 155 на телефоне | `t13d1517h2_8daaf6152771_cb7bf5808d99` | своя спека: постквантовые алгоритмы подписи + расширение 0xCA34 |
 | `chrome_152_psk` | то же, но с resumption | — | добавляет PSK binder |
 | `node_24` | Node.js 24 / Electron 42 (BoringSSL) | `t13d1812h1_5d04281c6031_ef7df7f74e48` | ALPN только `http/1.1` |
 | `max_app` | приложение MAX (`ru.oneme.app`) | `t13d171100_5b57614c22b0_40271e0a5736` | форма Conscrypt/OkHttp, **ALPN нет вообще**, 17 шифров |
 | `max_app_psk` | то же, с resumption | `t13d171200_5b57614c22b0_352634941f3a` | PSK несли 113 из 116 реальных соединений |
 | `firefox_auto`, `ios_auto`, `random`, `random_alpn` | Firefox, iOS, случайный | — | встроенные в uTLS |
-| `chrome_exact` | настоящий Chrome, байт в байт | `t13d1516h2_8daaf6152771_806a8c22fdea` | это не uTLS-спека: транспорт делегирован [headless-client](https://github.com/kulikov0/headless-client), который снят с актуального стабильного Chrome |
+| `chrome_exact` | настоящий Chrome, байт в байт | `t13d1517h2_8daaf6152771_cb7bf5808d99` | это не uTLS-спека: транспорт делегирован [headless-client](https://github.com/megamen32/headless-client) (форк [Куликова](https://github.com/kulikov0/headless-client)), чей ClientHello снят с актуального стабильного Chrome. После синхронизации форка 20.10.2026 говорит тем же отпечатком, что спека `chrome_152` и наш собственный захват |
 
 `max_app` — единственная спека **без ALPN**: она умеет только HTTP/1.1.
 Профиль с ней обязан ставить `http1_wire_order` и `wire_header_order` —

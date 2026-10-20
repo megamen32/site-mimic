@@ -9,6 +9,13 @@ reproducing the stand's byte-exact browser value below). All captures:
 
 - `browser.pcap` (real Chromium in the stand's network namespace):
   `t13d1516h2_8daaf6152771_806a8c22fdea`
+
+  **Superseded 2026-10-20**: the headless-client fork was synced with Kulikov's
+  stream, and the captured Chrome moved to the next generation. The
+  `chrome_exact` path now produces `t13d1517h2_8daaf6152771_cb7bf5808d99` —
+  the same fingerprint as our own Chrome 152/155 capture. The value above is
+  what the 2026-08-30 capture produced; the guard for the current one is
+  `mimic/exact_capture_test.go`.
 - `probe.pcap` (site-mimic `tls_client_hello: "chrome_auto"`):
 
   `t13d1516h2_8daaf6152771_d8a2da3f94cd`
