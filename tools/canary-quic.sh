@@ -84,6 +84,11 @@ ip_of() {
 }
 IP=$(ip_of)
 [ -n "$IP" ] || die "no LAN address found (set CANARY_IP)"
+# Both sides go by this name, so both hellos carry the server name and the
+# comparison is between the same shape. A client that talks to an address has
+# no session to offer on the next connection, and its hello would have a
+# different extension set.
+CANARY_HOST=${CANARY_HOST:-quic.test}
 URL="https://$IP:$PORT/"
 
 mkdir -p "$WORK"
@@ -100,7 +105,7 @@ if [ ! -f "$WORK/srv.pem" ] || [ ! -f "$WORK/srv.key" ]; then
     openssl req -newkey rsa:2048 -nodes \
         -keyout "$WORK/srv.key" -out "$WORK/srv.csr" \
         -subj "/CN=$IP" >/dev/null 2>&1 || die "openssl: the request"
-    printf 'subjectAltName=IP:%s\n' "$IP" > "$WORK/ext.cnf"
+    printf 'subjectAltName=IP:%s,DNS:%s\n' "$IP" "$CANARY_HOST" > "$WORK/ext.cnf"
     openssl x509 -req -in "$WORK/srv.csr" -CA "$WORK/ca.pem" -CAkey "$WORK/ca.key" \
         -CAcreateserial -out "$WORK/srv.pem" -days 30 -extfile "$WORK/ext.cnf" \
         >/dev/null 2>&1 || die "openssl: the certificate"
@@ -153,8 +158,9 @@ sleep 12
 kill $CHROME_PID 2>/dev/null
 
 # 2) our own h3 client, against the same kind of stand.
-step "driving our h3 client against https://$IP:$OURS_PORT/"
-go run ./examples/http3 -url "https://$IP:$OURS_PORT/" -profile "$PROFILE" -insecure \
+step "driving our h3 client against https://$CANARY_HOST:$OURS_PORT/"
+go run ./examples/http3 -url "https://quic.test:$OURS_PORT/" -profile "$PROFILE" -insecure -resume \
+    -resolve "quic.test=$IP" \
     >"$WORK/ours.log" 2>&1 || step "WARN: our client failed (see $WORK/ours.log)"
 sleep 1
 
@@ -177,7 +183,11 @@ ref_sig = set(ref_sig.split())
 ref_settings = dict(p.split("=") for p in ref_settings.split())
 
 # An address on the wire means no SNI, and no server_name extension with
-# it; the measurement was taken against a name.
+# it; the measurement was taken against a name. The browser goes by the
+# address and our client by a name (a session is bound to a name, so a
+# client that talks to an address has no session to offer), so the two sides
+# are compared with the shape each of them sends.
+ref_ext_by_name = set(ref_ext)
 BY_NAME = not target.replace(".", "").isdigit()
 if not BY_NAME:
     ref_ext = ref_ext - {"0x0000"}
@@ -207,10 +217,8 @@ browser = browser_reports[0]
 ours = ours_reports[0]
 
 # The resumption: a browser that has a ticket for an origin offers it on the
-# next connection, and the hello then carries the pre_shared_key. The
-# browser's second connection to the stand is that shape; ours never is (the
-# QUIC stack of the dependency has no session store), so the canary says so
-# out loud instead of leaving it to be noticed.
+# next connection, and the hello then carries the pre_shared_key. Both sides
+# are checked, so a client that stops resuming shows up here.
 def resumed_shape(reports):
     for report in reports[1:]:
         if "0x0029" in (report.get("extension_ids") or []):
@@ -218,10 +226,16 @@ def resumed_shape(reports):
     return False
 
 
-print("the browser's connections: %d, a later one resumes: %s"
-      % (len(browser_reports), "yes" if resumed_shape(browser_reports) else "no"))
-print("our connections: %d, a later one resumes: %s"
-      % (len(ours_reports), "yes" if resumed_shape(ours_reports) else "no"))
+def resumption_line(label, reports):
+    if len(reports) < 2:
+        print("%s: one connection only, nothing to resume on" % label)
+        return
+    print("%s: %d connections, a later one resumes: %s"
+          % (label, len(reports), "yes" if resumed_shape(reports) else "no"))
+
+
+resumption_line("the browser", browser_reports)
+resumption_line("ours", ours_reports)
 
 bad = 0
 
@@ -247,7 +261,15 @@ compare("JA4 b and c", bc_of(ours), ref_bc, bc_of(browser))
 # The extension set, order-independent: the QUIC hello shuffles it.
 ours_ext = set(ours.get("extension_ids", []))
 browser_ext = set(browser.get("extension_ids", []))
-compare("extensions", ours_ext, ref_ext, browser_ext)
+# The extension sets are compared per side: our client goes by a name and
+# carries the server_name extension, the browser goes by the address and
+# does not.
+if ours_ext != ref_ext_by_name:
+    print("DRIFT extensions: ours=%s want=%s" % (ours_ext, ref_ext_by_name))
+    bad += 1
+elif browser_ext != ref_ext:
+    print("NOTE  extensions: the browser sends %s, the reference says %s - the browser moved on, the measurement is old"
+          % (browser_ext, ref_ext))
 
 ours_sig = set(ours.get("sig_algs", []))
 browser_sig = set(browser.get("sig_algs", []))

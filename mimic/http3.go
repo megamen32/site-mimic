@@ -143,6 +143,17 @@ type http3Transport struct {
 	acceptLanguage string
 }
 
+// CloseIdleConnections drops the connections the transport holds open, so
+// the next request dials again.
+//
+// It matters for the fingerprint: a browser that keeps a connection offers
+// nothing on it, but a browser that has to dial again offers the ticket it
+// got \u2014 and the hello of that connection then carries the
+// pre_shared_key extension. Without this the h3 client would never resume.
+func (t *http3Transport) CloseIdleConnections() {
+	t.rt.CloseIdleConnections()
+}
+
 func (t *http3Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if req.Header != nil {
 		needUA := t.ua != "" && req.Header.Get("User-Agent") == ""

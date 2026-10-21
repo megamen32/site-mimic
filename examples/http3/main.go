@@ -10,6 +10,7 @@
 //
 //	go run .                                  # GET https://example.com/
 //	go run . -url https://vk.ru/ -profile ../profiles/windows-chrome152.json
+//	go run . -resume          # twice, so the second connection resumes
 //
 // Note: HTTP/3 is a Go API. The Python and TypeScript clients go through
 // fetchd, which speaks TCP. And a QUIC connection needs UDP/443 to be
@@ -26,6 +27,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/megamen32/site-mimic/mimic"
@@ -36,6 +38,8 @@ func main() {
 	profilePath := flag.String("profile", "", "profile JSON (default: the Chrome 152 profile)")
 	timeout := flag.Duration("timeout", 30*time.Second, "request timeout")
 	insecure := flag.Bool("insecure", false, "skip TLS certificate verification (for a local test server)")
+	resume := flag.Bool("resume", false, "fetch twice, dropping the connection in between, so the second connection resumes")
+	resolveHost := flag.String("resolve", "", "host=ip to pin the address of a host (repeatable: -resolve a=1.2.3.4)")
 	flag.Parse()
 
 	path := *profilePath
@@ -54,6 +58,13 @@ func main() {
 	var options []mimic.Option
 	if *insecure {
 		options = append(options, mimic.WithInsecureTLS())
+	}
+	if *resolveHost != "" {
+		host, ip, ok := strings.Cut(*resolveHost, "=")
+		if !ok {
+			log.Fatalf("-resolve wants host=ip, got %q", *resolveHost)
+		}
+		options = append(options, mimic.WithResolve(map[string]string{host: ip}))
 	}
 	client, err := mimic.NewHTTP3(profile, options...)
 	if err != nil {
@@ -91,6 +102,27 @@ func main() {
 	}
 	if resp.Proto != "HTTP/3.0" {
 		fmt.Fprintln(os.Stderr, "warning: the response did not come over HTTP/3")
+	}
+
+	if *resume {
+		// A browser that has to dial again offers the ticket it got, and
+		// the hello of that connection carries the pre_shared_key
+		// extension. Dropping the pooled connection is what makes the
+		// second request dial again.
+		client.CloseIdleConnections()
+		time.Sleep(100 * time.Millisecond)
+		ctx2, cancel2 := context.WithTimeout(context.Background(), *timeout)
+		defer cancel2()
+		req2, err := profile.Request(http.MethodGet, *target, nil)
+		if err != nil {
+			log.Fatalf("build the second request: %v", err)
+		}
+		resp2, err := client.Do(req2.WithContext(ctx2))
+		if err != nil {
+			log.Fatalf("the second request: %v", err)
+		}
+		defer resp2.Body.Close()
+		fmt.Printf("resumed connection: %s\n", resp2.Proto)
 	}
 }
 

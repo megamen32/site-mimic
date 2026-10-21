@@ -360,16 +360,21 @@ func (c *sniffConn) ReadFrom(p []byte) (int, net.Addr, error) {
 // sniffer keeps one QUIC connection per client address and remembers what
 // each of them sent.
 type sniffer struct {
-	mu     sync.Mutex
-	conns  map[string]*quicwire.Connection
-	hellos map[string]*mimic.ClientHello
+	mu sync.Mutex
+	// conns is keyed by the client's address and the connection's first
+	// destination connection id: a client that opens one socket for many
+	// origins runs several connections over it, and they must not be mixed
+	// up.
+	conns map[string]*quicwire.Connection
+	// hellos holds the hellos of one address in the order they arrived.
+	hellos map[string][]*mimic.ClientHello
 	sink   io.Writer
 }
 
 func newSniffer(sink io.Writer) *sniffer {
 	return &sniffer{
 		conns:  map[string]*quicwire.Connection{},
-		hellos: map[string]*mimic.ClientHello{},
+		hellos: map[string][]*mimic.ClientHello{},
 		sink:   sink,
 	}
 }
@@ -383,7 +388,14 @@ func newSniffer(sink io.Writer) *sniffer {
 // client that opens a socket per connection (or a test) sees one report per
 // connection.
 func (s *sniffer) observe(addr net.Addr, datagram []byte) {
-	key := addr.String()
+	address := addr.String()
+	// The connection's identity is the client's address and the
+	// destination connection id of its first Initial packet.
+	dcid, ok := quicwire.DestinationConnectionID(datagram)
+	if !ok {
+		return
+	}
+	key := address + "\x00" + string(dcid)
 	s.mu.Lock()
 	conn := s.conns[key]
 	if conn == nil {
@@ -404,14 +416,19 @@ func (s *sniffer) observe(addr net.Addr, datagram []byte) {
 		return
 	}
 	s.mu.Lock()
-	s.hellos[key] = hello
+	s.hellos[address] = append(s.hellos[address], hello)
 	s.mu.Unlock()
 }
 
 // report builds the report of one connection.
 func (s *sniffer) report(client string) report {
 	s.mu.Lock()
-	hello := s.hellos[client]
+	var hello *mimic.ClientHello
+	if seen := s.hellos[client]; len(seen) > 0 {
+		// The newest hello of that address: a client that opened several
+		// connections over one socket is reported on its last one.
+		hello = seen[len(seen)-1]
+	}
 	s.mu.Unlock()
 	rep := report{Client: client}
 	if hello == nil {

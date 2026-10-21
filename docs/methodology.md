@@ -120,19 +120,23 @@ measurement was taken again against Chrome 156.0.8078.47, the reference was
 moved to it, and the canary is silent:
 
 ```
+the browser: 2 connections, a later one resumes: yes
+ours: 2 connections, a later one resumes: yes
 real browser: ja4=q13i0312h3_55b375c5d22e_eb028bd37c08 extensions=12
-ours:         ja4=q13i0312h3_55b375c5d22e_eb028bd37c08 extensions=12
-the browser's connections: 2, a later one resumes: yes
-our connections: 1, a later one resumes: no
+ours:         ja4=q13d0313h3_55b375c5d22e_eb028bd37c08 extensions=13
 [canary-quic] RESULT: match — our QUIC fingerprint is the reference one
 ```
 
-The last two lines are the resumption, said out loud: a browser that has a
-ticket for an origin offers it on the next connection and the hello then
-carries the pre_shared_key. Chrome does; our h3 client does not — the
-QUIC stack of the dependency has no session store, and a session state
-cannot be rebuilt outside it. The canary says so on every run, so the gap
-is visible instead of waiting to be noticed.
+The first two lines are the resumption, said out loud: a browser that has a
+ticket for an origin offers it on the next connection, and the hello of
+that connection carries the `pre_shared_key` extension. Both sides are
+checked on every run, so a client that stops resuming shows up here.
+
+The two sides send a different shape, and the comparison knows it: the
+browser goes by the address and carries no `server_name` extension, while
+our client goes by a name (a session is bound to a name) and carries one.
+The reference is by name, and each side is compared with the shape it
+sends.
 
 ### The autopilot: a new Chrome without a person noticing
 

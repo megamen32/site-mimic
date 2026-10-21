@@ -113,4 +113,14 @@ func applyQUICShape(spec *utls.ClientHelloSpec, shape quicShape) {
 		}
 		spec.Extensions = append(spec.Extensions, ext)
 	}
+	// The pre_shared_key extension has to stay the last one: uTLS asserts it
+	// when it applies the spec, and the TLS 1.3 rules ask for it too.
+	for i, ext := range spec.Extensions {
+		if _, ok := ext.(utls.PreSharedKeyExtension); ok && i != len(spec.Extensions)-1 {
+			psk := ext
+			spec.Extensions = append(spec.Extensions[:i], spec.Extensions[i+1:]...)
+			spec.Extensions = append(spec.Extensions, psk)
+			break
+		}
+	}
 }

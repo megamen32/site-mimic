@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -574,4 +575,131 @@ func captureQUICClientHello(t *testing.T, helloName string) *ClientHello {
 type h3Control struct {
 	data []byte
 	err  error
+}
+
+// recordingPacketConn wraps a UDP socket and keeps a copy of every datagram
+// that passes through it.
+//
+// The HTTP/3 server reads the packets from the socket, so the client's QUIC
+// Initial packets would be gone by the time a test wanted to look at the
+// ClientHello inside them. This keeps a copy.
+type recordingPacketConn struct {
+	net.PacketConn
+	mu        sync.Mutex
+	datagrams [][]byte
+}
+
+func (c *recordingPacketConn) ReadFrom(p []byte) (int, net.Addr, error) {
+	n, addr, err := c.PacketConn.ReadFrom(p)
+	if n > 0 {
+		c.mu.Lock()
+		c.datagrams = append(c.datagrams, append([]byte(nil), p[:n]...))
+		c.mu.Unlock()
+	}
+	return n, addr, err
+}
+
+// datagramsCopy returns the recorded datagrams.
+func (c *recordingPacketConn) datagramsCopy() [][]byte {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	out := make([][]byte, 0, len(c.datagrams))
+	for _, d := range c.datagrams {
+		out = append(out, append([]byte(nil), d...))
+	}
+	return out
+}
+
+// TestChromeQUICResumedHello checks the shape of the hello of a resuming
+// connection: the fresh hello plus the pre_shared_key extension.
+//
+// A browser that never resumes always sends the full handshake, and its
+// hello never carries that extension. The resumed shape is what a server
+// sees on the second connection to an origin.
+func TestChromeQUICResumedHello(t *testing.T) {
+	server := newTestH3Server(t)
+	pc, err := net.ListenPacket("udp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	defer pc.Close()
+	recorder := &recordingPacketConn{PacketConn: pc}
+	go func() { _ = server.Serve(recorder) }()
+
+	_, port, err := net.SplitHostPort(pc.LocalAddr().String())
+	if err != nil {
+		t.Fatalf("split the server address: %v", err)
+	}
+	p := Profile{Name: "chrome-156-h3", TLSClientHello: "chrome_156", UserAgent: chrome152UA}
+	client, err := NewHTTP3(p, WithInsecureTLS(),
+		WithResolve(map[string]string{"resumption.test": "127.0.0.1"}))
+	if err != nil {
+		t.Fatalf("NewHTTP3: %v", err)
+	}
+	defer client.Transport.(io.Closer).Close()
+
+	for attempt := 0; attempt < 2; attempt++ {
+		req, err := http.NewRequest(http.MethodGet, "https://resumption.test:"+port+"/", nil)
+		if err != nil {
+			t.Fatalf("request: %v", err)
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatalf("the request %d failed: %v", attempt, err)
+		}
+		resp.Body.Close()
+		if resp.Header.Get("X-Resume") == "true" && attempt == 0 {
+			t.Error("the first connection claimed to be a resumed one")
+		}
+		// Drop the pooled connection, so the next request dials again and
+		// offers the ticket.
+		client.CloseIdleConnections()
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	// The hellos of the two connections, one per destination connection id.
+	// The ClientHello spans several Initial packets, so all the datagrams of
+	// a connection go into one tracker.
+	grouped := map[string][][]byte{}
+	for _, datagram := range recorder.datagramsCopy() {
+		dcid, ok := quicwire.DestinationConnectionID(datagram)
+		if !ok {
+			continue
+		}
+		key := string(dcid)
+		grouped[key] = append(grouped[key], datagram)
+	}
+	hellos := map[string][]byte{}
+	for key, datagrams := range grouped {
+		connection := quicwire.NewConnection()
+		for _, datagram := range datagrams {
+			connection.AddInitial(datagram)
+		}
+		msg, ok := connection.ClientHello()
+		if !ok {
+			continue
+		}
+		hellos[key] = msg
+	}
+	if len(hellos) < 2 {
+		t.Fatalf("%d hellos captured, want the two connections", len(hellos))
+	}
+
+	var resumed *ClientHello
+	for _, msg := range hellos {
+		hello, err := ParseClientHello(helloRecord(msg))
+		if err != nil {
+			t.Fatalf("parse the client hello: %v", err)
+		}
+		if hasExtension(hello, 0x0029) {
+			resumed = hello
+		}
+	}
+	if resumed == nil {
+		t.Fatal("no hello carried the pre_shared_key extension: the client never offered its ticket")
+	}
+	if got, want := len(resumed.Extensions), 14; got != want {
+		t.Errorf("the resumed hello carries %d extensions, want %d (the fresh hello plus the pre_shared_key)", got, want)
+	}
+	t.Logf("the resumed hello: %s", resumed.JA4QUIC())
 }
