@@ -21,6 +21,47 @@ root; the measured numbers live in `docs/max-oneme.ru.md`.
 | `../cmd/tproxyfwd` | on the phone | transparent TCP → SOCKS5 forwarder (recovers the pre-REDIRECT destination) |
 | `../cmd/hello-tap` | on your laptop | plain TCP-level ClientHello tap — the cheap path when you only need JA3/JA4 |
 
+## `sweep.sh` — the phone as a measurement stand
+
+`sweep.sh` takes the ClientHello of several apps in one pass and leaves the
+phone the way it found it. It is the same chain as above, driven by a list
+of packages instead of by hand:
+
+```sh
+tools/phone/sweep.sh                                   # the default list
+tools/phone/sweep.sh ru.oneme.app com.yandex.browser    # your own list
+tools/phone/sweep.sh --quic com.android.chrome          # and the QUIC part
+tools/phone/sweep.sh --seconds 45 --url https://vk.ru/  # longer, with a URL
+```
+
+For every app it routes the TCP through the capture chain, launches the
+app, reads the capture with the library's own parser (`cmd/hellofp`), and
+tears the chain down before the next app. The summary is one line per
+hello:
+
+```
+api.browser.yandex.net t13d1516h2_8daaf6152771_806a8c22fdea
+yandex.ru               t13d1516h2_8daaf6152771_806a8c22fdea
+```
+
+**The teardown is the point of the script.** The CA is a root of trust in
+the device's store, so it and its mounts go when the sweep ends, whatever
+happened in between; the iptables rules and the forwarder go with them. The
+script prints the state it left behind:
+
+```
+[sweep] phone state: CA in the zygote view = 0, REDIRECT rules = 0, forwarder = none
+```
+
+Two things the QUIC part needs to know:
+
+* it runs with the chain **stopped** — the chain blocks the app's QUIC (a
+  REJECT on udp/443) so that a TCP ClientHello exists at all, and a
+  rejected packet never reaches the wire, so the capture would be empty;
+* it needs a **navigation**: a browser sitting on its home page talks to
+  nobody. `--url` is the target (a Google one by default — Chrome speaks
+  QUIC to an origin it already knows, and only then).
+
 ## The forwarder
 
 `../cmd/tproxyfwd` is the on-device half of the chain: a self-contained
