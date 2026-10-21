@@ -2,6 +2,7 @@ package mimic
 
 import (
 	"context"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -17,6 +18,33 @@ import (
 
 	"github.com/megamen32/site-mimic/internal/quicwire"
 )
+
+// quicVersion1 is QUIC v1, the version Chrome chooses.
+const quicVersion1 = uint32(1)
+
+// versionInformationKey reduces the version_information transport parameter
+// to the parts that do not change per connection: the chosen version and the
+// version the client supports.
+//
+// The greased version is drawn per connection, and Chrome draws it at either
+// end of the available versions list — six captures of Chrome 156 showed
+// three of each — so the list is compared as a set, not as a sequence.
+func versionInformationKey(value []byte) string {
+	if len(value) != 12 {
+		return hex.EncodeToString(value)
+	}
+	chosen := binary.BigEndian.Uint32(value[:4])
+	plain := uint32(0)
+	for _, v := range []uint32{
+		binary.BigEndian.Uint32(value[4:8]),
+		binary.BigEndian.Uint32(value[8:12]),
+	} {
+		if v == quicVersion1 {
+			plain = v
+		}
+	}
+	return fmt.Sprintf("%08x:%08x", chosen, plain)
+}
 
 // The tests in this file read what the h3 path puts on the wire. They do not
 // trust the configuration objects: the control stream is taken from a live
@@ -282,18 +310,19 @@ func isGREASEH3SettingID(id uint64) bool {
 // TestChromeQUICClientHelloOnTheWire reads the QUIC Initial the client sends,
 // decrypts it and fingerprints the ClientHello inside.
 //
-// The reference is the phone capture: the real Chrome's QUIC JA4 is
-// q13d0311h3_55b375c5d22e_653d80c3fe9d. The hello this path sends has to
-// fingerprint the same, or the h3 wire announces a different browser than
+// The reference is the capture of a real Chrome 156: the browser's QUIC JA4
+// is q13d0313h3_55b375c5d22e_eb028bd37c08 (q13i0312h3_... when the target
+// is an address and there is no server name). The hello this path sends has
+// to fingerprint the same, or the h3 wire announces a different browser than
 // the TCP one.
 func TestChromeQUICClientHelloOnTheWire(t *testing.T) {
 	hello := captureQUICClientHello(t)
 	ja4 := hello.JA4QUIC()
 	t.Logf("QUIC ClientHello JA4 on the wire: %s", ja4)
-	if got, want := ja4, "q13d0311h3_55b375c5d22e_653d80c3fe9d"; got != want {
-		t.Errorf("QUIC JA4 = %s, want %s (the phone's real Chrome)", got, want)
+	if got, want := ja4, "q13d0313h3_55b375c5d22e_eb028bd37c08"; got != want {
+		t.Errorf("QUIC JA4 = %s, want %s (the real Chrome 156)", got, want)
 	}
-	if got, want := len(hello.Extensions), 11; got != want {
+	if got, want := len(hello.Extensions), 13; got != want {
 		t.Errorf("the hello carries %d extensions, want %d", got, want)
 	}
 	if got, want := len(hello.CipherSuites), 3; got != want {
@@ -314,7 +343,7 @@ func TestChromeQUICClientHelloOnTheWire(t *testing.T) {
 // a GREASE version, which Chrome draws per connection: the captured value is
 // one sample, and the value on the wire is checked against the same scheme.
 func TestChromeQUICTransportParametersOnTheWire(t *testing.T) {
-	captured, err := os.ReadFile("testdata/chrome_quic_transport_parameters.bin")
+	captured, err := os.ReadFile("testdata/chrome156_quic_transport_parameters.bin")
 	if err != nil {
 		t.Fatalf("read the captured transport parameters: %v", err)
 	}
@@ -341,14 +370,12 @@ func TestChromeQUICTransportParametersOnTheWire(t *testing.T) {
 			if id == quicChromeVersionInformationID {
 				// The GREASE version inside version_information is drawn
 				// per connection, on the browser's side as well, so the
-				// captured value is one sample and not a constant. The
-				// chosen version and the version list are compared
-				// exactly; the GREASE version is compared by its scheme.
-				if len(value) != 12 {
-					out[id] = hex.EncodeToString(value)
-					continue
-				}
-				out[id] = hex.EncodeToString(value[:8])
+				// captured value is one sample and not a constant. Chrome
+				// also draws it at either end of the available versions
+				// list (six captures showed three of each), so the list is
+				// compared as a set: the chosen version and the version the
+				// client supports.
+				out[id] = versionInformationKey(value)
 				continue
 			}
 			out[id] = hex.EncodeToString(value)
@@ -380,11 +407,25 @@ func TestChromeQUICTransportParametersOnTheWire(t *testing.T) {
 	if len(version) != 12 {
 		t.Fatalf("version_information is %d bytes, want 12", len(version))
 	}
-	if got, want := hex.EncodeToString(version[:8]), "0000000100000001"; got != want {
+	if got, want := versionInformationKey(version), "00000001:00000001"; got != want {
 		t.Errorf("version_information = %s, want the chosen version 1 and the version list", got)
 	}
-	for i, b := range version[8:] {
-		if b&0x0f != 0x0a {
+	// The greased version is the one that is not QUIC v1, wherever Chrome
+	// drew it in the list.
+	greased := uint32(0)
+	for _, v := range []uint32{
+		binary.BigEndian.Uint32(version[4:8]),
+		binary.BigEndian.Uint32(version[8:12]),
+	} {
+		if v != quicVersion1 {
+			greased = v
+		}
+	}
+	if greased == 0 {
+		t.Fatalf("version_information = %s, carries no greased version", hex.EncodeToString(version))
+	}
+	for i := 0; i < 4; i++ {
+		if b := byte(greased >> (24 - 8*i)); b&0x0f != 0x0a {
 			t.Errorf("byte %d of the GREASE version is 0x%02x, want the low nibble 0x0a", i, b)
 		}
 	}

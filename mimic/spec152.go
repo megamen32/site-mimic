@@ -74,6 +74,15 @@ func chrome152PSKSpec() (*utls.ClientHelloSpec, error) {
 // adds the utls-managed resumption placeholder (used by the fresh-handshake
 // variant, where real sessions make utls fill it).
 func chrome152BaseSpec(withResumption bool) (utls.ClientHelloSpec, error) {
+	return chromeBaseSpec(chrome152CA34PayloadHex, withResumption)
+}
+
+// chromeBaseSpec builds the layout the chrome_152 and chrome_156 specs
+// share: the uTLS Chrome preset, the post-quantum signature algorithms and
+// the unregistered 0xCA34 extension with the given payload. The extra
+// extensions are added before the resumption placeholder, which has to stay
+// last.
+func chromeBaseSpec(ca34PayloadHex string, withResumption bool, extra ...utls.TLSExtension) (utls.ClientHelloSpec, error) {
 	spec, err := utls.UTLSIdToSpec(utls.HelloChrome_Auto)
 	if err != nil {
 		return spec, fmt.Errorf("mimic: chrome_152 base spec: %w", err)
@@ -96,11 +105,12 @@ func chrome152BaseSpec(withResumption bool) (utls.ClientHelloSpec, error) {
 	if !patched {
 		return spec, fmt.Errorf("mimic: chrome_152 base spec has no signature_algorithms extension")
 	}
-	ca34, err := hex.DecodeString(chrome152CA34PayloadHex)
+	ca34, err := hex.DecodeString(ca34PayloadHex)
 	if err != nil {
-		return spec, fmt.Errorf("mimic: chrome_152 0xCA34 payload: %w", err)
+		return spec, fmt.Errorf("mimic: chrome 0xCA34 payload: %w", err)
 	}
 	spec.Extensions = append(spec.Extensions, &utls.GenericExtension{Id: 0xCA34, Data: ca34})
+	spec.Extensions = append(spec.Extensions, extra...)
 	if withResumption {
 		// Resumption placeholder: utls fills it from the session cache when
 		// one exists; OmitEmptyPsk conceals it on full handshakes. Must be
@@ -217,14 +227,17 @@ func newUConn(rawConn net.Conn, cfg *utls.Config, helloName string) (*utls.UConn
 		// Conscrypt emits a fixed extension order — do not shuffle it.
 		return uc, nil
 	}
-	if helloName == "chrome_152" || helloName == "chrome_152_psk" {
+	if helloName == "chrome_152" || helloName == "chrome_152_psk" || helloName == "chrome_156" {
 		uc := utls.UClient(rawConn, cfg, utls.HelloCustom)
 		var spec *utls.ClientHelloSpec
 		var err error
-		if helloName == "chrome_152" {
+		switch helloName {
+		case "chrome_152":
 			spec, err = chrome152Spec()
-		} else {
+		case "chrome_152_psk":
 			spec, err = chrome152PSKSpec()
+		default:
+			spec, err = chrome156Spec()
 		}
 		if err != nil {
 			return nil, err

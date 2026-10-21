@@ -54,7 +54,7 @@ func TestChromeQUICGoogleConnectionOptions(t *testing.T) {
 	if !ok {
 		t.Fatal("the configuration carries no google_connection_options")
 	}
-	if want := "ORIGECCPIW2X"; string(got) != want {
+	if want := "ORIGNOIP"; string(got) != want {
 		t.Errorf("google_connection_options = %q, want %q", got, want)
 	}
 }

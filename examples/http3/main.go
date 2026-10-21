@@ -44,7 +44,7 @@ func main() {
 		// must not promise a byte-exact Chrome *TCP* TLS layer: mimic.NewHTTP3
 		// refuses chrome_exact for that reason. This profile is the Windows
 		// Chrome 152 one with the QUIC-suitable identity.
-		path = "../profiles/windows-chrome152-h3.json"
+		path = "../profiles/mac-chrome156-h3.json"
 	}
 	profile, err := mimic.LoadProfile(path)
 	if err != nil {

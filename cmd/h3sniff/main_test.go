@@ -102,16 +102,16 @@ func TestTheStandReportsTheClientsFingerprint(t *testing.T) {
 
 	// The Chrome QUIC hello, without the server name: the client talked to
 	// an address.
-	if got, want := rep.JA4, "q13i0310h3_55b375c5d22e_653d80c3fe9d"; got != want {
+	if got, want := rep.JA4, "q13i0312h3_55b375c5d22e_eb028bd37c08"; got != want {
 		t.Errorf("JA4 = %s, want %s", got, want)
 	}
-	if got, want := rep.Extensions, 10; got != want {
+	if got, want := rep.Extensions, 12; got != want {
 		t.Errorf("%d extensions, want %d", got, want)
 	}
 	if len(rep.ALPN) != 1 || rep.ALPN[0] != "h3" {
 		t.Errorf("ALPN = %v, want [h3]", rep.ALPN)
 	}
-	if got, want := rep.TransportParameters["12584"], "4f5249474543435049573258"; got != want {
+	if got, want := rep.TransportParameters["12584"], "4f5249474e4f4950"; got != want {
 		t.Errorf("google_connection_options = %s, want %s", got, want)
 	}
 	// The settings the client sends on its control stream.

@@ -40,9 +40,11 @@ var errNoH2 = errors.New("mimic: server did not negotiate h2 via ALPN")
 // against a real Android Chrome 149 on a phone, m.vk.ru capture:
 // identical JA4 t13d1516h2_8daaf6152771_d8a2da3f94cd and per-connection
 // extension shuffling; see docs/phone-reference.md), "chrome_152" (custom
-// spec for current stable Chrome 152: post-quantum signature algorithms +
-// extension 0xCA34 — wire reference t13d1517h2_8daaf6152771_cb7bf5808d99;
-// resolved through newUConn, the returned ID is only the spec base),
+// spec for Chrome 152: post-quantum signature algorithms + extension 0xCA34
+// — wire reference t13d1517h2_8daaf6152771_cb7bf5808d99; resolved through
+// newUConn, the returned ID is only the spec base), "chrome_156" (the same
+// layout plus the 0x12E0 extension Chrome 156 added — wire reference
+// t13d1518h2_8daaf6152771_4980c97edce0),
 // "node_24" (custom spec for the Node.js 24 / Electron 42 ClientHello —
 // BoringSSL shape, ALPN http/1.1 only; wire reference JA4
 // t13d1812h1_5d04281c6031_ef7df7f74e48; resolved through newUConn),
@@ -52,7 +54,7 @@ var errNoH2 = errors.New("mimic: server did not negotiate h2 via ALPN")
 // "firefox_auto", "ios_auto", "random", "random_alpn".
 func ParseClientHelloID(name string) (utls.ClientHelloID, error) {
 	switch name {
-	case "", "chrome_auto", "android_149", "chrome_152", "chrome_152_psk":
+	case "", "chrome_auto", "android_149", "chrome_152", "chrome_152_psk", "chrome_156":
 		return utls.HelloChrome_Auto, nil
 	case node24HelloName:
 		return node24HelloID(), nil
@@ -67,7 +69,7 @@ func ParseClientHelloID(name string) (utls.ClientHelloID, error) {
 	case "random_alpn":
 		return utls.HelloRandomizedALPN, nil
 	default:
-		return utls.ClientHelloID{}, fmt.Errorf("mimic: unknown tls_client_hello %q (want chrome_auto, chrome_152, node_24, max_app, max_app_psk, firefox_auto, ios_auto, random, random_alpn)", name)
+		return utls.ClientHelloID{}, fmt.Errorf("mimic: unknown tls_client_hello %q (want chrome_auto, chrome_152, chrome_156, node_24, max_app, max_app_psk, firefox_auto, ios_auto, random, random_alpn)", name)
 	}
 }
 

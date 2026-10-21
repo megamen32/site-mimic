@@ -114,6 +114,17 @@ the shorter `google_connection_options "ORIG"` where the phone sent
 `"ORIGECCPIW2X"`. Both are notes, not failures: the pinned measurement is
 old, not our client wrong.
 
+Chrome 156 moved on once more: it adds the unregistered `0x12E0` extension
+next to `0xCA34` and sends `google_connection_options "ORIGNOIP"`. The
+measurement was taken again against Chrome 156.0.8078.47, the reference was
+moved to it, and the canary is silent:
+
+```
+real browser: ja4=q13i0312h3_55b375c5d22e_eb028bd37c08 extensions=12
+ours:         ja4=q13i0312h3_55b375c5d22e_eb028bd37c08 extensions=12
+[canary-quic] RESULT: match — our QUIC fingerprint is the reference one
+```
+
 Two rules the canary has to know, both found the hard way:
 
 * Chrome refuses to speak QUIC to a loopback address, and it checks the

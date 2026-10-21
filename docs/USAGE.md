@@ -57,8 +57,8 @@ defer client.Transport.(io.Closer).Close()   // releases the UDP socket
 ```
 
 The QUIC handshake carries the **Chrome QUIC** ClientHello, which is a
-different shape from the Chrome TCP one: 11 extensions and 3 cipher suites
-against 19 and 16 on TCP. Chrome's two hellos differ, so ours do too — a
+different shape from the Chrome TCP one: 12 extensions and 3 cipher suites
+against 20 and 16 on TCP. Chrome's two hellos differ, so ours do too — a
 server that fingerprints the extension list sees the QUIC one. The hello
 comes from the headless-client QUIC stack, whose ClientHello is Chrome's
 byte for byte: the post-quantum key share, ALPS, the ECH GREASE pair and the
@@ -68,9 +68,10 @@ The transport parameters are the real Chrome's: the same thirteen
 parameters with the same values, an empty source connection id in both the
 packet and parameter 0x0f — which is what the captured phone hellos send,
 not an 8-byte id — and the GREASE parameter with a random id and payload, as
-on the browser's side. The one value the stack gets wrong is
-google_connection_options, which it sends as "ORIG"; the captured Chrome
-sends "ORIGECCPIW2X", and that is what goes on the wire.
+on the browser's side. The google_connection_options parameter carries
+Chrome's own token, and the token changes with the release: Chrome 152 sent
+"ORIGECCPIW2X", Chrome 155 "ORIG", Chrome 156 "ORIGNOIP". The newest one
+measured is what goes on the wire.
 
 The HTTP/3 settings are Chrome's too, measured on the wire against a local
 server that printed the client's control stream: QPACK_MAX_TABLE_CAPACITY
@@ -80,20 +81,20 @@ The profile's user agent is applied the same way as on the TCP path. A
 CONNECT proxy is an error here, not a fallback: QUIC does not travel through
 one.
 
-Measured on the wire (2026-10-21): JA4
-`q13d0311h3_55b375c5d22e_653d80c3fe9d` — the same value the real phone's
-Chrome QUIC fingerprint reads (`docs/phone-reference.md`). All three parts
-of the JA4 match, so the QUIC hello is no longer merely the same shape as
-the browser's: it is the same fingerprint.
+Measured on the wire (2026-10-21, against a local HTTP/3 stand, Chrome
+156.0.8078.47 on macOS): JA4
+`q13d0313h3_55b375c5d22e_eb028bd37c08` — the same value a real Chrome 156
+reads. All three parts of the JA4 match, so the QUIC hello is no longer
+merely the same shape as the browser's: it is the same fingerprint.
 
 One consequence worth knowing: the SNI rides along when the target is a
 hostname, and RFC 6066 forbids an SNI for an IP address — against an IP
 the extension leaves the hello and the same fingerprint reads
-`q13i0310h3_…`. That is the correct form for an IP target, not a defect.
+`q13i0312h3_…`. That is the correct form for an IP target, not a defect.
 
 The QUIC wire always carries that one QUIC fingerprint, so the profile's
 `tls_client_hello` must name a Chrome identity — `chrome_auto`,
-`android_149`, `chrome_152` or `chrome_152_psk`. `chrome_exact` is refused:
+`android_149`, `chrome_152`, `chrome_152_psk` or `chrome_156`. `chrome_exact` is refused:
 it is a byte-exact Chrome *TCP* TLS layer, and over QUIC that layer is
 not applied.
 
@@ -188,11 +189,12 @@ The client supervises the daemon: if `/healthz` is unreachable it starts
 | `android_149` | Android Chrome 149 | same as above | mobile reference |
 | `chrome_152` | Chrome 152 desktop / 155 mobile | `t13d1517h2_8daaf6152771_cb7bf5808d99` | custom spec: post-quantum signature algorithms + extension 0xCA34 |
 | `chrome_152_psk` | the same, with resumption | — | adds the PSK binder |
+| `chrome_156` | Chrome 156, the current stable | `t13d1518h2_8daaf6152771_4980c97edce0` | custom spec: the `chrome_152` layout plus the 0x12E0 extension Chrome 156 added |
 | `node_24` | Node.js 24 / Electron 42 (BoringSSL) | `t13d1812h1_5d04281c6031_ef7df7f74e48` | ALPN `http/1.1` only |
 | `max_app` | MAX messenger app (`ru.oneme.app`) | `t13d171100_5b57614c22b0_40271e0a5736` | Conscrypt/OkHttp shape, **no ALPN at all**, 17 cipher suites |
 | `max_app_psk` | the same, with resumption | `t13d171200_5b57614c22b0_352634941f3a` | 113 of 116 real connections carried a PSK |
 | `firefox_auto`, `ios_auto`, `random`, `random_alpn` | Firefox, iOS, random | — | uTLS built-ins |
-| `chrome_exact` | real Chrome, byte-for-byte | `t13d1517h2_8daaf6152771_cb7bf5808d99` | not a uTLS spec: the transport is delegated to [headless-client](https://github.com/megamen32/headless-client) (a fork of [kulikov0's](https://github.com/kulikov0/headless-client)), whose ClientHello is measured against the current stable Chrome. Since the 2026-10-20 fork sync it speaks the same fingerprint as the `chrome_152` spec and our own capture |
+| `chrome_exact` | real Chrome, byte-for-byte | `t13d1518h2_8daaf6152771_4980c97edce0` | not a uTLS spec: the transport is delegated to [headless-client](https://github.com/megamen32/headless-client) (a fork of [kulikov0's](https://github.com/kulikov0/headless-client)), whose ClientHello is measured against the current stable Chrome. Since the 2026-10-21 fork sync it speaks the same fingerprint as the `chrome_156` spec and our own Chrome 156 capture |
 
 `max_app` is the only spec **without ALPN**: it can only speak HTTP/1.1.
 A profile that sets it must also set `http1_wire_order` and
@@ -287,13 +289,18 @@ Two things it knows that a plain diff does not:
 transport of the `chrome_exact` profile, the WebSocket upgrade handshake,
 the Chrome header tables and the whole QUIC stack come from it.
 
-The dependency is pinned to the fork's tag `v0.2.0` (2026-10-21), not to a
+The dependency is pinned to the fork's tag `v0.3.0` (2026-10-21), not to a
 pseudo-version: a tag is a thing a reader can check, and a pseudo-version
 of a fork says only "some commit of somebody's branch". The fork is
 [our fork of kulikov0's](https://github.com/kulikov0/headless-client), and
-it is upstream's `main` plus two commits: the module path, and the Chrome
-152 TLS change (the unregistered 0xCA34 extension) that is [an open pull
-request against upstream](https://github.com/kulikov0/headless-client/pull/1).
+it is upstream's `main` plus three commits: the module path, the Chrome 152
+TLS change (the unregistered 0xCA34 extension) that is [an open pull
+request against upstream](https://github.com/kulikov0/headless-client/pull/1),
+and the Chrome 156 change — the unregistered 0x12E0 extension next to
+0xCA34, the same two extensions in the QUIC hello, and the
+`google_connection_options "ORIGNOIP"` token. The Chrome 156 change lives in
+the fork only: it is a measured wire shape, and it will follow upstream
+when there is a pull request for it.
 Everything else we use is already upstream — the `Sec-Fetch-Site` per pair
 work, for one, was [merged there](https://github.com/kulikov0/headless-client/pull/2)
 in September 2026. So the fork exists for one extension, and it can become

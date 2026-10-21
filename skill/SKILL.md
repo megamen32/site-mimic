@@ -61,6 +61,13 @@ Firefoxy/iOSy), `user_agent`, `header_order` (documentation), `headers`
 (captured values). Copy a starting point from `examples/vk-ru/profile.json`.
 Do NOT put `accept-encoding` in `headers` — see limits.
 
+The newest stable Chrome has its own spec: `chrome_156` reproduces the
+Chrome 156 ClientHello (18 extensions, the unregistered 0xCA34 and 0x12E0
+next to the ECH GREASE), and `chrome_exact` delegates the TLS layer to
+headless-client, which speaks the same shape. Measure the browser you
+actually imitate — a spec that is one release behind is a different
+fingerprint.
+
 ### 4. Wire the client
 
 ```go

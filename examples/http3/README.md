@@ -8,14 +8,15 @@
 
 ```sh
 go run .                                        # GET https://example.com/
-go run . -url https://vk.ru/ -profile ../profiles/windows-chrome152-h3.json
+go run . -url https://vk.ru/ -profile ../profiles/mac-chrome156-h3.json
 ```
 
-Профиль по умолчанию — `windows-chrome152-h3.json`: те же заголовки и TTL,
-что у `windows-chrome152.json`, но с идентичностью `chrome_152`, а не
-`chrome_exact`. Причина в том, что `chrome_exact` — это побайтово точный
-Chrome-слой по **TCP**, и по QUIC он не применяется, поэтому
-`mimic.NewHTTP3` такой профиль отвергает (см. `mimic/http3.go`).
+Профиль по умолчанию — `mac-chrome156-h3.json`: заголовки и TTL сняты с
+настоящего Chrome 156.0.8078.47 на macOS (2026-10-21), идентичность —
+`chrome_156`, то есть QUIC-hello нынешнего stable Chrome.
+`chrome_exact` — это побайтово точный Chrome-слой по **TCP**, и по QUIC он
+не применяется, поэтому `mimic.NewHTTP3` такой профиль отвергает (см.
+`mimic/http3.go`).
 
 Ожидаемый результат:
 

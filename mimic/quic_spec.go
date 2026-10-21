@@ -13,23 +13,26 @@ import (
 // wire, taken from the headless-client QUIC stack
 // (github.com/megamen32/headless-client).
 //
-// The stack's ClientHello is the Chrome QUIC shape byte for byte: eleven
-// extensions, three cipher suites, the post-quantum key share, ALPS and the
-// ECH GREASE pair. Its QUIC transport parameters, however, are not the ones a
-// Chrome sends: the stack advertises google_connection_options as "ORIG",
-// while the browser captured on the phone sends "ORIGECCPIW2X". The values in
-// this file are the captured ones, and they are what this package injects
-// into the stack's configuration.
+// The stack's ClientHello is the Chrome QUIC shape byte for byte: twelve
+// extensions (thirteen by name), three cipher suites, the post-quantum key
+// share, ALPS, the ECH GREASE pair and the two unregistered extensions
+// Chrome sends next to it, 0xCA34 and 0x12E0. Its QUIC transport
+// parameters are Chrome's as well, the google_connection_options token
+// included: the stack sends "ORIGNOIP", the token Chrome 156 sends.
 //
-// Measured on the wire (2026-10-20, phone capture, Android Chrome 152): the
-// phone's QUIC JA4 is q13d0311h3_55b375c5d22e_653d80c3fe9d, and the hello
-// this package sends now fingerprints the same.
+// Measured on the wire (2026-10-21, Google Chrome 156.0.8078.47 on macOS,
+// against a local HTTP/3 stand that prints the client's hello, transport
+// parameters and control stream): the browser's QUIC JA4 is
+// q13i0312h3_55b375c5d22e_eb028bd37c08, and the hello this package sends
+// now fingerprints the same.
 //
 // The transport parameters as a whole are the captured ones: the same
-// thirteen parameters, each with the same value — 94 bytes in total, the
-// GREASE parameter included. Two of them differ per connection, in Chrome
-// too: the GREASE parameter's id and payload, and the GREASE version inside
-// version_information.
+// thirteen parameters, each with the same value — 96 bytes in total, the
+// GREASE parameter included. Three of them differ per connection, in Chrome
+// too: the GREASE parameter's id and payload, the GREASE version inside
+// version_information (Chrome draws it at either end of the available
+// versions list), and the order of the parameters themselves (Chrome
+// shuffles them).
 //
 // The source connection id stays empty, and that is what Chrome sends. In the
 // captured phone hellos the transport parameter
@@ -54,7 +57,7 @@ const (
 	// RFC 9221.
 	quicChromeMaxDatagramFrameSize = 65536
 	// quicChromeGoogleConnOptionsID is google_connection_options; Chrome
-	// sends the ASCII token "ORIGECCPIW2X" in it.
+	// sends an ASCII token in it.
 	quicChromeGoogleConnOptionsID = 0x3128
 	// quicChromeVersionInformationID is version_information (0x11), RFC 9368.
 	quicChromeVersionInformationID = 0x11
@@ -62,7 +65,12 @@ const (
 
 // quicChromeGoogleConnOptions is the captured google_connection_options
 // value: the ASCII token Chrome puts in that transport parameter.
-var quicChromeGoogleConnOptions = []byte("ORIGECCPIW2X")
+//
+// The token is Chrome's own and changes with the release. Chrome 152 on
+// Android sent "ORIGECCPIW2X", Chrome 155 on macOS sent "ORIG", and Chrome
+// 156 on macOS sends "ORIGNOIP" (measured 2026-10-21). This is the newest
+// one measured.
+var quicChromeGoogleConnOptions = []byte("ORIGNOIP")
 
 // quicChromeVersionInformation is the captured version_information parameter
 // (0x11, RFC 9368): the chosen version 1 plus the GREASE version the phone
@@ -189,8 +197,8 @@ const quicChromeInitialPacketSize = 1250
 // would promise bytes the wire never carries.
 func checkHTTP3Profile(p Profile) error {
 	switch p.TLSClientHello {
-	case "", "chrome_auto", "android_149", "chrome_152", "chrome_152_psk":
+	case "", "chrome_auto", "android_149", "chrome_152", "chrome_152_psk", "chrome_156":
 		return nil
 	}
-	return fmt.Errorf("mimic: http3: profile tls_client_hello %q has no Chrome QUIC fingerprint (want chrome_auto, android_149, chrome_152 or chrome_152_psk; the QUIC wire always carries the Chrome QUIC hello)", p.TLSClientHello)
+	return fmt.Errorf("mimic: http3: profile tls_client_hello %q has no Chrome QUIC fingerprint (want chrome_auto, android_149, chrome_152, chrome_152_psk or chrome_156; the QUIC wire always carries the Chrome QUIC hello)", p.TLSClientHello)
 }

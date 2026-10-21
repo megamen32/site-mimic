@@ -51,8 +51,11 @@ type report struct {
 	Extensions          int               `json:"extensions,omitempty"`
 	CipherSuites        int               `json:"cipher_suites,omitempty"`
 	ExtensionIDs        []string          `json:"extension_ids,omitempty"`
+	ExtensionData       map[string]string `json:"extension_data,omitempty"`
 	SigAlgs             []string          `json:"sig_algs,omitempty"`
+	Groups              []string          `json:"supported_groups,omitempty"`
 	TransportParameters map[string]string `json:"transport_parameters,omitempty"`
+	TransportParamsRaw  string            `json:"transport_parameters_raw,omitempty"`
 	Settings            map[string]uint64 `json:"settings,omitempty"`
 	UserAgent           string            `json:"user_agent,omitempty"`
 	Error               string            `json:"error,omitempty"`
@@ -417,14 +420,27 @@ func (s *sniffer) report(client string) report {
 	for _, id := range hello.Extensions {
 		rep.ExtensionIDs = append(rep.ExtensionIDs, fmt.Sprintf("%#04x", id))
 	}
+	// The payload of every extension, in hex. The identifiers say which
+	// extensions a client sends; the payload says what it puts in them, and
+	// that is the part a captured fingerprint cannot be reconstructed from.
+	rep.ExtensionData = map[string]string{}
+	for id, data := range hello.ExtensionData {
+		rep.ExtensionData[fmt.Sprintf("%#04x", id)] = hex.EncodeToString(data)
+	}
 	for _, id := range hello.SigAlgs {
 		rep.SigAlgs = append(rep.SigAlgs, fmt.Sprintf("%#04x", id))
+	}
+	for _, id := range hello.Groups {
+		rep.Groups = append(rep.Groups, fmt.Sprintf("%#04x", id))
 	}
 	rep.TransportParameters = map[string]string{}
 	raw, ok := hello.ExtensionData[0x39]
 	if !ok {
 		return rep
 	}
+	// The transport parameters as they went on the wire: the ids in Chrome's
+	// order, with the GREASE ones included. The map above loses the order.
+	rep.TransportParamsRaw = hex.EncodeToString(raw)
 	params, err := quicwire.TransportParameters(raw)
 	if err != nil {
 		rep.Error = err.Error()

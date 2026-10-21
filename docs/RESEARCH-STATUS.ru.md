@@ -47,6 +47,25 @@ Windows и Android. Google выключил Finch-флаг за ночь. Выв
   PCAPdroid-MITM (аддон сам перешифровывает TLS своим клиентом).
   Реальный end-to-end телефонный Chrome 152 = десктопный набор.
 
+## Прогресс 2026-10-21 — переход на актуальный stable Chrome
+
+Chrome 156 вышел встал в stable (2026-10-20), и он повел отпечаток в
+поведению во всех двух способах. Замеры сняты на настоящем
+Chrome 156.0.8078.47 (macOS, отстойнерв Chrome for Testing) против локальной
+HTTP/3-стойки (`cmd/h3sniff`) и через сырой перехватчик.
+
+| Пункт | Что сделано | Проверка |
+|---|---|---|
+| Добавить новое расширение 0x12E0 | форк `megamen32/headless-client` v0.3.0: 0x12E0 рядом с 0xCA34 в TCP-hello и в QUIC-hello | напроводе `chrome_exact` = `t13d1518h2_8daaf6152771_4980c97edce0` == реальный Chrome 156 (18 расширений) |
+| Обновить `google_connection_options` | токен браузера меняется с релизом: Chrome 152 — "ORIGECCPIW2X", Chrome 155 — "ORIG", Chrome 156 — "ORIGNOIP" | напроводе токен = токену браузера |
+| Спека `chrome_156` | спека Chrome 152 + расширение 0x12E0; фикстура — захват настоящего Chrome 156 (`mimic/testdata/chrome156_clienthello.json`) | JA4 совпал с эталоном по всем частям JA4 |
+| Переехат эталона канаря | эталони канаря — снимок Chrome 156 (12 растрений, `q13i0312h3_…_eb028bd37c08`) | канарей молчит: наш JA4 == эталону, браазератель без NOTE |
+
+Отдельное решение: позиция GREASE-версии внутри
+version_information пробор случайна — Chrome рисует её то ски в конце списка
+версий (шесть замеров — по три из шести), поэтому порядок
+не меняли — так и оставлись как и было.
+
 ## Прогресс 2026-09-02 (вечер) — что уже закрыто из «НЕ мимикрим»
 
 | Пункт | Что сделано | Проверка |
@@ -57,7 +76,7 @@ Windows и Android. Google выключил Finch-флаг за ночь. Выв
 | «Живые» эталоны по QUIC | `tools/canary-quic.sh` + `cmd/h3sniff` — локальная h3-стойка читает QUIC-отпечаток клиента прямо с провода (ClientHello из Initial-пакета, транспортные параметры, настройки control stream); канарей гоняет настоящий Chrome и наш h3-клиент через две такие стойки и сверяет их | первый прогон (Chrome 155 против замера Chrome 152): наш отпечаток == эталон; три NOTE — браузер уже шлёт 0xCA34 в QUIC-hello и `google_connection_options "ORIG"`; замер устарел, а не наш клиент |
 | Session resumption | `mimic/resumption.go`: хранилище тикетов общее, но именованное по (идентичность профиля, сервер) — `scopedSessionCache`; `chrome_auto` (дефолт), `max_app` и `node_24` получили управляемый плейсхолдер `pre_shared_key`; chrome_exact возобновляет через upstream sessionCache | первое соединение — полный handshake (17 exts), второе — resumption с 0x0029 на проводе; тикет не переходит между профилями (проверено в трёх направлениях) |
 | TCP SYN per-profile | `tools/win-netns.sh` + `tools/rawsyn`: изолированный netns (macvlan, свой LAN IP, без TCP timestamps, wscale 8, TTL 128) без изменения хостовых sysctl; NFQUEUE-демон `rawsyn` переставляет опции исходящего SYN в Windows-порядок с пересчётом контрольных сумм | на проводе SYN = `mss 1460,wscale 8,sackOK` — байт-в-байт как у реального Windows Chrome (стенд, 2026-09-02) |
-| QUIC 152 | `mimic.NewHTTP3` (`mimic/quic_spec.go`) — QUIC-стек headless-client: его ClientHello совпадает с Chrome'овским побайтово (11 расширений, 3 набора шифров, PQ key share, ALPS, ECH GREASE); транспортные параметры — захваченные значения (пустой source CID, `google_connection_options "ORIGECCPIW2X"`); настройки HTTP/3 — Chrome'овские, измерены на проводе | наш JA4 на проводе `q13d0311h3_55b375c5d22e_653d80c3fe9d` — **равен эталону телефона**, совпадают все три части JA4 (2026-10-21) |
+| QUIC 156 | `mimic.NewHTTP3` (`mimic/quic_spec.go`) — QUIC-стек headless-client: его ClientHello совпадает с Chrome'овским побайтово (12 расширений, 3 набора шифров, PQ key share, ALPS, ECH GREASE, нерегистрированные 0xCA34 и 0x12E0); транспортные параметры — захваченные значения (пустой source CID, `google_connection_options "ORIGNOIP"`); настройки HTTP/3 — Chrome'овские, измерены на проводе | наш JA4 на проводе `q13i0312h3_55b375c5d22e_eb028bd37c08` — **равен эталону настоящего Chrome 156**, совпадают все три части JA4 (2026-10-21) |
 | accept-language | поле `accept_language` в профиле — подмена значения без правки таблиц заголовков | go test |
 
 Уточнение механики «живых» фингерпринтов: чередование `t13d1517h2_cb7bf5808d99` (свежий полный handshake) и `t13d1518h2_e2d80978ab2e` (resumption-форма с pre_shared_key) — это не Finch-флаги, а полная/возобновлённая форма hello реального Chrome. Наша мимикрия теперь покрывает обе формы: свежую (chrome_exact / chrome_152) и resumption (cache + chrome_152_psk).
@@ -76,12 +95,12 @@ Windows и Android. Google выключил Finch-флаг за ночь. Выв
    (ext 0x0039 из capture'а телефонного QUIC) едут на проводе как есть:
    тот же набор из тринадцати параметров с теми же значениями (max_udp 1472,
    окна 6 MiB / 15 MiB, idle 30000, streams 100/103, datagram 64 KiB,
-   google_connection_options "ORIGECCPIW2X", version_information, GREASE-пара
+   google_connection_options "ORIGNOIP", version_information, GREASE-пара
    с рандомным ID), пустой source connection id и в пакете, и в параметре
    0x0f. Длина списка на проводе от захвата не зависит: id GREASE-параметра
    случаен. С 2026-10-21 h3 работает на QUIC-стеке headless-client: его
    ClientHello совпадает с Chrome'овским побайтово, JA4 на проводе
-   `q13d0311h3_55b375c5d22e_653d80c3fe9d` — ровно как у телефона. Настройки
+   `q13i0312h3_55b375c5d22e_eb028bd37c08` — ровно как у настоящего Chrome 156. Настройки
    HTTP/3 тоже Chrome'овские (QPACK 65536 / field section 262144 / blocked
    100 / H3_DATAGRAM 1 + GREASE), измерены на проводе против локального
    сервера, печатавшего control stream клиента. Прежняя запись
@@ -161,15 +180,15 @@ PageCache — HTTP-семантика, ревалидирует; на /fp/dot.pn
    клиент ходят на стенд, diff JA4/заголовков/TTL публикуется.
 3. Per-connection TCP SYN (netns + raw) — порядок опций и TS.
 4. ~~QUIC 152-exact пресет + h3.~~ ЗАКРЫТО 2026-10-21: `mimic.NewHTTP3` на
-   QUIC-стеке headless-client; JA4 на проводе равен эталону телефона —
-   `q13d0311h3_55b375c5d22e_653d80c3fe9d`.
+   QUIC-стеке headless-client; эталон переехан на настоящий Chrome —
+   `q13i0312h3_55b375c5d22e_eb028bd37c08`.
 5. Session resumption (переиспользование tickets).
 6. Параметризация пользовательских полей (accept-language и пр.).
 
 Инструменты, которыми всё это снято (в этом репозитории):
 `cmd/fpd` — стенд-«эхо» полного фингерпринта (`/fp`, `/fp/recent`),
 `tools/ja4_from_pcap.py`, `tools/ja3_ja4.py` (FoxIO JA4),
-`mimic/` — клиенты (chrome_exact / chrome_152 / android_149, WithTTL),
+`mimic/` — клиенты (chrome_exact / chrome_156 / chrome_152 / android_149, WithTTL),
 keylog + ручная расшифровка TLS1.3 для h2-кадров.
 
 ## Прогресс 2026-10-12 — Mac mini (macOS) паритет, LAN-стенд

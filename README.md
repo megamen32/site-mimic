@@ -18,10 +18,11 @@ fully worked examples.
 | Client | JA4 (stand, pinned Chromium) | Result |
 |---|---|---|
 | uTLS `chrome_auto` | `t13d1516h2_8daaf6152771_d8a2da3f94cd` | 200 OK over HTTP/2; near-match (extension set differs) |
-| `chrome_exact` (delegates TLS to [headless-client](https://github.com/kulikov0/headless-client)) | `t13d1517h2_8daaf6152771_cb7bf5808d99` | **byte-exact JA4 match with the browser** (re-verified 2026-10-20, after the fork was synced with upstream) |
+| `chrome_exact` (delegates TLS to [headless-client](https://github.com/kulikov0/headless-client)) | `t13d1518h2_8daaf6152771_4980c97edce0` | **byte-exact JA4 match with the browser** (re-verified 2026-10-21 against Chrome 156.0.8078.47) |
 | Real phone, Android Chrome **149** | `t13d1516h2_8daaf6152771_d8a2da3f94cd` ([phone reference](docs/phone-reference.md)) | mobile reference; `android_149` profile matches field-for-field |
 | Real phone Chrome **152** (updated 2026-09-01) | `t13d1518h2_8daaf6152771_e2d80978ab2e` — ML-DSA + 0xCA34 on mobile | newest mobile reference |
 | Desktop Chrome 152 stable | `t13d1517h2_8daaf6152771_cb7bf5808d99` | desktop 152 reference |
+| Desktop Chrome 156 stable (measured 2026-10-21) | `t13d1518h2_8daaf6152771_4980c97edce0` | current stable: 18 extensions, the new unregistered 0x12E0 next to 0xCA34 |
 | Windows Chrome 151 headed (AdGuard on) | `t13d1516h2_8daaf6152771_806a8c22fdea`, TTL 128 | `examples/vk-ru-windows` |
 | MAX app 26.35.1 on Android 15 (Conscrypt/OkHttp) | `t13d171100_5b57614c22b0_40271e0a5736` — **no ALPN**, 17 ciphers | `max_app` / `max_app_psk` specs, 1:1 vs capture |
 | Mobile Chrome 155 (phone) on `web.max.ru` | `t13d1517h2_8daaf6152771_cb7bf5808d99` | same JA4 as `chrome_152`; headers only |

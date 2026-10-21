@@ -29,24 +29,29 @@ cd "$(dirname "$0")/.."
 CHROME=${CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}
 PORT=${CANARY_PORT:-18443}
 WORK=.tmp/canary-quic
-PROFILE=${CANARY_PROFILE:-examples/profiles/windows-chrome152-h3.json}
+PROFILE=${CANARY_PROFILE:-examples/profiles/mac-chrome156-h3.json}
 
 step() { printf '[canary-quic] %s\n' "$*"; }
 die() { step "FAIL: $*"; exit 1; }
 
-# The reference: what a real Chrome sent on the wire, measured on the phone
-# (2026-08-30, Chrome on the S21, a QUIC handshake to a Google server) and
-# pinned by mimic/h3_wire_test.go.
+# The reference: what a real Chrome sent on the wire, measured against this
+# stand (2026-10-21, Google Chrome 156.0.8078.47 on macOS) and pinned by
+# mimic/h3_wire_test.go.
 #
 # The JA4 is split: the b and c parts are the fingerprint itself (the cipher
 # list and the extension list with the signature algorithms), and the a part
 # carries the SNI token and the extension count — both of which depend on
 # whether the target was a name or an address.
-REF_JA4_BC='55b375c5d22e_653d80c3fe9d'
-REF_EXTENSIONS='0x0000 0x000a 0x000d 0x0010 0x001b 0x002b 0x002d 0x0033 0x0039 0x44cd 0xfe0d'
+#
+# The extension list is the one Chrome 156 sends: the Chrome 155 set plus
+# the unregistered 0xCA34 and 0x12E0. Chrome 155 sent eleven extensions and
+# fingerprinted as q13i0311h3_55b375c5d22e_178839b6cec1; Chrome 156 sends
+# twelve and fingerprints as q13i0312h3_55b375c5d22e_eb028bd37c08.
+REF_JA4_BC='55b375c5d22e_eb028bd37c08'
+REF_EXTENSIONS='0x0000 0x000a 0x000d 0x0010 0x001b 0x002b 0x002d 0x0033 0x0039 0x12e0 0x44cd 0xca34 0xfe0d'
 REF_SIGALGS='0x0201 0x0401 0x0403 0x0501 0x0503 0x0601 0x0804 0x0805 0x0806'
 REF_SETTINGS='1=65536 6=262144 7=100 51=1'
-REF_GCO='4f5249474543435049573258'   # google_connection_options: ORIGECCPIW2X
+REF_GCO='4f5249474e4f4950'   # google_connection_options: ORIGNOIP
 
 command -v go >/dev/null || die "go is not on PATH"
 [ -x "$CHROME" ] || die "no Chrome at $CHROME (set CHROME)"
@@ -144,7 +149,7 @@ wait $OURS_STAND 2>/dev/null
 # 3) the diff.
 python3 - "$WORK/browser.jsonl" "$WORK/ours.jsonl" "$REF_JA4_BC" "$REF_EXTENSIONS" \
     "$REF_SIGALGS" "$REF_SETTINGS" "$REF_GCO" "$IP" \
-    mimic/testdata/chrome_quic_transport_parameters.bin <<'EOF'
+    mimic/testdata/chrome156_quic_transport_parameters.bin <<'EOF'
 import json
 import sys
 
