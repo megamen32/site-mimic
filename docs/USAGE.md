@@ -305,10 +305,10 @@ extensions in the QUIC hello, and the `google_connection_options
 
 Those two Chrome changes were also proposed upstream, so that the fork
 could shrink to upstream's `main` plus the module path and we would stop
-carrying the patch across syncs. That is a bet on the maintainer's time,
-not a requirement: 0xCA34 is [an open pull request](https://github.com/kulikov0/headless-client/pull/1)
-since 2026-09-09 and the Chrome 156 change stays in the fork. Either way
-the fork is the source of truth here.
+carrying the patch across syncs. That was a bet on the maintainer's time,
+not a requirement, and the pull requests are closed again (2026-10-21): the
+0xCA34 one and the Safari one, so the maintainer is not carrying an open
+thread. Either way the fork is the source of truth here.
 Everything else we use is already upstream — the `Sec-Fetch-Site` per pair
 work, for one, was [merged there](https://github.com/kulikov0/headless-client/pull/2)
 in September 2026. So the fork exists for the Chrome wire details upstream
