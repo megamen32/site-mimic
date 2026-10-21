@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/refraction-networking/uquic/http3"
+	"github.com/megamen32/headless-client/quic/http3"
 	utls "github.com/refraction-networking/utls"
 )
 
@@ -247,6 +247,7 @@ func newTestH3Server(t *testing.T) *http3.Server {
 			w.Header().Set("X-Request-Proto", r.Proto)
 			w.Header().Set("X-SNI", r.TLS.ServerName)
 			w.Header().Set("X-UA", r.UserAgent())
+			w.Header().Set("X-Resume", fmt.Sprintf("%t", r.TLS.DidResume))
 			w.WriteHeader(http.StatusOK)
 			_, _ = io.WriteString(w, "hello over "+r.Proto)
 		}),
@@ -320,5 +321,70 @@ func TestHTTP3Live(t *testing.T) {
 	}
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("status = %s, want 200", resp.Status)
+	}
+}
+
+// TestHTTP3DoesNotResumeYet records the gap.
+//
+// A browser resumes: its second connection to an origin offers the ticket
+// the first one got, and the hello carries the pre_shared_key extension
+// (the phone's Chrome 155, 2026-10-21: q13d0314h3_55b375c5d22e_79cc91d6b50c,
+// captured as mimic/testdata/phone_chrome155_quic_resumed_hello.json).
+//
+// The h3 path does not: the QUIC stack of the dependency has no session
+// store, and a session state cannot be rebuilt outside it, so the ticket
+// cannot be kept and offered again. This test pins that state, so the day
+// the dependency grows a store, it fails and the path gets fixed with it.
+func TestHTTP3DoesNotResumeYet(t *testing.T) {
+	certificate := selfSignedCert(t)
+
+	pc, err := net.ListenPacket("udp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	defer pc.Close()
+
+	server := &http3.Server{
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-Resume", fmt.Sprintf("%t", r.TLS.DidResume))
+			w.WriteHeader(http.StatusOK)
+			_, _ = io.WriteString(w, "ok")
+		}),
+		TLSConfig: &utls.Config{Certificates: []utls.Certificate{certificate}},
+	}
+	go func() { _ = server.Serve(pc) }()
+
+	p := Profile{Name: "chrome-156-h3", TLSClientHello: "chrome_156", UserAgent: chrome152UA}
+	client, err := NewHTTP3(p, WithInsecureTLS())
+	if err != nil {
+		t.Fatalf("NewHTTP3: %v", err)
+	}
+	defer client.Transport.(io.Closer).Close()
+
+	addr := pc.LocalAddr().String()
+	resumed := make([]bool, 0, 2)
+	for attempt := 0; attempt < 2; attempt++ {
+		req, err := http.NewRequest(http.MethodGet, "https://"+addr+"/", nil)
+		if err != nil {
+			t.Fatalf("request: %v", err)
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatalf("request %d: %v", attempt, err)
+		}
+		resp.Body.Close()
+		resumed = append(resumed, resp.Header.Get("X-Resume") == "true")
+		// The h3 transport pools connections, so the second request would
+		// ride the first connection and there would be no second handshake
+		// to resume. Closing the idle connections forces a new one.
+		client.CloseIdleConnections()
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	if resumed[0] {
+		t.Error("the first connection claimed to be a resumed one")
+	}
+	if resumed[1] {
+		t.Error("the second connection resumed: the dependency now has a session store, and the h3 path has to offer the ticket")
 	}
 }

@@ -137,3 +137,31 @@ func TestChrome155SpecMatchesThePhoneCapture(t *testing.T) {
 		t.Error("the spec carries no 0xCA34; the phone's Chrome 155 sends it")
 	}
 }
+
+// TestPhoneChrome155ResumedQUICHello pins the shape of a resuming Chrome:
+// the fresh hello plus the pre_shared_key (0x0029) and the
+// signed_certificate_timestamp (0x002a).
+//
+// This is the gap, stated as a measurement. A real Chrome offers a ticket
+// on its second connection to an origin — the phone's Chrome 155 does
+// (captured 2026-10-21, q13d0314h3_55b375c5d22e_79cc91d6b50c) — while our
+// h3 client never resumes: the QUIC stack of the dependency has no session
+// store, and a session state cannot be rebuilt outside it. A server that
+// counts resumptions sees a browser on the first connection and something
+// else on the second.
+func TestPhoneChrome155ResumedQUICHello(t *testing.T) {
+	hello := loadFixture(t, "phone_chrome155_quic_resumed_hello.json")
+
+	if got, want := hello.JA4QUIC(), "q13d0314h3_55b375c5d22e_79cc91d6b50c"; got != want {
+		t.Errorf("the resumed QUIC JA4: got %s, want %s", got, want)
+	}
+	if !hasExtension(hello, 0x0029) {
+		t.Error("the resumed hello carries no pre_shared_key; a resuming browser offers its ticket")
+	}
+	if !hasExtension(hello, 0x002a) {
+		t.Error("the resumed hello carries no signed_certificate_timestamp")
+	}
+	if hasExtension(hello, 0x12e0) {
+		t.Error("the resumed hello carries 0x12E0; that extension belongs to Chrome 156")
+	}
+}
