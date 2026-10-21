@@ -375,6 +375,13 @@ func newSniffer(sink io.Writer) *sniffer {
 }
 
 // observe offers one datagram to the connection it belongs to.
+//
+// The connection is keyed by the client's address. A browser opens one
+// socket for many origins, so two of its connections share the key and the
+// newer hello replaces the older one in the report. The hello of the
+// connection that is reported is the one seen last for that address; a
+// client that opens a socket per connection (or a test) sees one report per
+// connection.
 func (s *sniffer) observe(addr net.Addr, datagram []byte) {
 	key := addr.String()
 	s.mu.Lock()

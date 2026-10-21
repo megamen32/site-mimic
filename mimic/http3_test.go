@@ -324,6 +324,56 @@ func TestHTTP3Live(t *testing.T) {
 	}
 }
 
+// TestHTTP3CarriesEachHostItsOwnName checks that two connections of one
+// client carry their own server name.
+//
+// A browser opens one socket for many origins and sends the name of each
+// origin in its own hello. The QUIC stack of the dependency took the name
+// from the shared ClientHello spec, so the second connection to another
+// host carried the first one's name and failed with a local TLS error.
+func TestHTTP3CarriesEachHostItsOwnName(t *testing.T) {
+	server := newTestH3Server(t)
+	pc, err := net.ListenPacket("udp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	defer pc.Close()
+	go func() { _ = server.Serve(pc) }()
+
+	_, port, err := net.SplitHostPort(pc.LocalAddr().String())
+	if err != nil {
+		t.Fatalf("split the server address: %v", err)
+	}
+	p := Profile{Name: "chrome-156-h3", TLSClientHello: "chrome_156", UserAgent: chrome152UA}
+	client, err := NewHTTP3(p, WithInsecureTLS(), WithResolve(map[string]string{
+		"first.test":  "127.0.0.1",
+		"second.test": "127.0.0.1",
+	}))
+	if err != nil {
+		t.Fatalf("NewHTTP3: %v", err)
+	}
+	defer client.Transport.(io.Closer).Close()
+
+	seen := map[string]bool{}
+	for _, host := range []string{"first.test", "second.test"} {
+		req, err := http.NewRequest(http.MethodGet, "https://"+host+":"+port+"/", nil)
+		if err != nil {
+			t.Fatalf("request: %v", err)
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatalf("the request to %s failed: %v", host, err)
+		}
+		resp.Body.Close()
+		seen[resp.Header.Get("X-SNI")] = true
+	}
+	for _, host := range []string{"first.test", "second.test"} {
+		if !seen[host] {
+			t.Errorf("the server saw %v, the connection to %s did not carry its own name", seen, host)
+		}
+	}
+}
+
 // TestHTTP3DoesNotResumeYet records the gap.
 //
 // A browser resumes: its second connection to an origin offers the ticket
