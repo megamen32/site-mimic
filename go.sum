@@ -8,6 +8,8 @@ github.com/klauspost/compress v1.17.11 h1:In6xLpyWOi1+C7tXUUWv2ot1QvBjxevKAaI6IX
 github.com/klauspost/compress v1.17.11/go.mod h1:pMDklpSncoRMuLFrf1W9Ss9KT+0rH90U12bZKk7uwG0=
 github.com/megamen32/headless-client v0.6.0 h1:X/vF/ve3yzb+seCAtrAs4XjI6zeEkpG2/SblpKWbsuw=
 github.com/megamen32/headless-client v0.6.0/go.mod h1:7sUaijN2pwR+nuuE2dOKLetS1QeUgt+RK/ghJWePsys=
+github.com/megamen32/headless-client v0.7.0 h1:QZNPQ1FmOBKMnomsBddHh9WsppvwQs1/eFBgWvkTn7s=
+github.com/megamen32/headless-client v0.7.0/go.mod h1:7sUaijN2pwR+nuuE2dOKLetS1QeUgt+RK/ghJWePsys=
 github.com/pion/datachannel v1.6.0 h1:XecBlj+cvsxhAMZWFfFcPyUaDZtd7IJvrXqlXD/53i0=
 github.com/pion/datachannel v1.6.0/go.mod h1:ur+wzYF8mWdC+Mkis5Thosk+u/VOL287apDNEbFpsIk=
 github.com/pion/dtls/v3 v3.1.2 h1:gqEdOUXLtCGW+afsBLO0LtDD8GnuBBjEy6HRtyofZTc=

@@ -142,13 +142,12 @@ func TestChrome155SpecMatchesThePhoneCapture(t *testing.T) {
 // the fresh hello plus the pre_shared_key (0x0029) and the
 // signed_certificate_timestamp (0x002a).
 //
-// This is the gap, stated as a measurement. A real Chrome offers a ticket
-// on its second connection to an origin — the phone's Chrome 155 does
-// (captured 2026-10-21, q13d0314h3_55b375c5d22e_79cc91d6b50c) — while our
-// h3 client never resumes: the QUIC stack of the dependency has no session
-// store, and a session state cannot be rebuilt outside it. A server that
-// counts resumptions sees a browser on the first connection and something
-// else on the second.
+// The phone's Chrome 155 sends this shape on its second connection to an
+// origin (captured 2026-10-21, q13d0314h3_55b375c5d22e_79cc91d6b50c), and
+// our h3 client sends the same shape now: the fresh hello plus the
+// pre_shared_key, measured as q13d0314h3_55b375c5d22e_40246181ac92. The
+// two lists differ in the extension Chrome adds because the server sent a
+// certificate timestamp — ours is the list we can produce on our own.
 func TestPhoneChrome155ResumedQUICHello(t *testing.T) {
 	hello := loadFixture(t, "phone_chrome155_quic_resumed_hello.json")
 

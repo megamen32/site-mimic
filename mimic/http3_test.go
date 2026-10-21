@@ -376,12 +376,17 @@ func TestHTTP3CarriesEachHostItsOwnName(t *testing.T) {
 
 // TestHTTP3ResumesTheSession checks that the h3 path resumes like a
 // browser: the second connection to an origin offers the ticket the first
-// one got, and the server sees a resumed session.
+// one got, and the server sees a resumed session — and so does the third.
 //
 // A browser that never resumes always sends the full handshake, and its
 // hello never carries the pre_shared_key extension. The QUIC stack could
 // not resume either: the ClientHello had no place for the ticket and the
 // TLS configuration had no cache to keep it in.
+//
+// Three connections, not two: the second resumes off the ticket of the
+// first, the third off the ticket of the second. A client that can resume
+// only once is a client that dies in the handshake of its second resumed
+// connection.
 func TestHTTP3ResumesTheSession(t *testing.T) {
 	server := newTestH3Server(t)
 	pc, err := net.ListenPacket("udp", "127.0.0.1:0")
@@ -403,8 +408,9 @@ func TestHTTP3ResumesTheSession(t *testing.T) {
 	}
 	defer client.Transport.(io.Closer).Close()
 
-	resumed := make([]bool, 0, 2)
-	for attempt := 0; attempt < 2; attempt++ {
+	const connections = 3
+	resumed := make([]bool, 0, connections)
+	for attempt := 0; attempt < connections; attempt++ {
 		req, err := http.NewRequest(http.MethodGet, "https://resumption.test:"+port+"/", nil)
 		if err != nil {
 			t.Fatalf("request: %v", err)
@@ -425,7 +431,9 @@ func TestHTTP3ResumesTheSession(t *testing.T) {
 	if resumed[0] {
 		t.Error("the first connection claimed to be a resumed one")
 	}
-	if !resumed[1] {
-		t.Error("the second connection did not resume: the client never offered the ticket")
+	for attempt := 1; attempt < connections; attempt++ {
+		if !resumed[attempt] {
+			t.Errorf("connection %d did not resume: the client never offered the ticket", attempt+1)
+		}
 	}
 }
