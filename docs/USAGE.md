@@ -375,9 +375,12 @@ per-destination header tables beyond the four the library defines.
   `q13d0314h3_55b375c5d22e_79cc91d6b50c`, the fresh hello plus
   `pre_shared_key` and `signed_certificate_timestamp`; the capture is
   committed as `mimic/testdata/phone_chrome155_quic_resumed_hello.json`).
-  The QUIC stack of the dependency has no session store, and a session
-  state cannot be rebuilt outside it — so the gap is in the dependency, not
-  in the profile. Over TCP the path does resume.
+  The gap is in the dependency, not in the profile: uTLS offers two QUIC
+  connections, and the one that can carry a custom ClientHello — the only
+  one that can carry Chrome's hello — has no session store, while the one
+  that has a store cannot take a preset. A session state cannot be rebuilt
+  outside the package either, so the ticket cannot be kept. Over TCP the
+  path does resume.
 * **HTTP/2 frames** are Chrome's: the SETTINGS and the connection window
   come from the headless-client's Chrome HTTP/2 stack, over whichever
   ClientHello the profile speaks (`mimic/h2_settings_test.go` pins them).
