@@ -1,0 +1,87 @@
+{
+  "note": "The pinned wire reference of the newest stable Chrome. The QUIC canary and the Chrome autopilot both read this file, so there is one number to move when the browser moves on.",
+  "chrome_version": "156.0.8078.47",
+  "measured": "2026-10-21",
+  "measured_on": "Google Chrome 156.0.8078.47 on macOS, against the local stands of this repository",
+  "tcp": {
+    "ja4": "t13d1518h2_8daaf6152771_4980c97edce0",
+    "extensions": 18,
+    "cipher_suites": 16,
+    "extension_ids": [
+      "0x0000",
+      "0x0005",
+      "0x000a",
+      "0x000b",
+      "0x000d",
+      "0x0010",
+      "0x0012",
+      "0x0017",
+      "0x001b",
+      "0x0023",
+      "0x002b",
+      "0x002d",
+      "0x0033",
+      "0x12e0",
+      "0x44cd",
+      "0xca34",
+      "0xfe0d",
+      "0xff01"
+    ],
+    "sig_algs": [
+      "0x0904",
+      "0x0905",
+      "0x0906",
+      "0x0403",
+      "0x0804",
+      "0x0401",
+      "0x0503",
+      "0x0805",
+      "0x0501",
+      "0x0806",
+      "0x0601"
+    ],
+    "b_and_c": "8daaf6152771_4980c97edce0",
+    "ja4_by_address": "t13i1517h2_8daaf6152771_4980c97edce0"
+  },
+  "quic": {
+    "ja4": "q13i0312h3_55b375c5d22e_eb028bd37c08",
+    "ja4_by_name": "q13d0313h3_55b375c5d22e_eb028bd37c08",
+    "b_and_c": "55b375c5d22e_eb028bd37c08",
+    "extensions": 12,
+    "extensions_by_name": 13,
+    "extension_ids": [
+      "0x0000",
+      "0x000a",
+      "0x000d",
+      "0x0010",
+      "0x001b",
+      "0x002b",
+      "0x002d",
+      "0x0033",
+      "0x0039",
+      "0x12e0",
+      "0x44cd",
+      "0xca34",
+      "0xfe0d"
+    ],
+    "sig_algs": [
+      "0x0201",
+      "0x0401",
+      "0x0403",
+      "0x0501",
+      "0x0503",
+      "0x0601",
+      "0x0804",
+      "0x0805",
+      "0x0806"
+    ],
+    "settings": {
+      "1": 65536,
+      "6": 262144,
+      "7": 100,
+      "51": 1
+    },
+    "google_connection_options": "4f5249474e4f4950",
+    "transport_parameters_fixture": "mimic/testdata/chrome156_quic_transport_parameters.bin"
+  }
+}

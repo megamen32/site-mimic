@@ -125,6 +125,32 @@ ours:         ja4=q13i0312h3_55b375c5d22e_eb028bd37c08 extensions=12
 [canary-quic] RESULT: match — our QUIC fingerprint is the reference one
 ```
 
+### The autopilot: a new Chrome without a person noticing
+
+Chrome ships every four weeks, and each release changes the wire now and
+then — a new extension, a new `google_connection_options` token. The
+canary can only compare against a pinned reference, so the reference has to
+be moved by hand, and a hand is easy to forget.
+
+`tools/chrome_autopilot.sh` closes that loop:
+
+```sh
+tools/chrome_autopilot.sh              # measure the newest stable and report
+tools/chrome_autopilot.sh --issue      # and open an issue when it moved on
+```
+
+It asks Chrome for Testing which stable is the newest, downloads that
+browser (once, into `.tools/`), runs it against the local stands — a plain
+ClientHello tap for TCP and the HTTP/3 stand for QUIC — and diffs the
+fingerprints with the pinned reference in `tools/chrome_reference.json`. The
+same file is what `tools/canary-quic.sh` reads, so there is one set of
+numbers to move, not two.
+
+The comparison is on the b and c parts of the JA4, not the whole string:
+the a part carries the SNI token and the extension count, and both depend
+on whether the target was a name or an address. The autopilot measures by
+address (the stand is a LAN address) and the reference was taken by name.
+
 Two rules the canary has to know, both found the hard way:
 
 * Chrome refuses to speak QUIC to a loopback address, and it checks the

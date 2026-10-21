@@ -89,6 +89,20 @@ func handle(conn net.Conn, enc *json.Encoder) {
 	_ = conn.SetDeadline(time.Now().Add(60 * time.Second))
 
 	br := bufio.NewReader(conn)
+	// A TLS handshake starts with the record type 0x16. Peeking keeps the
+	// bytes in the buffer: a proxy request is read line by line, and a
+	// client that sends a hello and closes would otherwise lose the hello
+	// in the line buffer.
+	first, err := br.Peek(1)
+	if err != nil {
+		return
+	}
+	if first[0] == 0x16 {
+		// Not a proxy request: the peer sent a TLS handshake straight to
+		// us (a DNAT/REDIRECT on the device side).
+		relayTransparent(conn, br, enc)
+		return
+	}
 	target, err := readConnect(br)
 	if err != nil {
 		// Transparent mode: not a proxy request. The peer sent a TLS
