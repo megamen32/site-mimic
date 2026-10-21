@@ -290,10 +290,14 @@ the Chrome header tables and the whole QUIC stack come from it.
 The dependency is pinned to the fork's tag `v0.2.0` (2026-10-21), not to a
 pseudo-version: a tag is a thing a reader can check, and a pseudo-version
 of a fork says only "some commit of somebody's branch". The fork is
-[our fork of kulikov0's](https://github.com/kulikov0/headless-client);
-the Chrome 152 TLS change (the unregistered 0xCA34 extension) is [an open
-pull request against upstream](https://github.com/kulikov0/headless-client/pull/1),
-so the fork can become the upstream's tag when it is merged.
+[our fork of kulikov0's](https://github.com/kulikov0/headless-client), and
+it is upstream's `main` plus two commits: the module path, and the Chrome
+152 TLS change (the unregistered 0xCA34 extension) that is [an open pull
+request against upstream](https://github.com/kulikov0/headless-client/pull/1).
+Everything else we use is already upstream — the `Sec-Fetch-Site` per pair
+work, for one, was [merged there](https://github.com/kulikov0/headless-client/pull/2)
+in September 2026. So the fork exists for one extension, and it can become
+the upstream's own tag as soon as that pull request is merged.
 
 What we took:
 
