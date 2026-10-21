@@ -369,7 +369,10 @@ per-destination header tables beyond the four the library defines.
 
 ## Known limits
 
-* **HTTP/2 header order** follows Go's canonical write, not the browser's.
+* **HTTP/2 frames** are Chrome's: the SETTINGS and the connection window
+  come from the headless-client's Chrome HTTP/2 stack, over whichever
+  ClientHello the profile speaks (`mimic/h2_settings_test.go` pins them).
+  The **header order** inside the frames is still Go's canonical write.
   `header_order` documents the intended order; the wire order is only
   controllable for HTTP/1.1 profiles (`http1_wire_order` +
   `wire_header_order`).

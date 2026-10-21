@@ -13,7 +13,6 @@ package mimic
 import (
 	"bufio"
 	"context"
-	"crypto/tls"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -24,8 +23,8 @@ import (
 	"syscall"
 	"time"
 
+	headless "github.com/megamen32/headless-client"
 	utls "github.com/refraction-networking/utls"
-	"golang.org/x/net/http2"
 )
 
 // errNoH2 is returned by the dialer when the server did not negotiate h2 via
@@ -200,10 +199,17 @@ func New(p Profile, opts ...Option) (*http.Client, error) {
 		return dialProfileTLS(ctx, o, p, network, addr, requireH2, nil)
 	}
 
-	dialTLSH2 := func(ctx context.Context, network, addr string, _ *tls.Config) (net.Conn, error) {
+	// Chrome's HTTP/2 frames — its SETTINGS, the connection window it
+	// opens with — over our own TLS connection. The standard library's
+	// transport sends its own defaults, and a server that looks at the
+	// frames sees a Go client there and not a browser.
+	//
+	// The fork owns the frames, the caller owns the request: the headers
+	// (the user agent, the Sec-Fetch-Site of the pair) stay ours, because
+	// the Sec-Fetch-Site of a redirect chain is computed here.
+	h2 := headless.ChromeHTTP2Transport(func(ctx context.Context, network, addr string) (net.Conn, error) {
 		return dial(ctx, network, addr, true)
-	}
-	h2 := &http2.Transport{DialTLSContext: dialTLSH2}
+	})
 
 	h1 := &http.Transport{
 		DialTLSContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
@@ -235,11 +241,17 @@ func New(p Profile, opts ...Option) (*http.Client, error) {
 	return &http.Client{Transport: rt, Jar: p.CookieJar}, nil
 }
 
+// h2RoundTripper is the HTTP/2 transport of the h2 path: the standard
+// library's or the fork's Chrome-shaped one, depending on the profile.
+type h2RoundTripper interface {
+	RoundTrip(*http.Request) (*http.Response, error)
+}
+
 // roundTripper routes https requests through the uTLS+h2 transport and falls
 // back to HTTP/1.1 for plain http URLs and for hosts that have ever refused
 // the h2 ALPN.
 type roundTripper struct {
-	h2     *http2.Transport
+	h2     h2RoundTripper
 	h1     *http.Transport
 	mu     sync.Mutex
 	h1Only map[string]bool

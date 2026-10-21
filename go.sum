@@ -22,6 +22,8 @@ github.com/klauspost/compress v1.17.11 h1:In6xLpyWOi1+C7tXUUWv2ot1QvBjxevKAaI6IX
 github.com/klauspost/compress v1.17.11/go.mod h1:pMDklpSncoRMuLFrf1W9Ss9KT+0rH90U12bZKk7uwG0=
 github.com/megamen32/headless-client v0.3.0 h1:MW2fxsWeS4X23jf8gnwA4X6b2cvCUPc5ols51KuAUzY=
 github.com/megamen32/headless-client v0.3.0/go.mod h1:7sUaijN2pwR+nuuE2dOKLetS1QeUgt+RK/ghJWePsys=
+github.com/megamen32/headless-client v0.4.0 h1:L23seheD2QNidfj1D86A5CkVcFWHAkTDIZWrEgLhgNo=
+github.com/megamen32/headless-client v0.4.0/go.mod h1:7sUaijN2pwR+nuuE2dOKLetS1QeUgt+RK/ghJWePsys=
 github.com/onsi/ginkgo/v2 v2.17.2 h1:7eMhcy3GimbsA3hEnVKdw/PQM9XN9krpKVXsZdph0/g=
 github.com/onsi/ginkgo/v2 v2.17.2/go.mod h1:nP2DPOQoNsQmsVyv5rDA8JkXQoCs6goXIvr/PRJ1eCc=
 github.com/onsi/gomega v1.33.1 h1:dsYjIxxSR755MDmKVsaFQTE22ChNBcuuTWgkUDSubOk=

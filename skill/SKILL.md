@@ -265,9 +265,11 @@ Full measured case: `docs/max-oneme.ru.md`,
 
 ## Known limits (do not overclaim)
 
-- HTTP/2 frame shape (SETTINGS/WINDOW_UPDATE values and order) is Go's
-  `x/net/http2` default, not the browser's. Sites fingerprinting h2 frames
-  (Akamai-style) can still tell Go apart — roadmap.
+- HTTP/2 frame shape (SETTINGS/WINDOW_UPDATE values and order) is Chrome's
+  — the frames come from the headless-client's Chrome HTTP/2 stack, over
+  whichever TLS hello the profile speaks (`mimic/h2_settings_test.go` pins
+  the values). What is still Go's is the *order* of the header block, see
+  the next item.
 - Wire header order is Go's, not the browser's. Values and set are exact.
   Closed for HTTP/1.1 profiles with `http1_wire_order` (the transport writes
   the header block itself, in the captured order and casing); browser/h2

@@ -3,7 +3,7 @@ module github.com/megamen32/site-mimic
 go 1.26.1
 
 require (
-	github.com/megamen32/headless-client v0.3.0
+	github.com/megamen32/headless-client v0.4.0
 	github.com/refraction-networking/uquic v0.0.6
 	github.com/refraction-networking/utls v1.8.2
 	golang.org/x/net v0.57.0

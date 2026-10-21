@@ -184,3 +184,139 @@ func TestExactPathH2Settings(t *testing.T) {
 		}
 	}
 }
+
+// TestCustomSpecPathH2Settings pins the HTTP/2 frames of the path that owns
+// its own ClientHello: the SETTINGS it sends and the connection window it
+// opens with.
+//
+// The exact path takes its HTTP/2 layer from headless-client, which speaks
+// Chrome's frames. The path with a custom spec used to speak the standard
+// library's HTTP/2, and a server that reads the frames saw a Go client
+// there — the settings of Go's transport are not Chrome's (the header
+// table, the initial window and the header list size all differ).
+func TestCustomSpecPathH2Settings(t *testing.T) {
+	for _, helloName := range []string{"chrome_152", "chrome_155", "chrome_156", "yandex_browser"} {
+		t.Run(helloName, func(t *testing.T) {
+			frames := readClientH2Frames(t, Profile{
+				Name:           helloName + "-h2",
+				TLSClientHello: helloName,
+				UserAgent:      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/156.0.0.0",
+			})
+			checkChromeH2Frames(t, frames)
+		})
+	}
+}
+
+// readClientH2Frames runs a request against a local TLS server and returns
+// the frames the client sent first.
+func readClientH2Frames(t *testing.T, profile Profile) []h2Frame {
+	t.Helper()
+
+	certServer := httptest.NewTLSServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	certificate := certServer.TLS.Certificates[0]
+	certServer.Close()
+
+	ln, err := tls.Listen("tcp", "127.0.0.1:0", &tls.Config{
+		Certificates: []tls.Certificate{certificate},
+		NextProtos:   []string{"h2"},
+	})
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	defer ln.Close()
+
+	type frameResult struct {
+		frames []h2Frame
+		err    error
+	}
+	frames := make(chan frameResult, 1)
+	go func() {
+		conn, err := ln.Accept()
+		if err != nil {
+			frames <- frameResult{err: err}
+			return
+		}
+		defer conn.Close()
+		f, err := readH2Frames(conn, 2)
+		frames <- frameResult{frames: f, err: err}
+	}()
+
+	client, err := New(profile, WithInsecureTLS())
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	defer client.CloseIdleConnections()
+
+	_, port, err := net.SplitHostPort(ln.Addr().String())
+	if err != nil {
+		t.Fatalf("split the server address: %v", err)
+	}
+	url := fmt.Sprintf("https://127.0.0.1:%s/", port)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		t.Fatalf("request: %v", err)
+	}
+	go func() {
+		// The request never completes — the server speaks no h2 — but the
+		// frames the client sends first are what this test reads.
+		_, _ = client.Do(req)
+	}()
+
+	select {
+	case res := <-frames:
+		if res.err != nil {
+			t.Fatalf("read the client's frames: %v", res.err)
+		}
+		if len(res.frames) == 0 {
+			t.Fatal("the client sent no frames")
+		}
+		return res.frames
+	case <-time.After(10 * time.Second):
+		t.Fatal("the client sent no frames")
+	}
+	return nil
+}
+
+// checkChromeH2Frames checks the frames against Chrome's values: the
+// SETTINGS it sends and the connection window it opens with.
+func checkChromeH2Frames(t *testing.T, got []h2Frame) {
+	t.Helper()
+
+	settings := map[uint16]uint32{}
+	for _, f := range got {
+		switch f.typ {
+		case h2FrameSettings:
+			for i := 0; i+6 <= len(f.payload); i += 6 {
+				id := binary.BigEndian.Uint16(f.payload[i : i+2])
+				value := binary.BigEndian.Uint32(f.payload[i+2 : i+6])
+				settings[id] = value
+			}
+		case h2FrameWindowUpdate:
+			if f.streamID != 0 || len(f.payload) < 4 {
+				continue
+			}
+			inc := binary.BigEndian.Uint32(f.payload[:4]) & 0x7fffffff
+			want := uint32(15663105)
+			if inc != want {
+				t.Errorf("connection WINDOW_UPDATE = %d, want %d", inc, want)
+			}
+		}
+	}
+
+	want := map[uint16]uint32{
+		0x1: 65536,   // HEADER_TABLE_SIZE
+		0x2: 0,       // ENABLE_PUSH
+		0x4: 6291456, // INITIAL_WINDOW_SIZE
+		0x6: 262144,  // MAX_HEADER_LIST_SIZE
+	}
+	for id, wantValue := range want {
+		gotValue, ok := settings[id]
+		if !ok {
+			t.Errorf("SETTINGS 0x%02x missing", id)
+			continue
+		}
+		if gotValue != wantValue {
+			t.Errorf("SETTINGS 0x%02x = %d, want %d", id, gotValue, wantValue)
+		}
+	}
+}
