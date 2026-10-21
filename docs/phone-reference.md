@@ -83,6 +83,61 @@ Android Chrome 149 (mobile): t13d1516h2_8daaf6152771_d8a2da3f94cd
 Desktop stand Chromium:      t13d1516h2_8daaf6152771_806a8c22fdea
 ```
 
+## Mobile re-capture (2026-10-21) — Chrome 155, Yandex.Browser, MAX
+
+The phone was on USB, rooted, and the whole chain of `tools/phone` was run
+again: `mitmdump --mode socks5` on the capture host, the on-device forwarder
+over the phone's Wi-Fi, the CA mounted into the zygote view. The captures
+are committed as `mimic/testdata/phone_chrome155_clienthello.json` and
+`mimic/testdata/yandex_browser_clienthello.json`, and `mimic/phone_capture_test.go`
+pins their fingerprints.
+
+**Chrome 155.0.8059.81 on the phone** (the browser's own hello to m.vk.ru):
+
+- TCP: JA4 `t13d1517h2_8daaf6152771_cb7bf5808d99` — seventeen extensions,
+  0xCA34 included, post-quantum signature algorithms, ML-KEM768 key share.
+  **The same fingerprint desktop Chrome 155 produces**: the mobile extension
+  set is the desktop one. (The mobile reference of 2026-09-01, Chrome 152
+  with eighteen extensions, was a different generation; the mobile set is
+  not "wider" after all — it caught up.)
+- QUIC: JA4 `q13d0312h3_55b375c5d22e_178839b6cec1` by name
+  (`q13i0311h3_…` by address) — twelve extensions, the 0xCA34 payload
+  byte-for-byte the desktop one, `google_connection_options "ORIG"`, the
+  same as desktop Chrome 155. The resumed shape is
+  `q13d0314h3_55b375c5d22e_79cc91d6b50c`: fourteen extensions, the
+  pre_shared_key (0x0029) and signed_certificate_timestamp (0x002a) added.
+- Headers (over CDP, no CA needed): UA
+  `Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko)
+  Chrome/155.0.0.0 Mobile Safari/537.36`, `sec-ch-ua: "Google Chrome";v="155",
+  "Chromium";v="155", "Not(A:Brand";v="24"`, `sec-ch-ua-mobile: ?1`,
+  `sec-ch-ua-platform: "Android"`, `Upgrade-Insecure-Requests: 1`.
+
+**The google_connection_options token follows the Chrome version, not the
+platform**: the phone's Chrome 152 sent "ORIGECCPIW2X", the phone's Chrome
+155 sends "ORIG" — the same token desktop Chrome 155 sends. A token measured
+on one platform must not be assumed for another.
+
+**Yandex.Browser 26.8.7.49 on the phone** (hello to api.browser.yandex.net):
+
+- TCP: JA4 `t13d1516h2_8daaf6152771_806a8c22fdea` — **sixteen** extensions
+  and **no 0xCA34**. Yandex's Chromium fork lags the upstream patch level:
+  its hello is the shape of Chrome 151. The post-quantum signature
+  algorithms and the ML-KEM768 group are there, so the fork is recent, but
+  it does not send the unregistered extension. For a client that has to look
+  like Yandex's own browser, sending 0xCA34 is a tell.
+
+**MAX (ru.oneme.app)** re-measured the same day: JA4
+`t13d171100_5b57614c22b0_40271e0a5736`, JA3 md5
+`fb1972c15d60b7be0427edfbd00affde` — identical to the reference committed
+on 2026-10-20, so the app's hello has not moved.
+
+A note on the QUIC path from a phone: Chrome does not try QUIC for an
+origin it has never seen (no Alt-Svc yet), so a local QUIC stand gets
+nothing unless the origin was already told to use QUIC. The working way is
+a packet capture of the real thing: `tcpdump` on the phone (root) over
+`udp port 443`, then `tools/ja4_from_pcap.py` decrypts the Initial packets
+and prints the hello.
+
 ## Desktop Chrome 152 stable — what changed after 149
 
 Measured 2026-08-30 on this workstation (Google Chrome 152.0.7977.64,

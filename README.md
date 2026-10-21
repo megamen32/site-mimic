@@ -26,6 +26,8 @@ fully worked examples.
 | Windows Chrome 151 headed (AdGuard on) | `t13d1516h2_8daaf6152771_806a8c22fdea`, TTL 128 | `examples/vk-ru-windows` |
 | MAX app 26.35.1 on Android 15 (Conscrypt/OkHttp) | `t13d171100_5b57614c22b0_40271e0a5736` — **no ALPN**, 17 ciphers | `max_app` / `max_app_psk` specs, 1:1 vs capture |
 | Mobile Chrome 155 (phone) on `web.max.ru` | `t13d1517h2_8daaf6152771_cb7bf5808d99` | same JA4 as `chrome_152`; headers only |
+| Mobile Chrome 155 (phone, captured 2026-10-21) | `t13d1517h2_8daaf6152771_cb7bf5808d99` over TCP, `q13d0312h3_55b375c5d22e_178839b6cec1` over QUIC | **the same fingerprint desktop Chrome 155 gives**; capture committed as `mimic/testdata/phone_chrome155_clienthello.json` |
+| Yandex.Browser 26.8.7.49 (phone, captured 2026-10-21) | `t13d1516h2_8daaf6152771_806a8c22fdea` | 16 extensions, **no 0xCA34** — Yandex's Chromium fork lags upstream; committed as `mimic/testdata/yandex_browser_clienthello.json` |
 
 The complete by-platform/by-condition table (AdGuard, headless vs headed,
 BrowserOS, Schannel, insecure-context caveats) lives in
