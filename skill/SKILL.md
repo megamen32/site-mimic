@@ -101,6 +101,14 @@ Sites rotate fingerprints rarely but WAF rules often. When a working client
 starts failing: re-run step 2, diff headers first, then JA4 shape. Keep the
 capture date in `profile.json`'s `name`/README.
 
+A browser drifts too, and that is what the canaries are for. `tools/canary.sh`
+compares a real browser with our variants over TCP; `tools/canary-quic.sh`
+does the same over QUIC — it drives a real Chrome and our own h3 client
+against two local HTTP/3 stands (`cmd/h3sniff`) and diffs the QUIC
+ClientHello, the transport parameters and the HTTP/3 settings. Run the QUIC
+one after any change to the h3 path: it is the only check that puts a real
+browser's QUIC handshake next to ours.
+
 ## Worked example: vk.ru
 
 1. Real Chrome navigation captured: UA `Chrome/119…`, `sec-fetch-*` quartet,

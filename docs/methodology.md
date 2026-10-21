@@ -88,6 +88,44 @@ and a PRIORITY_UPDATE frame ("u=0, i"). The values above are the ones the
 client sends; `mimic/h3_wire_test.go` reads them back off a live connection
 and fails if the frame goes back to being empty.
 
+### The QUIC canary: a real browser on the same wire
+
+The measurements above are ours against a capture. A capture is a moment;
+a browser is a moving target. `tools/canary-quic.sh` therefore puts a real
+Chrome and our own h3 client against the same kind of HTTP/3 stand
+(`cmd/h3sniff`) and diffs what the two send: the QUIC ClientHello (JA4,
+the extension set, the signature algorithms), the transport parameters and
+the HTTP/3 settings.
+
+The first run (2026-10-21, Chrome 155 on macOS against the Chrome 152
+measurement) is what a canary is for:
+
+```
+NOTE  JA4 b and c: the browser sends 55b375c5d22e_178839b6cec1, the reference says 55b375c5d22e_653d80c3fe9d
+NOTE  extensions: the browser sends {..., '0xca34'}, the reference says {...}
+NOTE  google_connection_options: the browser sends 4f524947, the reference says 4f5249474543435049573258
+[canary-quic] RESULT: match — our QUIC fingerprint is the reference one
+```
+
+Ours is still the reference — but the browser has moved on in three ways:
+Chrome 155 sends the unregistered `0xCA34` extension in its QUIC hello too
+(the measurement was taken from Chrome 152, which did not), and it sends
+the shorter `google_connection_options "ORIG"` where the phone sent
+`"ORIGECCPIW2X"`. Both are notes, not failures: the pinned measurement is
+old, not our client wrong.
+
+Two rules the canary has to know, both found the hard way:
+
+* Chrome refuses to speak QUIC to a loopback address, and it checks the
+  certificate even with `--ignore-certificate-errors` — so the stand runs
+  on the LAN address with a test CA in the login keychain.
+* The Initial keys come from the destination connection id of the
+  connection's **first** Initial packet (RFC 9001 §5.2). A client may put
+  another id in a later Initial — Google's does — and the keys stay. A
+  reader that derives the keys per packet silently loses the tail of the
+  hello. `internal/quicwire` keeps the id of the first packet for that
+  reason, and its test pins it against the phone's own capture.
+
 ## Header wire order and HTTP/2 frames: what `chrome_exact` closes
 
 Two gaps below were closed by delegating the transport to

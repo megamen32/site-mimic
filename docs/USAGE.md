@@ -249,6 +249,38 @@ it was captured) a resource plan. Load one with
 The full sequence, with the reasoning behind each step, is in
 [`skill/SKILL.md`](../skill/SKILL.md).
 
+## Checking the fingerprint against a real browser
+
+Two canaries put a real browser and our own client on the wire and compare
+what they send.
+
+`tools/canary.sh` is the TCP one: it drives a real Chrome at the
+verification stand, drives our three variants at the same stand, and diffs
+JA4, JA3 and the header names. It knows the two shapes a real Chrome sends
+— the fresh handshake and the resumed one — and treats a variant that
+matches either as good.
+
+`tools/canary-quic.sh` is the QUIC one, and it needs nothing but this
+machine. It starts two HTTP/3 stands (`cmd/h3sniff`), drives a real Chrome
+at one and our own h3 client at the other, and diffs what the two put on
+the wire: the QUIC ClientHello (its JA4, the extension set, the signature
+algorithms), the QUIC transport parameters and the HTTP/3 settings of the
+control stream.
+
+```sh
+tools/canary-quic.sh          # exit 0 = ours is the reference, 2 = drift
+```
+
+Two things it knows that a plain diff does not:
+
+* Chrome refuses to speak QUIC to a loopback address, and it checks the
+  certificate even with `--ignore-certificate-errors`. The canary therefore
+  runs on the LAN address and trusts its own test CA (once).
+* The verdict has two halves. Ours against the pinned reference is a
+  failure when it differs — that is us drifting. The browser against the
+  reference is only a note: the browser moved on and the pinned measurement
+  is old.
+
 ## Borrowed from the headless client
 
 `github.com/megamen32/headless-client` is a dependency, not a copy: the
@@ -333,6 +365,8 @@ per-destination header tables beyond the four the library defines.
 | `mimic/http3.go`, `mimic/quic_spec.go` | the QUIC transport and its Chrome 152 fingerprint |
 | `cmd/fetchd` | the daemon for non-Go callers |
 | `cmd/hello-tap`, `cmd/hellofp` | capture and fingerprint tooling |
+| `cmd/h3sniff` | the HTTP/3 stand: it reads a client's QUIC fingerprint off the wire |
+| `internal/quicwire` | the QUIC wire primitives: Initial decryption, transport parameters, h3 settings |
 | `cmd/tproxyfwd` | the on-device transparent forwarder for a rooted phone |
 | `examples/profiles/` | the ready-to-load JSON profiles |
 | `examples/` | worked examples, one per site |
@@ -341,5 +375,6 @@ per-destination header tables beyond the four the library defines.
 | `tools/phone/`, `tools/win/`, `tools/avd/` | capture tooling per platform |
 | `tools/mac/` | the rootless macOS capture path — no root, no CA in the keychain |
 | `tools/parse_clienthello.py`, `tools/ja4_from_pcap.py` | fingerprint readers |
+| `tools/canary.sh`, `tools/canary-quic.sh` | the canaries: a real browser against ours, over TCP and over QUIC |
 | `docs/` | methodology, research notes, per-site documentation |
 | `skill/SKILL.md` | the agent workflow for fitting a new site |
