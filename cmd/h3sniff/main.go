@@ -8,7 +8,7 @@
 //
 // One JSON line per connection:
 //
-//	{"client":"192.168.10.102:54321","ja4":"q13d0311h3_...","ja3":"...",
+//	{"client":"192.0.2.10:54321","ja4":"q13d0311h3_...","ja3":"...",
 //	 "sni":"www.google.com","alpn":["h3"],"extensions":11,
 //	 "transport_parameters":{"1":"80007530"},"settings":{"1":65536},
 //	 "user_agent":"Mozilla/5.0 ..."}
