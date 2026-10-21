@@ -5,52 +5,12 @@ import (
 	"testing"
 )
 
-// ja4QUIC is the FoxIO JA4 in its QUIC form: the same computation as
-// ClientHello.JA4 (the "t" form) with the protocol letter swapped, exactly
-// what tools/ja3_ja4.py's compute_ja4(trace, "q") does.
-func ja4QUIC(h *ClientHello) string {
-	ja4a := "q" + h.ja4VersionToken() + h.ja4SNIToken() +
-		pad2(len(stripGREASE(h.CipherSuites))) + pad2(len(stripGREASE(h.Extensions))) + h.ja4ALPNToken()
-	return ja4a + "_" + h.ja4B() + "_" + h.ja4C()
-}
-
 // helloRecord wraps a TLS handshake message in a record header, so the
 // library's ClientHello parser can read it — QUIC carries handshake messages
 // without records, but the bytes inside are the same.
 func helloRecord(msg []byte) []byte {
 	rec := []byte{0x16, 0x03, 0x01, byte(len(msg) >> 8), byte(len(msg))}
 	return append(rec, msg...)
-}
-
-// decodeTransportParameters reads a marshalled transport parameter list into
-// id -> value bytes.
-func decodeTransportParameters(t *testing.T, raw []byte) map[uint64][]byte {
-	t.Helper()
-	out := map[uint64][]byte{}
-	for pos := 0; pos < len(raw); {
-		id, n, ok := readVarint(raw[pos:])
-		if !ok {
-			t.Fatalf("truncated parameter id at %d", pos)
-		}
-		pos += n
-		length, n, ok := readVarint(raw[pos:])
-		if !ok {
-			t.Fatalf("truncated parameter length at %d", pos)
-		}
-		pos += n
-		if pos+int(length) > len(raw) {
-			t.Fatalf("parameter 0x%02x claims %d bytes, only %d left", id, length, len(raw)-pos)
-		}
-		out[id] = raw[pos : pos+int(length)]
-		pos += int(length)
-	}
-	return out
-}
-
-// isGREASETransportParamID reports whether the id is a GREASE transport
-// parameter id (the 0x1b..0x3a family RFC 9000 defines for them).
-func isGREASETransportParamID(id uint64) bool {
-	return id >= 27 && (id-27)%31 == 0
 }
 
 // TestChromeH3Settings pins the HTTP/3 settings to the values a real

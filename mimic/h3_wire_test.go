@@ -2,10 +2,6 @@ package mimic
 
 import (
 	"context"
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/hkdf"
-	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -18,6 +14,8 @@ import (
 	h3quic "github.com/megamen32/headless-client/quic"
 	h3http3 "github.com/megamen32/headless-client/quic/http3"
 	utls "github.com/refraction-networking/utls"
+
+	"github.com/megamen32/site-mimic/internal/quicwire"
 )
 
 // The tests in this file read what the h3 path puts on the wire. They do not
@@ -199,7 +197,7 @@ func startH3ControlServer(t *testing.T, control chan<- h3Control) string {
 			n, err := str.Read(buf)
 			if n > 0 {
 				data = append(data, buf[:n]...)
-				if _, complete := h3SettingsFrom(data); complete {
+				if _, complete := quicwire.H3Settings(data); complete {
 					control <- h3Control{data: data}
 					return
 				}
@@ -218,53 +216,6 @@ func startH3ControlServer(t *testing.T, control chan<- h3Control) string {
 	return port
 }
 
-// h3SettingsFrom decodes the SETTINGS frame at the head of a control stream
-// and reports whether the frame is complete.
-func h3SettingsFrom(raw []byte) (map[uint64]uint64, bool) {
-	settings := map[uint64]uint64{}
-	if len(raw) == 0 {
-		return settings, false
-	}
-	streamType, pos, ok := readVarint(raw)
-	if !ok || streamType != 0x00 {
-		return settings, false
-	}
-	if pos >= len(raw) {
-		return settings, false
-	}
-	frameType, n, ok := readVarint(raw[pos:])
-	if !ok {
-		return settings, false
-	}
-	pos += n
-	if frameType != 0x04 {
-		return settings, false
-	}
-	length, n, ok := readVarint(raw[pos:])
-	if !ok {
-		return settings, false
-	}
-	pos += n
-	if pos+int(length) > len(raw) {
-		return settings, false
-	}
-	payload := raw[pos : pos+int(length)]
-	for len(payload) > 0 {
-		id, n, ok := readVarint(payload)
-		if !ok {
-			return settings, false
-		}
-		payload = payload[n:]
-		value, n, ok := readVarint(payload)
-		if !ok {
-			return settings, false
-		}
-		payload = payload[n:]
-		settings[id] = value
-	}
-	return settings, true
-}
-
 // decodeH3ControlStream decodes the control stream: the stream type, then
 // every frame, and the SETTINGS frame as identifier/value pairs.
 func decodeH3ControlStream(t *testing.T, raw []byte) map[uint64]uint64 {
@@ -272,7 +223,7 @@ func decodeH3ControlStream(t *testing.T, raw []byte) map[uint64]uint64 {
 	if len(raw) == 0 {
 		t.Fatal("empty control stream")
 	}
-	streamType, pos, ok := readVarint(raw)
+	streamType, pos, ok := quicwire.ReadVarint(raw)
 	if !ok {
 		t.Fatal("the control stream has no stream type")
 	}
@@ -281,12 +232,12 @@ func decodeH3ControlStream(t *testing.T, raw []byte) map[uint64]uint64 {
 	}
 	settings := map[uint64]uint64{}
 	for pos < len(raw) {
-		frameType, n, ok := readVarint(raw[pos:])
+		frameType, n, ok := quicwire.ReadVarint(raw[pos:])
 		if !ok {
 			t.Fatal("truncated frame type")
 		}
 		pos += n
-		length, n, ok := readVarint(raw[pos:])
+		length, n, ok := quicwire.ReadVarint(raw[pos:])
 		if !ok {
 			t.Fatal("truncated frame length")
 		}
@@ -300,12 +251,12 @@ func decodeH3ControlStream(t *testing.T, raw []byte) map[uint64]uint64 {
 			continue
 		}
 		for len(payload) > 0 {
-			id, n, ok := readVarint(payload)
+			id, n, ok := quicwire.ReadVarint(payload)
 			if !ok {
 				t.Fatal("truncated setting id")
 			}
 			payload = payload[n:]
-			value, n, ok := readVarint(payload)
+			value, n, ok := quicwire.ReadVarint(payload)
 			if !ok {
 				t.Fatal("truncated setting value")
 			}
@@ -314,37 +265,6 @@ func decodeH3ControlStream(t *testing.T, raw []byte) map[uint64]uint64 {
 		}
 	}
 	return settings
-}
-
-// readVarint reads a QUIC variable-length integer and returns its value and
-// the number of bytes it took.
-func readVarint(b []byte) (uint64, int, bool) {
-	if len(b) == 0 {
-		return 0, 0, false
-	}
-	switch b[0] >> 6 {
-	case 0:
-		return uint64(b[0]), 1, true
-	case 1:
-		if len(b) < 2 {
-			return 0, 0, false
-		}
-		return uint64(b[0]&0x3f)<<8 | uint64(b[1]), 2, true
-	case 2:
-		if len(b) < 4 {
-			return 0, 0, false
-		}
-		return uint64(b[0]&0x3f)<<24 | uint64(b[1])<<16 | uint64(b[2])<<8 | uint64(b[3]), 4, true
-	default:
-		if len(b) < 8 {
-			return 0, 0, false
-		}
-		var v uint64
-		for i := 0; i < 8; i++ {
-			v = v<<8 | uint64(b[i])
-		}
-		return v & 0x3fffffffffffffff, 8, true
-	}
 }
 
 // isGREASEH3SettingID reports whether the setting id is a GREASE one. Chrome
@@ -368,7 +288,7 @@ func isGREASEH3SettingID(id uint64) bool {
 // the TCP one.
 func TestChromeQUICClientHelloOnTheWire(t *testing.T) {
 	hello := captureQUICClientHello(t)
-	ja4 := ja4QUIC(hello)
+	ja4 := hello.JA4QUIC()
 	t.Logf("QUIC ClientHello JA4 on the wire: %s", ja4)
 	if got, want := ja4, "q13d0311h3_55b375c5d22e_653d80c3fe9d"; got != want {
 		t.Errorf("QUIC JA4 = %s, want %s (the phone's real Chrome)", got, want)
@@ -403,13 +323,19 @@ func TestChromeQUICTransportParametersOnTheWire(t *testing.T) {
 	if !ok {
 		t.Fatal("the hello has no quic transport parameters extension")
 	}
-	ours := decodeTransportParameters(t, raw)
-	theirs := decodeTransportParameters(t, captured)
+	ours, err := quicwire.TransportParameters(raw)
+	if err != nil {
+		t.Fatalf("our transport parameters: %v", err)
+	}
+	theirs, err := quicwire.TransportParameters(captured)
+	if err != nil {
+		t.Fatalf("the captured transport parameters: %v", err)
+	}
 
 	nonGREASE := func(m map[uint64][]byte) map[uint64]string {
 		out := map[uint64]string{}
 		for id, value := range m {
-			if isGREASETransportParamID(id) {
+			if quicwire.IsGREASEParamID(id) {
 				continue
 			}
 			if id == quicChromeVersionInformationID {
@@ -467,7 +393,7 @@ func TestChromeQUICTransportParametersOnTheWire(t *testing.T) {
 	var greaseID uint64
 	var greaseValue []byte
 	for id, value := range ours {
-		if isGREASETransportParamID(id) {
+		if quicwire.IsGREASEParamID(id) {
 			greaseID, greaseValue = id, value
 		}
 	}
@@ -476,7 +402,7 @@ func TestChromeQUICTransportParametersOnTheWire(t *testing.T) {
 	}
 	var capturedGREASE []byte
 	for id, value := range theirs {
-		if isGREASETransportParamID(id) {
+		if quicwire.IsGREASEParamID(id) {
 			capturedGREASE = value
 		}
 	}
@@ -515,7 +441,7 @@ func captureQUICClientHello(t *testing.T) *ClientHello {
 
 	deadline := time.Now().Add(5 * time.Second)
 	buf := make([]byte, 2048)
-	crypto := map[uint64][]byte{}
+	conn := quicwire.NewConnection()
 	for time.Now().Before(deadline) {
 		pc.SetReadDeadline(time.Now().Add(time.Second))
 		n, _, err := pc.ReadFrom(buf)
@@ -523,10 +449,8 @@ func captureQUICClientHello(t *testing.T) *ClientHello {
 			continue
 		}
 		datagram := append([]byte(nil), buf[:n]...)
-		for _, frame := range quicInitialFrames(t, datagram) {
-			crypto[frame.offset] = frame.data
-		}
-		if msg, ok := clientHelloFromCrypto(crypto); ok {
+		conn.AddInitial(datagram)
+		if msg, ok := conn.ClientHello(); ok {
 			hello, err := ParseClientHello(helloRecord(msg))
 			if err != nil {
 				t.Fatalf("parse client hello: %v", err)
@@ -543,235 +467,4 @@ func captureQUICClientHello(t *testing.T) *ClientHello {
 type h3Control struct {
 	data []byte
 	err  error
-}
-
-// quicInitialFrame is one CRYPTO frame of a QUIC Initial packet.
-type quicInitialFrame struct {
-	offset uint64
-	data   []byte
-}
-
-// quicInitialFrames decrypts a QUIC Initial packet and returns its CRYPTO
-// frames.
-func quicInitialFrames(t *testing.T, datagram []byte) []quicInitialFrame {
-	t.Helper()
-	dcid, header, pnAndPayload, ok := parseLongHeader(datagram)
-	if !ok {
-		return nil
-	}
-	secret, err := hkdf.Extract(sha256.New, dcid, quicV1InitialSalt)
-	if err != nil {
-		t.Fatalf("hkdf extract: %v", err)
-	}
-	clientSecret, err := hkdf.Expand(sha256.New, secret, string(expandLabel("client in", 32)), 32)
-	if err != nil {
-		t.Fatalf("hkdf expand: %v", err)
-	}
-	key, err := hkdf.Expand(sha256.New, clientSecret, string(expandLabel("quic key", 16)), 16)
-	if err != nil {
-		t.Fatalf("hkdf expand key: %v", err)
-	}
-	iv, err := hkdf.Expand(sha256.New, clientSecret, string(expandLabel("quic iv", 12)), 12)
-	if err != nil {
-		t.Fatalf("hkdf expand iv: %v", err)
-	}
-	hp, err := hkdf.Expand(sha256.New, clientSecret, string(expandLabel("quic hp", 16)), 16)
-	if err != nil {
-		t.Fatalf("hkdf expand hp: %v", err)
-	}
-	payload, ok := decryptInitialPayload(t, header, pnAndPayload, key, iv, hp)
-	if !ok {
-		return nil
-	}
-	return cryptoFrames(payload)
-}
-
-// quicV1InitialSalt is the salt RFC 9001 defines for QUIC v1.
-var quicV1InitialSalt = []byte{
-	0x38, 0x76, 0x2c, 0xf7, 0xf5, 0x59, 0x34, 0xb3, 0x4d, 0x17,
-	0x9a, 0xe6, 0xa4, 0xc8, 0x0c, 0xad, 0xcc, 0xbb, 0x7f, 0x0a,
-}
-
-// expandLabel builds the HKDF-ExpandLabel info of TLS 1.3 (RFC 8446 §7.1).
-func expandLabel(label string, length int) []byte {
-	full := "tls13 " + label
-	info := make([]byte, 0, 2+1+len(full)+1)
-	info = append(info, byte(length>>8), byte(length))
-	info = append(info, byte(len(full)))
-	info = append(info, full...)
-	info = append(info, 0)
-	return info
-}
-
-// parseLongHeader returns the destination connection id, the header bytes
-// without the packet number, and the packet number with the payload.
-func parseLongHeader(datagram []byte) ([]byte, []byte, []byte, bool) {
-	if len(datagram) < 6 || datagram[0]&0x80 == 0 {
-		return nil, nil, nil, false
-	}
-	if (datagram[0]&0x30)>>4 != 0 {
-		return nil, nil, nil, false // not an Initial
-	}
-	pos := 5
-	dcidLen := int(datagram[pos])
-	pos++
-	if pos+dcidLen > len(datagram) {
-		return nil, nil, nil, false
-	}
-	dcid := datagram[pos : pos+dcidLen]
-	pos += dcidLen
-	scidLen := int(datagram[pos])
-	pos++
-	if pos+scidLen > len(datagram) {
-		return nil, nil, nil, false
-	}
-	pos += scidLen
-	tokenLen, n, ok := readVarint(datagram[pos:])
-	if !ok {
-		return nil, nil, nil, false
-	}
-	pos += n + int(tokenLen)
-	length, n, ok := readVarint(datagram[pos:])
-	if !ok {
-		return nil, nil, nil, false
-	}
-	pos += n
-	if pos+int(length) > len(datagram) {
-		return nil, nil, nil, false
-	}
-	return dcid, datagram[:pos], datagram[pos : pos+int(length)], true
-}
-
-// decryptInitialPayload removes the header protection and decrypts the
-// payload of a QUIC Initial packet.
-func decryptInitialPayload(t *testing.T, header, pnAndPayload, key, iv, hp []byte) ([]byte, bool) {
-	t.Helper()
-	if len(pnAndPayload) < 4+16+16 {
-		return nil, false
-	}
-	block, err := aes.NewCipher(hp)
-	if err != nil {
-		t.Fatalf("aes: %v", err)
-	}
-	sample := pnAndPayload[4:20]
-	mask := make([]byte, 16)
-	block.Encrypt(mask, sample)
-
-	first := header[0] ^ (mask[0] & 0x0f)
-	if (first&0x30)>>4 != 0 {
-		return nil, false
-	}
-	pnLen := int(first&0x03) + 1
-	pnBytes := make([]byte, pnLen)
-	for i := 0; i < pnLen; i++ {
-		pnBytes[i] = pnAndPayload[i] ^ mask[1+i]
-	}
-	pn := uint64(0)
-	for _, b := range pnBytes {
-		pn = pn<<8 | uint64(b)
-	}
-
-	fullHeader := append([]byte{first}, header[1:]...)
-	fullHeader = append(fullHeader, pnBytes...)
-
-	gcm, err := cipher.NewGCM(blockForKey(t, key))
-	if err != nil {
-		t.Fatalf("gcm: %v", err)
-	}
-	nonce := make([]byte, len(iv))
-	copy(nonce, iv)
-	for i := 0; i < 8; i++ {
-		nonce[len(nonce)-1-i] ^= byte(pn >> (8 * i))
-	}
-	plain, err := gcm.Open(nil, nonce, pnAndPayload[pnLen:], fullHeader)
-	if err != nil {
-		return nil, false
-	}
-	return plain, true
-}
-
-// blockForKey returns an AES block cipher for the given key.
-func blockForKey(t *testing.T, key []byte) cipher.Block {
-	t.Helper()
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		t.Fatalf("aes: %v", err)
-	}
-	return block
-}
-
-// cryptoFrames returns the CRYPTO frames of a decrypted QUIC payload.
-//
-// A CRYPTO frame carries its offset before its length (RFC 9000 §19.6), and
-// both are variable-length integers.
-func cryptoFrames(payload []byte) []quicInitialFrame {
-	var frames []quicInitialFrame
-	pos := 0
-	for pos < len(payload) {
-		frameType, n, ok := readVarint(payload[pos:])
-		if !ok {
-			return frames
-		}
-		pos += n
-		if frameType == 0x00 || frameType == 0x01 {
-			// PADDING and PING carry no length and no payload.
-			continue
-		}
-		if frameType == 0x06 {
-			offset, offsetLen, ok := readVarint(payload[pos:])
-			if !ok {
-				return frames
-			}
-			pos += offsetLen
-			length, lengthLen, ok := readVarint(payload[pos:])
-			if !ok {
-				return frames
-			}
-			pos += lengthLen
-			if pos+int(length) > len(payload) {
-				return frames
-			}
-			frames = append(frames, quicInitialFrame{
-				offset: offset,
-				data:   append([]byte(nil), payload[pos:pos+int(length)]...),
-			})
-			pos += int(length)
-			continue
-		}
-		length, n, ok := readVarint(payload[pos:])
-		if !ok {
-			return frames
-		}
-		pos += n
-		if pos+int(length) > len(payload) {
-			return frames
-		}
-		pos += int(length)
-	}
-	return frames
-}
-
-// clientHelloFromCrypto assembles the CRYPTO frames into the TLS handshake
-// stream and returns the ClientHello when it is complete.
-func clientHelloFromCrypto(frames map[uint64][]byte) ([]byte, bool) {
-	size := uint64(0)
-	for offset, data := range frames {
-		if offset+uint64(len(data)) > size {
-			size = offset + uint64(len(data))
-		}
-	}
-	if size < 4 {
-		return nil, false
-	}
-	stream := make([]byte, size)
-	for offset, data := range frames {
-		copy(stream[offset:], data)
-	}
-	length := uint64(stream[1])<<16 | uint64(stream[2])<<8 | uint64(stream[3])
-	if uint64(len(stream)) < 4+length {
-		return nil, false
-	}
-	// The handshake message with its four-byte header: the type is 1
-	// (ClientHello) and the three-byte length follows it.
-	return stream[:4+length], true
 }

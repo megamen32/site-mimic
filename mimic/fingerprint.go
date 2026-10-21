@@ -245,6 +245,19 @@ func (c *ClientHello) JA4() string {
 	return ja4a + "_" + c.ja4B() + "_" + c.ja4C()
 }
 
+// JA4QUIC is the same computation in its QUIC form: the protocol letter is
+// "q" instead of "t", which is what a server computes for a hello that
+// arrives inside a QUIC Initial packet.
+//
+// The "q" form is what tools/ja3_ja4.py's compute_ja4(trace, "q") prints,
+// so a QUIC fingerprint measured by that script and one measured by this
+// method are the same string.
+func (c *ClientHello) JA4QUIC() string {
+	ja4a := "q" + c.ja4VersionToken() + c.ja4SNIToken() +
+		pad2(len(stripGREASE(c.CipherSuites))) + pad2(len(stripGREASE(c.Extensions))) + c.ja4ALPNToken()
+	return ja4a + "_" + c.ja4B() + "_" + c.ja4C()
+}
+
 // JA4R is JA4_r: the original wire order, GREASE removed, SNI/ALPN kept.
 func (c *ClientHello) JA4R() string {
 	ciphers := strings.Join(hex4(stripGREASE(c.CipherSuites)), ",")

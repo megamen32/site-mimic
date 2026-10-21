@@ -170,21 +170,32 @@ def quic_clienthellos(datagrams: list[bytes]):
     Reassembles the CRYPTO stream across Initial packets (Chrome's hello
     spans several), then wraps the handshake message in a synthetic TLS
     record for the shared parser.
+
+    The Initial keys come from the destination connection id of the
+    connection's FIRST Initial packet, not from the id of each packet:
+    RFC 9001 section 5.2 keeps those keys even when the client puts a
+    different destination connection id in a later Initial. The phone's
+    own capture shows Google doing exactly that, and a sniffer that
+    derives the keys per packet drops the tail of the hello.
     """
     from parse_clienthello import parse_clienthello
 
-    by_dcid: dict[bytes, list[tuple[int, bytes]]] = {}
+    # key dcid -> the CRYPTO frames of that connection
+    connections: dict[bytes, list[tuple[int, bytes]]] = {}
     for datagram in datagrams:
         parsed = _parse_long_header(datagram)
         if parsed is None:
             continue
         dcid, header_bytes, pn_and_payload = parsed
-        payload = _decrypt_initial(dcid, header_bytes, pn_and_payload)
-        if payload is None:
-            continue
-        by_dcid.setdefault(dcid, []).extend(_crypto_frames(payload))
+        # Try the keys of the connections already seen, then this packet's
+        # own id (which opens a new connection).
+        for key_dcid in (list(connections) + [dcid]):
+            payload = _decrypt_initial(key_dcid, header_bytes, pn_and_payload)
+            if payload is not None:
+                connections.setdefault(key_dcid, []).extend(_crypto_frames(payload))
+                break
 
-    for chunks in by_dcid.values():
+    for chunks in connections.values():
         stream = bytearray()
         expected = 0
         for offset, data in sorted(chunks):
