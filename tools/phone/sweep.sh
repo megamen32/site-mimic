@@ -155,16 +155,29 @@ trap cleanup EXIT INT TERM
 launch() {
 	local pkg="$1" act="${2:-}"
 	if [ -n "$act" ]; then
-		adb_ shell am start -n "$act" >/dev/null 2>&1
-		return $?
+		# "am start -n" wants the full component: package/activity.
+		case "$act" in
+		*/*) ;;
+		*) act="$pkg/$act" ;;
+		esac
+		adb_ shell am start -n "$act" >/dev/null 2>&1 && return 0
+		# The activity may live in a split the package manager resolves but
+		# "am start -n" cannot see: the launcher intent finds it anyway.
+		adb_ shell am start -a android.intent.action.MAIN \
+			-c android.intent.category.LAUNCHER "$pkg" >/dev/null 2>&1 && return 0
 	fi
+	# The package's own launcher.
+	adb_ shell am start -a android.intent.action.MAIN \
+		-c android.intent.category.LAUNCHER "$pkg" >/dev/null 2>&1 && return 0
 	adb_ shell monkey -p "$pkg" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
 }
 
 for pkg in "${APPS[@]}"; do
+	# A package may carry its activity: pkg#activity. The hash, not the
+	# colon, because a URL has colons in it.
 	act=""
 	case "$pkg" in
-	*:*) pkg="${pkg%%:*}"; act="${pkg#*:}"; act="${act##*:}" ;;
+	*#*) pkg="${pkg%%#*}"; act="${pkg#*#}" ;;
 	esac
 	step "=== $pkg ==="
 	adb_ shell am force-stop "$pkg" >/dev/null 2>&1

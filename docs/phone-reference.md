@@ -126,6 +126,22 @@ on one platform must not be assumed for another.
   it does not send the unregistered extension. For a client that has to look
   like Yandex's own browser, sending 0xCA34 is a tell.
 
+**The Yandex app (com.yandex.searchapp, 26.87)** carries the same main
+shape as the browser — `t13d1516h2_8daaf6152771_806a8c22fdea`, sixteen
+extensions — because the app embeds the browser. It also carries two other
+shapes, and they are worth knowing about:
+
+- `t13d1513h2_8daaf6152771_eca864cca44a` — thirteen extensions, no ALPS,
+  no ECH GREASE, no post-quantum signature algorithms: a different TLS
+  stack inside the app (the one behind `yandex.ru`, `yastatic.net`,
+  `favicon.yandex.net`);
+- `t12d1409h1_...` and `t12d1410h1_...` — TLS 1.2, HTTP/1.1 only: the
+  Rustore statistics SDK.
+
+So "Yandex" is not one client but three, and the browser's shape is the one
+that speaks to the Yandex sites. The app was disabled on the device and was
+enabled only for the capture.
+
 **MAX (ru.oneme.app)** re-measured the same day: JA4
 `t13d171100_5b57614c22b0_40271e0a5736`, JA3 md5
 `fb1972c15d60b7be0427edfbd00affde` — identical to the reference committed
