@@ -290,21 +290,29 @@ transport of the `chrome_exact` profile, the WebSocket upgrade handshake,
 the Chrome header tables and the whole QUIC stack come from it.
 
 The dependency is pinned to the fork's tag `v0.3.0` (2026-10-21), not to a
-pseudo-version: a tag is a thing a reader can check, and a pseudo-version
-of a fork says only "some commit of somebody's branch". The fork is
-[our fork of kulikov0's](https://github.com/kulikov0/headless-client), and
-it is upstream's `main` plus three commits: the module path, the Chrome 152
-TLS change (the unregistered 0xCA34 extension) that is [an open pull
-request against upstream](https://github.com/kulikov0/headless-client/pull/1),
-and the Chrome 156 change — the unregistered 0x12E0 extension next to
-0xCA34, the same two extensions in the QUIC hello, and the
-`google_connection_options "ORIGNOIP"` token. The Chrome 156 change lives in
-the fork only: it is a measured wire shape, and it will follow upstream
-when there is a pull request for it.
+pseudo-version: a tag is a named, immutable pointer a reader can check,
+while a pseudo-version says only "some commit of some branch". **Who owns
+the tag makes no difference to that** — our own tag is as checkable as
+upstream's, and `go.mod` points at ours. Depending on a tagged fork of a
+patched library is an ordinary thing to do.
+
+The fork is [our fork of kulikov0's](https://github.com/kulikov0/headless-client),
+and it is upstream's `main` plus three commits: the module path, the
+Chrome 152 TLS change (the unregistered 0xCA34 extension) and the Chrome 156
+change — the unregistered 0x12E0 extension next to 0xCA34, the same two
+extensions in the QUIC hello, and the `google_connection_options
+"ORIGNOIP"` token.
+
+Those two Chrome changes were also proposed upstream, so that the fork
+could shrink to upstream's `main` plus the module path and we would stop
+carrying the patch across syncs. That is a bet on the maintainer's time,
+not a requirement: 0xCA34 is [an open pull request](https://github.com/kulikov0/headless-client/pull/1)
+since 2026-09-09 and the Chrome 156 change stays in the fork. Either way
+the fork is the source of truth here.
 Everything else we use is already upstream — the `Sec-Fetch-Site` per pair
 work, for one, was [merged there](https://github.com/kulikov0/headless-client/pull/2)
-in September 2026. So the fork exists for one extension, and it can become
-the upstream's own tag as soon as that pull request is merged.
+in September 2026. So the fork exists for the Chrome wire details upstream
+does not carry yet.
 
 What we took:
 
