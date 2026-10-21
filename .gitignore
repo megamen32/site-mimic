@@ -9,6 +9,9 @@ __pycache__/
 # compiled daemon binary — build locally: go build -o fetchd ./cmd/fetchd
 /fetchd
 
+# the QUIC stand, built by tools/canary-quic.sh
+/h3sniff
+
 # agent runtime state (task records under .agents/tasks/ stay tracked)
 .agents/shared-session/
 .worktrees/
