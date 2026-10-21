@@ -122,8 +122,17 @@ moved to it, and the canary is silent:
 ```
 real browser: ja4=q13i0312h3_55b375c5d22e_eb028bd37c08 extensions=12
 ours:         ja4=q13i0312h3_55b375c5d22e_eb028bd37c08 extensions=12
+the browser's connections: 2, a later one resumes: yes
+our connections: 1, a later one resumes: no
 [canary-quic] RESULT: match — our QUIC fingerprint is the reference one
 ```
+
+The last two lines are the resumption, said out loud: a browser that has a
+ticket for an origin offers it on the next connection and the hello then
+carries the pre_shared_key. Chrome does; our h3 client does not — the
+QUIC stack of the dependency has no session store, and a session state
+cannot be rebuilt outside it. The canary says so on every run, so the gap
+is visible instead of waiting to be noticed.
 
 ### The autopilot: a new Chrome without a person noticing
 

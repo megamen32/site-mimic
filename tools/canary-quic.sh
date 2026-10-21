@@ -206,6 +206,23 @@ if not ours_reports:
 browser = browser_reports[0]
 ours = ours_reports[0]
 
+# The resumption: a browser that has a ticket for an origin offers it on the
+# next connection, and the hello then carries the pre_shared_key. The
+# browser's second connection to the stand is that shape; ours never is (the
+# QUIC stack of the dependency has no session store), so the canary says so
+# out loud instead of leaving it to be noticed.
+def resumed_shape(reports):
+    for report in reports[1:]:
+        if "0x0029" in (report.get("extension_ids") or []):
+            return True
+    return False
+
+
+print("the browser's connections: %d, a later one resumes: %s"
+      % (len(browser_reports), "yes" if resumed_shape(browser_reports) else "no"))
+print("our connections: %d, a later one resumes: %s"
+      % (len(ours_reports), "yes" if resumed_shape(ours_reports) else "no"))
+
 bad = 0
 
 
