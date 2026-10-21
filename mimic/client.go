@@ -54,7 +54,7 @@ var errNoH2 = errors.New("mimic: server did not negotiate h2 via ALPN")
 // "firefox_auto", "ios_auto", "random", "random_alpn".
 func ParseClientHelloID(name string) (utls.ClientHelloID, error) {
 	switch name {
-	case "", "chrome_auto", "android_149", "chrome_152", "chrome_152_psk", "chrome_156":
+	case "", "chrome_auto", "android_149", "chrome_152", "chrome_152_psk", "chrome_155", "chrome_156", "yandex_browser":
 		return utls.HelloChrome_Auto, nil
 	case node24HelloName:
 		return node24HelloID(), nil
@@ -69,7 +69,7 @@ func ParseClientHelloID(name string) (utls.ClientHelloID, error) {
 	case "random_alpn":
 		return utls.HelloRandomizedALPN, nil
 	default:
-		return utls.ClientHelloID{}, fmt.Errorf("mimic: unknown tls_client_hello %q (want chrome_auto, chrome_152, chrome_156, node_24, max_app, max_app_psk, firefox_auto, ios_auto, random, random_alpn)", name)
+		return utls.ClientHelloID{}, fmt.Errorf("mimic: unknown tls_client_hello %q (want chrome_auto, chrome_152, chrome_155, chrome_156, yandex_browser, node_24, max_app, max_app_psk, firefox_auto, ios_auto, random, random_alpn)", name)
 	}
 }
 

@@ -140,7 +140,7 @@ func TestChromeH3ControlStreamIsNotEmpty(t *testing.T) {
 	control := make(chan h3Control, 1)
 	addr := startH3ControlServer(t, control)
 
-	p := Profile{Name: "chrome-152-h3", TLSClientHello: "chrome_152"}
+	p := Profile{Name: "chrome-156-h3", TLSClientHello: "chrome_156"}
 	client, err := NewHTTP3(p, WithInsecureTLS(),
 		WithResolve(map[string]string{"localhost": "127.0.0.1"}))
 	if err != nil {
@@ -307,34 +307,83 @@ func isGREASEH3SettingID(id uint64) bool {
 	return id > 0x1f
 }
 
+// quicProfileCases is what each profile's QUIC wire must look like: the
+// fingerprint of the browser it imitates, the number of extensions, the
+// google_connection_options token and the captured transport parameters it
+// is checked against.
+//
+// Every row is a capture, not a design: Chrome 152 and Chrome 155 and
+// Chrome 156 on a desktop, Yandex's own browser on a phone. The two
+// extensions and the token move with the Chrome release, and the extension
+// set moves with it too — Chrome 152 sent 0xCA34 over TCP but not over
+// QUIC, Chrome 155 sent it over both.
+var quicProfileCases = []struct {
+	helloName string
+	ja4       string
+	exts      int
+	gco       string
+	tpFixture string
+}{
+	{
+		helloName: "chrome_152",
+		ja4:       "q13d0311h3_55b375c5d22e_653d80c3fe9d",
+		exts:      11,
+		gco:       "4f5249474543435049573258", // ORIGECCPIW2X
+		tpFixture: "testdata/chrome_quic_transport_parameters.bin",
+	},
+	{
+		helloName: "chrome_155",
+		ja4:       "q13d0312h3_55b375c5d22e_178839b6cec1",
+		exts:      12,
+		gco:       "4f524947", // ORIG
+		tpFixture: "testdata/chrome155_quic_transport_parameters.bin",
+	},
+	{
+		helloName: "chrome_156",
+		ja4:       "q13d0313h3_55b375c5d22e_eb028bd37c08",
+		exts:      13,
+		gco:       "4f5249474e4f4950", // ORIGNOIP
+		tpFixture: "testdata/chrome156_quic_transport_parameters.bin",
+	},
+	{
+		helloName: "yandex_browser",
+		ja4:       "q13d0311h3_55b375c5d22e_653d80c3fe9d",
+		exts:      11,
+		gco:       "4f524947", // ORIG
+		tpFixture: "testdata/yandex_browser_quic_transport_parameters.bin",
+	},
+}
+
 // TestChromeQUICClientHelloOnTheWire reads the QUIC Initial the client sends,
 // decrypts it and fingerprints the ClientHello inside.
 //
-// The reference is the capture of a real Chrome 156: the browser's QUIC JA4
-// is q13d0313h3_55b375c5d22e_eb028bd37c08 (q13i0312h3_... when the target
-// is an address and there is no server name). The hello this path sends has
-// to fingerprint the same, or the h3 wire announces a different browser than
-// the TCP one.
+// The reference is the capture of the browser the profile imitates: the
+// hello this path sends has to fingerprint the same, or the h3 wire
+// announces a different browser than the TCP one.
 func TestChromeQUICClientHelloOnTheWire(t *testing.T) {
-	hello := captureQUICClientHello(t)
-	ja4 := hello.JA4QUIC()
-	t.Logf("QUIC ClientHello JA4 on the wire: %s", ja4)
-	if got, want := ja4, "q13d0313h3_55b375c5d22e_eb028bd37c08"; got != want {
-		t.Errorf("QUIC JA4 = %s, want %s (the real Chrome 156)", got, want)
-	}
-	if got, want := len(hello.Extensions), 13; got != want {
-		t.Errorf("the hello carries %d extensions, want %d", got, want)
-	}
-	if got, want := len(hello.CipherSuites), 3; got != want {
-		t.Errorf("the hello offers %d cipher suites, want %d", got, want)
-	}
-	if len(hello.ALPN) != 1 || hello.ALPN[0] != "h3" {
-		t.Errorf("hello ALPN = %v, want [h3]", hello.ALPN)
+	for _, tc := range quicProfileCases {
+		t.Run(tc.helloName, func(t *testing.T) {
+			hello := captureQUICClientHello(t, tc.helloName)
+			ja4 := hello.JA4QUIC()
+			t.Logf("QUIC ClientHello JA4 on the wire: %s", ja4)
+			if ja4 != tc.ja4 {
+				t.Errorf("QUIC JA4 = %s, want %s", ja4, tc.ja4)
+			}
+			if got, want := len(hello.Extensions), tc.exts; got != want {
+				t.Errorf("the hello carries %d extensions, want %d", got, want)
+			}
+			if got, want := len(hello.CipherSuites), 3; got != want {
+				t.Errorf("the hello offers %d cipher suites, want %d", got, want)
+			}
+			if len(hello.ALPN) != 1 || hello.ALPN[0] != "h3" {
+				t.Errorf("hello ALPN = %v, want [h3]", hello.ALPN)
+			}
+		})
 	}
 }
 
 // TestChromeQUICTransportParametersOnTheWire compares the transport
-// parameters the client puts on the wire with the bytes a real Chrome sent,
+// parameters the client puts on the wire with the bytes a real browser sent,
 // committed as a fixture.
 //
 // The GREASE parameter's id and payload are random per connection on both
@@ -342,122 +391,139 @@ func TestChromeQUICClientHelloOnTheWire(t *testing.T) {
 // GREASE one matched by its shape. The version_information parameter carries
 // a GREASE version, which Chrome draws per connection: the captured value is
 // one sample, and the value on the wire is checked against the same scheme.
+//
+// One parameter is left out on purpose: 0x310B, which Chrome sends only to
+// Google's own servers (it is absent from every capture taken against a
+// local stand, and present in the ones taken against Google).
 func TestChromeQUICTransportParametersOnTheWire(t *testing.T) {
-	captured, err := os.ReadFile("testdata/chrome156_quic_transport_parameters.bin")
-	if err != nil {
-		t.Fatalf("read the captured transport parameters: %v", err)
-	}
-	hello := captureQUICClientHello(t)
-	raw, ok := hello.ExtensionData[0x39]
-	if !ok {
-		t.Fatal("the hello has no quic transport parameters extension")
-	}
-	ours, err := quicwire.TransportParameters(raw)
-	if err != nil {
-		t.Fatalf("our transport parameters: %v", err)
-	}
-	theirs, err := quicwire.TransportParameters(captured)
-	if err != nil {
-		t.Fatalf("the captured transport parameters: %v", err)
-	}
-
-	nonGREASE := func(m map[uint64][]byte) map[uint64]string {
-		out := map[uint64]string{}
-		for id, value := range m {
-			if quicwire.IsGREASEParamID(id) {
-				continue
+	for _, tc := range quicProfileCases {
+		t.Run(tc.helloName, func(t *testing.T) {
+			captured, err := os.ReadFile(tc.tpFixture)
+			if err != nil {
+				t.Fatalf("read the captured transport parameters: %v", err)
 			}
-			if id == quicChromeVersionInformationID {
-				// The GREASE version inside version_information is drawn
-				// per connection, on the browser's side as well, so the
-				// captured value is one sample and not a constant. Chrome
-				// also draws it at either end of the available versions
-				// list (six captures showed three of each), so the list is
-				// compared as a set: the chosen version and the version the
-				// client supports.
-				out[id] = versionInformationKey(value)
-				continue
+			hello := captureQUICClientHello(t, tc.helloName)
+			raw, ok := hello.ExtensionData[0x39]
+			if !ok {
+				t.Fatal("the hello has no quic transport parameters extension")
 			}
-			out[id] = hex.EncodeToString(value)
-		}
-		return out
-	}
-	got, want := nonGREASE(ours), nonGREASE(theirs)
-	if len(got) != len(want) {
-		t.Errorf("%d transport parameters, want the captured %d (%v)", len(got), len(want), got)
-	}
-	for id, wantHex := range want {
-		gotHex, ok := got[id]
-		if !ok {
-			t.Errorf("transport parameter 0x%02x missing", id)
-			continue
-		}
-		if gotHex != wantHex {
-			t.Errorf("transport parameter 0x%02x = %s, want the captured %s", id, gotHex, wantHex)
-		}
-	}
+			ours, err := quicwire.TransportParameters(raw)
+			if err != nil {
+				t.Fatalf("our transport parameters: %v", err)
+			}
+			theirs, err := quicwire.TransportParameters(captured)
+			if err != nil {
+				t.Fatalf("the captured transport parameters: %v", err)
+			}
 
-	// The GREASE version: the same scheme the capture shows — every byte
-	// of it ends in 0x0a — but a different value, because Chrome draws it
-	// per connection.
-	version, ok := ours[quicChromeVersionInformationID]
-	if !ok {
-		t.Fatal("the transport parameters carry no version_information")
-	}
-	if len(version) != 12 {
-		t.Fatalf("version_information is %d bytes, want 12", len(version))
-	}
-	if got, want := versionInformationKey(version), "00000001:00000001"; got != want {
-		t.Errorf("version_information = %s, want the chosen version 1 and the version list", got)
-	}
-	// The greased version is the one that is not QUIC v1, wherever Chrome
-	// drew it in the list.
-	greased := uint32(0)
-	for _, v := range []uint32{
-		binary.BigEndian.Uint32(version[4:8]),
-		binary.BigEndian.Uint32(version[8:12]),
-	} {
-		if v != quicVersion1 {
-			greased = v
-		}
-	}
-	if greased == 0 {
-		t.Fatalf("version_information = %s, carries no greased version", hex.EncodeToString(version))
-	}
-	for i := 0; i < 4; i++ {
-		if b := byte(greased >> (24 - 8*i)); b&0x0f != 0x0a {
-			t.Errorf("byte %d of the GREASE version is 0x%02x, want the low nibble 0x0a", i, b)
-		}
-	}
+			nonGREASE := func(m map[uint64][]byte) map[uint64]string {
+				out := map[uint64]string{}
+				for id, value := range m {
+					if quicwire.IsGREASEParamID(id) {
+						continue
+					}
+					if id == 0x3127 {
+						// Google's own parameter, right next to the
+						// google_connection_options one: Chrome sends it
+						// to Google's servers only (it is absent from every
+						// capture taken against a local stand).
+						continue
+					}
+					if id == quicChromeVersionInformationID {
+						// The GREASE version inside version_information is
+						// drawn per connection, on the browser's side as
+						// well, so the captured value is one sample and not
+						// a constant. The chosen version and the version
+						// list are compared as a set: Chrome draws the
+						// greased version at either end.
+						out[id] = versionInformationKey(value)
+						continue
+					}
+					out[id] = hex.EncodeToString(value)
+				}
+				return out
+			}
+			got, want := nonGREASE(ours), nonGREASE(theirs)
+			if len(got) != len(want) {
+				t.Errorf("%d transport parameters, want the captured %d (%v)", len(got), len(want), got)
+			}
+			for id, wantHex := range want {
+				gotHex, ok := got[id]
+				if !ok {
+					t.Errorf("transport parameter 0x%02x missing", id)
+					continue
+				}
+				if gotHex != wantHex {
+					t.Errorf("transport parameter 0x%02x = %s, want the captured %s", id, gotHex, wantHex)
+				}
+			}
 
-	// The GREASE parameter: a random id, a random payload.
-	var greaseID uint64
-	var greaseValue []byte
-	for id, value := range ours {
-		if quicwire.IsGREASEParamID(id) {
-			greaseID, greaseValue = id, value
-		}
-	}
-	if greaseID == 0 {
-		t.Error("the transport parameters carry no GREASE parameter")
-	}
-	var capturedGREASE []byte
-	for id, value := range theirs {
-		if quicwire.IsGREASEParamID(id) {
-			capturedGREASE = value
-		}
-	}
-	if len(capturedGREASE) == 0 {
-		t.Fatal("the captured transport parameters carry no GREASE parameter")
-	}
-	if len(greaseValue) > 15 {
-		t.Errorf("the GREASE parameter carries %d bytes, want at most 15", len(greaseValue))
+			// The GREASE parameter: a random id, a random payload.
+			var greaseID uint64
+			var greaseValue []byte
+			for id, value := range ours {
+				if quicwire.IsGREASEParamID(id) {
+					greaseID, greaseValue = id, value
+				}
+			}
+			if greaseID == 0 {
+				t.Error("the transport parameters carry no GREASE parameter")
+			}
+			var capturedGREASE []byte
+			for id, value := range theirs {
+				if quicwire.IsGREASEParamID(id) {
+					capturedGREASE = value
+				}
+			}
+			if len(capturedGREASE) == 0 {
+				t.Fatal("the captured transport parameters carry no GREASE parameter")
+			}
+			if len(greaseValue) > 15 {
+				t.Errorf("the GREASE parameter carries %d bytes, want at most 15", len(greaseValue))
+			}
+
+			// The token of the release the profile imitates.
+			if got, want := got[quicChromeGoogleConnOptionsID], tc.gco; got != want {
+				t.Errorf("google_connection_options = %s, want %s", got, want)
+			}
+
+			// The GREASE version: the same scheme the capture shows — every
+			// byte of it ends in 0x0a — but a different value, because
+			// Chrome draws it per connection.
+			version, ok := ours[quicChromeVersionInformationID]
+			if !ok {
+				t.Fatal("the transport parameters carry no version_information")
+			}
+			if len(version) != 12 {
+				t.Fatalf("version_information is %d bytes, want 12", len(version))
+			}
+			if got, want := versionInformationKey(version), "00000001:00000001"; got != want {
+				t.Errorf("version_information = %s, want the chosen version 1 and the version list", got)
+			}
+			greased := uint32(0)
+			for _, v := range []uint32{
+				binary.BigEndian.Uint32(version[4:8]),
+				binary.BigEndian.Uint32(version[8:12]),
+			} {
+				if v != quicVersion1 {
+					greased = v
+				}
+			}
+			if greased == 0 {
+				t.Fatalf("version_information = %s, carries no greased version", hex.EncodeToString(version))
+			}
+			for i := 0; i < 4; i++ {
+				if b := byte(greased >> (24 - 8*i)); b&0x0f != 0x0a {
+					t.Errorf("byte %d of the GREASE version is 0x%02x, want the low nibble 0x0a", i, b)
+				}
+			}
+		})
 	}
 }
 
 // captureQUICClientHello makes the h3 client send a QUIC Initial to a
 // socket that answers nothing, and returns the ClientHello inside it.
-func captureQUICClientHello(t *testing.T) *ClientHello {
+func captureQUICClientHello(t *testing.T, helloName string) *ClientHello {
 	t.Helper()
 	pc, err := net.ListenPacket("udp", "127.0.0.1:0")
 	if err != nil {
@@ -466,7 +532,7 @@ func captureQUICClientHello(t *testing.T) *ClientHello {
 	defer pc.Close()
 	port := pc.LocalAddr().(*net.UDPAddr).Port
 
-	p := Profile{Name: "chrome-152-h3", TLSClientHello: "chrome_152"}
+	p := Profile{Name: helloName + "-h3", TLSClientHello: helloName}
 	client, err := NewHTTP3(p, WithInsecureTLS(), WithDialTimeout(2*time.Second),
 		WithResolve(map[string]string{"localhost": "127.0.0.1"}))
 	if err != nil {

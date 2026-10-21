@@ -88,9 +88,15 @@ Chrome 156 — "ORIGNOIP". На провод едет самый свежий и
 уходит из hello, и тот же фингерпринт читается как `q13i0312h3_…`. Для
 IP-цели это правильная форма, а не дефект.
 
-На QUIC-проводе всегда едет этот один QUIC-фингерпринт, поэтому в
-профиле `tls_client_hello` должен называть Chrome-идентичность:
-`chrome_auto`, `android_149`, `chrome_152`, `chrome_152_psk` или `chrome_156`.
+QUIC-фингерпринт следует за профилем: и обаратайся
+QUIC-hello, и токен `google_connection_options` — те, что сняли у браузера, который
+имитирует профиль, а не одна форма для всех. Chrome 152 не шла
+QUIC-hello ни одного нерегистрированного расширения, токен `ORIGECCPIW2X`;
+Chrome 155 — 0xCA34 и `ORIG`; Chrome 156 — 0xCA34 и 0x12E0 и `ORIGNOIP`; Яндекс.Браузер — ни того, ни токена `ORIG`.
+Профили вне списка остаются на новейшей форме (`chrome_auto`, `android_149`).
+
+Поэтому в профиле `tls_client_hello` должен называть браузер, чей QUIC-фингерпринт
+измерен — `chrome_auto`, `android_149`, `chrome_152`, `chrome_152_psk`, `chrome_155`, `chrome_156` или `yandex_browser`.
 `chrome_exact` отвергается: это побайтово точный TLS-слой Chrome по
 **TCP**, и по QUIC он не применяется.
 
@@ -183,6 +189,8 @@ print(r.status, r.text)
 | `chrome_152` | Chrome 152 на десктопе / 155 на телефоне | `t13d1517h2_8daaf6152771_cb7bf5808d99` | своя спека: постквантовые алгоритмы подписи + расширение 0xCA34 |
 | `chrome_152_psk` | то же, но с resumption | — | добавляет PSK binder |
 | `chrome_156` | Chrome 156, текущий stable | `t13d1518h2_8daaf6152771_4980c97edce0` | своя спека: спека `chrome_152` плюс расширение 0x12E0, которое добавил Chrome 156 |
+| `chrome_155` | Chrome 155 десктоп и мобильный | `t13d1517h2_8daaf6152771_cb7bf5808d99` | то же hello, что у `chrome_152` — это форма Chrome 155, снятая на телфоне и на macOS |
+| `yandex_browser` | Яндекс.Браузер 26.8 | `t13d1516h2_8daaf6152771_806a8c22fdea` | своя спека: спека `chrome_152` **без** 0xCA34 — форк Chromium Яндекса отставал от пачлевого уровня, его hello — форма Chrome 151 |
 | `node_24` | Node.js 24 / Electron 42 (BoringSSL) | `t13d1812h1_5d04281c6031_ef7df7f74e48` | ALPN только `http/1.1` |
 | `max_app` | приложение MAX (`ru.oneme.app`) | `t13d171100_5b57614c22b0_40271e0a5736` | форма Conscrypt/OkHttp, **ALPN нет вообще**, 17 шифров |
 | `max_app_psk` | то же, с resumption | `t13d171200_5b57614c22b0_352634941f3a` | PSK несли 113 из 116 реальных соединений |

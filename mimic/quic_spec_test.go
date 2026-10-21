@@ -49,7 +49,7 @@ func TestChromeH3Settings(t *testing.T) {
 // TestChromeQUICGoogleConnectionOptions pins the google_connection_options
 // value: the captured token, not the shorter one the QUIC stack ships.
 func TestChromeQUICGoogleConnectionOptions(t *testing.T) {
-	_, quicConfig := chromeQUICConfig(transportOptions{})
+	_, quicConfig := chromeQUICConfig(transportOptions{}, "chrome_156")
 	got, ok := quicConfig.AdditionalTransportParameters[quicChromeGoogleConnOptionsID]
 	if !ok {
 		t.Fatal("the configuration carries no google_connection_options")
@@ -63,7 +63,7 @@ func TestChromeQUICGoogleConnectionOptions(t *testing.T) {
 // configuration carries: they are the captured ones, and a stack that changed
 // its defaults would move them silently.
 func TestChromeQUICConfigWindow(t *testing.T) {
-	_, quicConfig := chromeQUICConfig(transportOptions{})
+	_, quicConfig := chromeQUICConfig(transportOptions{}, "chrome_156")
 	if got, want := quicConfig.InitialStreamReceiveWindow, uint64(quicChromeStreamWindow); got != want {
 		t.Errorf("the stream window is %d, want %d", got, want)
 	}

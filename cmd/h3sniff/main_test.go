@@ -53,7 +53,7 @@ func TestTheStandReportsTheClientsFingerprint(t *testing.T) {
 
 	profile := mimic.Profile{
 		Name:           "chrome-152-h3",
-		TLSClientHello: "chrome_152",
+		TLSClientHello: "chrome_156",
 		UserAgent:      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
 	}
 	client, err := mimic.NewHTTP3(profile, mimic.WithInsecureTLS())

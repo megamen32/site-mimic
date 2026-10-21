@@ -67,3 +67,73 @@ func hasGroup(hello *ClientHello, id uint16) bool {
 	}
 	return false
 }
+
+// TestYandexBrowserSpecMatchesTheCapture checks the reconstructed spec
+// against the Yandex.Browser capture: the same fingerprint, the same
+// extension set, and the same bytes in every extension the browser does not
+// randomise.
+//
+// The spec is the chrome_152 layout without the 0xCA34 extension — the
+// extension a current Chrome sends and Yandex's fork does not.
+func TestYandexBrowserSpecMatchesTheCapture(t *testing.T) {
+	spec, err := yandexBrowserSpec()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ours := handshakeClientHello(t, spec, "api.browser.yandex.net")
+	reference := loadFixture(t, "yandex_browser_clienthello.json")
+
+	if got, want := ours.JA4(), reference.JA4(); got != want {
+		t.Errorf("JA4: ours %s, capture %s", got, want)
+	}
+
+	oursSet := nonGREASEExtensions(ours.Extensions)
+	refSet := nonGREASEExtensions(reference.Extensions)
+	if len(oursSet) != len(refSet) {
+		t.Fatalf("extension count: ours %d, capture %d", len(oursSet), len(refSet))
+	}
+	for id := range refSet {
+		if !oursSet[id] {
+			t.Errorf("extension %#06x is missing from the spec", id)
+		}
+	}
+	for id := range oursSet {
+		if !refSet[id] {
+			t.Errorf("extension %#06x is in the spec but not in the capture", id)
+		}
+	}
+
+	for id := range refSet {
+		switch id {
+		case 0x000a, 0x000d, 0x002b: // carry a GREASE value
+			continue
+		case 0x0033: // key_share: a fresh key every connection
+			continue
+		case 0xfe0d: // ALPS settings: randomised by Chrome
+			continue
+		}
+		got, want := ours.ExtensionData[id], reference.ExtensionData[id]
+		if string(got) != string(want) {
+			t.Errorf("extension %#06x payload: ours %x, capture %x", id, got, want)
+		}
+	}
+}
+
+// TestChrome155SpecMatchesThePhoneCapture checks that the chrome_155
+// profile — the same spec as chrome_152 under the name of the release it
+// reproduces — is the shape the phone's Chrome 155 sends.
+func TestChrome155SpecMatchesThePhoneCapture(t *testing.T) {
+	spec, err := chrome152Spec()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ours := handshakeClientHello(t, spec, "m.vk.ru")
+	reference := loadFixture(t, "phone_chrome155_clienthello.json")
+
+	if got, want := ours.JA4(), reference.JA4(); got != want {
+		t.Errorf("JA4: ours %s, capture %s", got, want)
+	}
+	if !hasExtension(ours, 0xca34) {
+		t.Error("the spec carries no 0xCA34; the phone's Chrome 155 sends it")
+	}
+}

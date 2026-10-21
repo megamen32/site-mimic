@@ -92,11 +92,19 @@ hostname, and RFC 6066 forbids an SNI for an IP address — against an IP
 the extension leaves the hello and the same fingerprint reads
 `q13i0312h3_…`. That is the correct form for an IP target, not a defect.
 
-The QUIC wire always carries that one QUIC fingerprint, so the profile's
-`tls_client_hello` must name a Chrome identity — `chrome_auto`,
-`android_149`, `chrome_152`, `chrome_152_psk` or `chrome_156`. `chrome_exact` is refused:
-it is a byte-exact Chrome *TCP* TLS layer, and over QUIC that layer is
-not applied.
+The QUIC fingerprint follows the profile: the QUIC hello and the
+`google_connection_options` token are the ones the browser the profile
+imitates was measured with, not one shape for everybody. Chrome 152 sent
+neither unregistered extension over QUIC and the token `ORIGECCPIW2X`; Chrome
+155 sent 0xCA34 and `ORIG`; Chrome 156 sent 0xCA34 and 0x12E0 and
+`ORIGNOIP`; Yandex's browser sent neither and `ORIG`. A profile outside
+that list (`chrome_auto`, `android_149`) keeps the newest shape.
+
+So the profile's `tls_client_hello` must name a browser whose QUIC
+fingerprint was measured — `chrome_auto`, `android_149`, `chrome_152`,
+`chrome_152_psk`, `chrome_155`, `chrome_156` or `yandex_browser`.
+`chrome_exact` is refused: it is a byte-exact Chrome *TCP* TLS layer, and
+over QUIC that layer is not applied.
 
 ### TypeScript / JavaScript
 
@@ -190,6 +198,8 @@ The client supervises the daemon: if `/healthz` is unreachable it starts
 | `chrome_152` | Chrome 152 desktop / 155 mobile | `t13d1517h2_8daaf6152771_cb7bf5808d99` | custom spec: post-quantum signature algorithms + extension 0xCA34 |
 | `chrome_152_psk` | the same, with resumption | — | adds the PSK binder |
 | `chrome_156` | Chrome 156, the current stable | `t13d1518h2_8daaf6152771_4980c97edce0` | custom spec: the `chrome_152` layout plus the 0x12E0 extension Chrome 156 added |
+| `chrome_155` | Chrome 155 desktop and mobile | `t13d1517h2_8daaf6152771_cb7bf5808d99` | the same hello as `chrome_152` — it is the shape Chrome 155 sends, measured on a phone and on macOS |
+| `yandex_browser` | Yandex.Browser 26.8 | `t13d1516h2_8daaf6152771_806a8c22fdea` | custom spec: the `chrome_152` layout **without** 0xCA34 — Yandex's Chromium fork lags the patch level, so its hello is the shape of Chrome 151 |
 | `node_24` | Node.js 24 / Electron 42 (BoringSSL) | `t13d1812h1_5d04281c6031_ef7df7f74e48` | ALPN `http/1.1` only |
 | `max_app` | MAX messenger app (`ru.oneme.app`) | `t13d171100_5b57614c22b0_40271e0a5736` | Conscrypt/OkHttp shape, **no ALPN at all**, 17 cipher suites |
 | `max_app_psk` | the same, with resumption | `t13d171200_5b57614c22b0_352634941f3a` | 113 of 116 real connections carried a PSK |

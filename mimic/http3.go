@@ -49,7 +49,7 @@ func NewHTTP3(p Profile, opts ...Option) (*http.Client, error) {
 	if err := checkHTTP3Profile(p); err != nil {
 		return nil, err
 	}
-	tlsConfig, quicConfig := chromeQUICConfig(o)
+	tlsConfig, quicConfig := chromeQUICConfig(o, p.TLSClientHello)
 	pc, err := http3ListenPacket(o, p)
 	if err != nil {
 		return nil, err

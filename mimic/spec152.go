@@ -105,11 +105,15 @@ func chromeBaseSpec(ca34PayloadHex string, withResumption bool, extra ...utls.TL
 	if !patched {
 		return spec, fmt.Errorf("mimic: chrome_152 base spec has no signature_algorithms extension")
 	}
-	ca34, err := hex.DecodeString(ca34PayloadHex)
-	if err != nil {
-		return spec, fmt.Errorf("mimic: chrome 0xCA34 payload: %w", err)
+	// The 0xCA34 extension, when the shape has one: an empty payload hex
+	// means the browser does not send it (Yandex's fork does not).
+	if ca34PayloadHex != "" {
+		ca34, err := hex.DecodeString(ca34PayloadHex)
+		if err != nil {
+			return spec, fmt.Errorf("mimic: chrome 0xCA34 payload: %w", err)
+		}
+		spec.Extensions = append(spec.Extensions, &utls.GenericExtension{Id: 0xCA34, Data: ca34})
 	}
-	spec.Extensions = append(spec.Extensions, &utls.GenericExtension{Id: 0xCA34, Data: ca34})
 	spec.Extensions = append(spec.Extensions, extra...)
 	if withResumption {
 		// Resumption placeholder: utls fills it from the session cache when
@@ -227,7 +231,8 @@ func newUConn(rawConn net.Conn, cfg *utls.Config, helloName string) (*utls.UConn
 		// Conscrypt emits a fixed extension order — do not shuffle it.
 		return uc, nil
 	}
-	if helloName == "chrome_152" || helloName == "chrome_152_psk" || helloName == "chrome_156" {
+	if helloName == "chrome_152" || helloName == "chrome_152_psk" || helloName == "chrome_155" ||
+		helloName == "chrome_156" || helloName == "yandex_browser" {
 		uc := utls.UClient(rawConn, cfg, utls.HelloCustom)
 		var spec *utls.ClientHelloSpec
 		var err error
@@ -236,6 +241,11 @@ func newUConn(rawConn net.Conn, cfg *utls.Config, helloName string) (*utls.UConn
 			spec, err = chrome152Spec()
 		case "chrome_152_psk":
 			spec, err = chrome152PSKSpec()
+		case "chrome_155":
+			// The same hello as chrome_152: it is the Chrome 155 shape.
+			spec, err = chrome152Spec()
+		case "yandex_browser":
+			spec, err = yandexBrowserSpec()
 		default:
 			spec, err = chrome156Spec()
 		}

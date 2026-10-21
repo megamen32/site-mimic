@@ -147,7 +147,12 @@ func chromeH3Settings() map[uint64]uint64 {
 // replaced here — google_connection_options is the captured token, not the
 // stack's "ORIG" — and the parameters the stack would otherwise leave out
 // are set to the captured values.
-func chromeQUICConfig(o transportOptions) (*utls.Config, *h3quic.Config) {
+//
+// The helloName is the profile's TLS identity: it decides the QUIC shape
+// (mimic/quic_shape.go). A profile whose identity was measured — Chrome 155,
+// Chrome 156, Yandex.Browser — gets exactly the hello that browser sends;
+// the others keep the stack's newest shape.
+func chromeQUICConfig(o transportOptions, helloName string) (*utls.Config, *h3quic.Config) {
 	tlsConfig, quicConfig := headless.ChromeWindows.QUICConfig(headless.QUICOptions{
 		Transport:          headless.QUICHTTP3,
 		ServerName:         o.serverName,
@@ -161,7 +166,16 @@ func chromeQUICConfig(o transportOptions) (*utls.Config, *h3quic.Config) {
 	if quicConfig.AdditionalTransportParameters == nil {
 		quicConfig.AdditionalTransportParameters = map[uint64][]byte{}
 	}
-	quicConfig.AdditionalTransportParameters[quicChromeGoogleConnOptionsID] = quicChromeGoogleConnOptions
+	token := quicChromeGoogleConnOptions
+	if shape, ok := quicShapeFor(helloName); ok {
+		// The shape the profile was measured with: the unregistered
+		// extensions it does send, and the token it sends them with.
+		applyQUICShape(quicConfig.CachedClientHelloSpec, shape)
+		if len(shape.googleConnOptions) > 0 {
+			token = shape.googleConnOptions
+		}
+	}
+	quicConfig.AdditionalTransportParameters[quicChromeGoogleConnOptionsID] = token
 
 	// The parameters the stack derives from its configuration are the
 	// captured ones already; they are spelled out here so a change in the
@@ -197,8 +211,8 @@ const quicChromeInitialPacketSize = 1250
 // would promise bytes the wire never carries.
 func checkHTTP3Profile(p Profile) error {
 	switch p.TLSClientHello {
-	case "", "chrome_auto", "android_149", "chrome_152", "chrome_152_psk", "chrome_156":
+	case "", "chrome_auto", "android_149", "chrome_152", "chrome_152_psk", "chrome_155", "chrome_156", "yandex_browser":
 		return nil
 	}
-	return fmt.Errorf("mimic: http3: profile tls_client_hello %q has no Chrome QUIC fingerprint (want chrome_auto, android_149, chrome_152, chrome_152_psk or chrome_156; the QUIC wire always carries the Chrome QUIC hello)", p.TLSClientHello)
+	return fmt.Errorf("mimic: http3: profile tls_client_hello %q has no Chrome QUIC fingerprint (want chrome_auto, android_149, chrome_152, chrome_152_psk, chrome_155, chrome_156 or yandex_browser; the QUIC wire always carries a measured Chrome QUIC hello)", p.TLSClientHello)
 }
