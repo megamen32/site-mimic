@@ -205,6 +205,16 @@ func handle(conn *h3quic.Conn, sniffer *sniffer) {
 		return
 	}
 
+	// The settings live on the control stream, which the client opens next
+	// to its request: a report without them would be half a fingerprint.
+	select {
+	case <-settingsDone:
+	case <-time.After(3 * time.Second):
+		logf("the client sent no settings")
+	case <-ctx.Done():
+		return
+	}
+
 	rep := sniffer.report(conn.RemoteAddr().String())
 	if gotHeaders != nil {
 		rep.UserAgent = gotHeaders["user-agent"]

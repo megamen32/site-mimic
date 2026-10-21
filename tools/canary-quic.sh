@@ -112,6 +112,9 @@ OURS_PORT=$((PORT + 1))
 "$WORK/h3sniff" -addr "$IP:$OURS_PORT" -cert "$WORK/srv.pem" -key "$WORK/srv.key" \
     -wait 90s -out "$WORK/ours.jsonl" >"$WORK/ours-stand.log" 2>&1 &
 OURS_STAND=$!
+# The stands are not jobs of this shell: a killed background job makes bash
+# print "Terminated" in the middle of the canary's own output.
+disown $BROWSER_STAND $OURS_STAND 2>/dev/null || true
 trap 'kill $BROWSER_STAND $OURS_STAND 2>/dev/null' EXIT
 sleep 1
 kill -0 $BROWSER_STAND 2>/dev/null || die "the stand did not start (see $WORK/browser.log)"
