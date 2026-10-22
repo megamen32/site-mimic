@@ -287,11 +287,30 @@ Two things it knows that a plain diff does not:
 
 * Chrome refuses to speak QUIC to a loopback address, and it checks the
   certificate even with `--ignore-certificate-errors`. The canary therefore
-  runs on the LAN address and trusts its own test CA (once).
+  runs on the LAN address and trusts its own test CA (once). The address of
+  the machine changes with the network it is on, so the server certificate
+  is reissued when the address changes — the CA stays, it is the one the
+  keychain trusts.
 * The verdict has two halves. Ours against the pinned reference is a
   failure when it differs — that is us drifting. The browser against the
   reference is only a note: the browser moved on and the pinned measurement
   is old.
+
+And it looks at the resumption, on both sides:
+
+* The browser's stand runs in the browser mode (`h3sniff -browser`): it
+  answers with a page that asks for a subresource a second and a half
+  later, and it closes every connection after its response. The browser
+  therefore opens a new connection for the subresource — and that hello
+  carries the ticket of the first one. Without that, the browser opens one
+  connection, keeps it, and the canary has no second hello to look at.
+* The comparison takes the hello of the handshake that offered no ticket:
+  the reference is the shape of the full handshake, and the stand reports
+  the newest hello it saw for a client address.
+* The resumed shapes are compared too: the browser goes by the address and
+  we go by a name, so the first part of the JA4 differs, but the cipher
+  list and the extension list have to be the same. At the moment both
+  sides send `55b375c5d22e_40246181ac92`.
 
 ## Borrowed from the headless client
 
@@ -299,7 +318,7 @@ Two things it knows that a plain diff does not:
 transport of the `chrome_exact` profile, the WebSocket upgrade handshake,
 the Chrome header tables and the whole QUIC stack come from it.
 
-The dependency is pinned to the fork's tag `v0.3.0` (2026-10-21), not to a
+The dependency is pinned to the fork's tag `v0.7.0` (2026-10-22), not to a
 pseudo-version: a tag is a named, immutable pointer a reader can check,
 while a pseudo-version says only "some commit of some branch". **Who owns
 the tag makes no difference to that** — our own tag is as checkable as
@@ -307,11 +326,14 @@ upstream's, and `go.mod` points at ours. Depending on a tagged fork of a
 patched library is an ordinary thing to do.
 
 The fork is [our fork of kulikov0's](https://github.com/kulikov0/headless-client),
-and it is upstream's `main` plus three commits: the module path, the
-Chrome 152 TLS change (the unregistered 0xCA34 extension) and the Chrome 156
-change — the unregistered 0x12E0 extension next to 0xCA34, the same two
-extensions in the QUIC hello, and the `google_connection_options
-"ORIGNOIP"` token.
+and it is upstream's `main` plus our commits: the module path, the Chrome
+152 TLS change (the unregistered 0xCA34 extension), the Chrome 156 change —
+the unregistered 0x12E0 extension next to 0xCA34, the same two extensions
+in the QUIC hello, and the `google_connection_options "ORIGNOIP"` token —
+the Chrome HTTP/2 stack for callers that own the TLS layer, a per-connection
+copy of the ClientHello spec, and the resumption over QUIC: the managed
+pre_shared_key placeholder and the session cache, with a fresh PSK
+extension per connection so a client can resume more than once.
 
 Those two Chrome changes were also proposed upstream, so that the fork
 could shrink to upstream's `main` plus the module path and we would stop
@@ -378,7 +400,11 @@ per-destination header tables beyond the four the library defines.
   binds its session to the connection itself and resumes against an address
   as well — that is the one difference left, and it shows only on a
   target that is an address.
-  The QUIC canary checks the resumption of both sides on every run.
+  The QUIC canary checks the resumption of both sides on every run, and
+  compares the resumed shapes: the browser and we send the same
+  `55b375c5d22e_40246181ac92`. A client may resume as many times as it
+  likes — the PSK extension is fresh on every connection, so the second
+  resumed handshake does not kill the process.
 * **HTTP/2 frames** are Chrome's: the SETTINGS and the connection window
   come from the headless-client's Chrome HTTP/2 stack, over whichever
   ClientHello the profile speaks (`mimic/h2_settings_test.go` pins them).

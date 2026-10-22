@@ -125,6 +125,165 @@ func TestTheStandReportsTheClientsFingerprint(t *testing.T) {
 	}
 }
 
+// TestTheStandAnswersEveryRequestOfAConnection checks that the stand
+// serves a connection, not a request.
+//
+// The stand used to stop at the first request: the loop that accepts the
+// streams ran on the context of that request, and the request's own
+// deadline cancelled it. A client that sent a second request over the
+// same connection waited for the idle timeout — thirty seconds — and then
+// failed.
+func TestTheStandAnswersEveryRequestOfAConnection(t *testing.T) {
+	cert := selfSignedCert(t)
+
+	pc, err := net.ListenPacket("udp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	defer pc.Close()
+
+	var sink safeBuffer
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go func() {
+		if err := serve(ctx, pc, cert, &sink); err != nil {
+			t.Logf("the stand stopped: %v", err)
+		}
+	}()
+
+	profile := mimic.Profile{
+		Name:           "chrome-152-h3",
+		TLSClientHello: "chrome_156",
+		UserAgent:      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+	}
+	client, err := mimic.NewHTTP3(profile, mimic.WithInsecureTLS())
+	if err != nil {
+		t.Fatalf("NewHTTP3: %v", err)
+	}
+	defer client.Transport.(io.Closer).Close()
+
+	port := pc.LocalAddr().(*net.UDPAddr).Port
+
+	// The first request.
+	resp, err := client.Get(fmt.Sprintf("https://127.0.0.1:%d/", port))
+	if err != nil {
+		t.Fatalf("the first request failed: %v", err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if string(body) != "ok\n" {
+		t.Errorf("body = %q, want %q", body, "ok\n")
+	}
+
+	// The second request, over the same connection. It must not wait for
+	// the idle timeout.
+	done := make(chan error, 1)
+	go func() {
+		resp, err := client.Get(fmt.Sprintf("https://127.0.0.1:%d/second", port))
+		if err == nil {
+			body, _ := io.ReadAll(resp.Body)
+			resp.Body.Close()
+			if string(body) != "ok\n" {
+				err = fmt.Errorf("body = %q, want %q", body, "ok\n")
+			}
+		}
+		done <- err
+	}()
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Errorf("the second request failed: %v", err)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("the second request hung: the stand answers one request per connection")
+	}
+}
+
+// TestTheStandDrivesTheBrowserThroughAResumption checks the browser mode:
+// the stand serves a page that asks for a subresource later, and closes
+// every connection after its response.
+//
+// A browser that loads one page opens one connection and keeps it, so
+// there is no second hello to look at — and the second hello, the one
+// that carries the ticket, is the whole point of the canary. The page and
+// the closed connections are what make the browser open a new one.
+func TestTheStandDrivesTheBrowserThroughAResumption(t *testing.T) {
+	old := browserMode
+	browserMode = true
+	defer func() { browserMode = old }()
+
+	cert := selfSignedCert(t)
+
+	pc, err := net.ListenPacket("udp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	defer pc.Close()
+
+	var sink safeBuffer
+	sniffer := newSniffer(&sink)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go func() {
+		if err := serveSniffer(ctx, pc, cert, sniffer); err != nil {
+			t.Logf("the stand stopped: %v", err)
+		}
+	}()
+
+	profile := mimic.Profile{
+		Name:           "chrome-152-h3",
+		TLSClientHello: "chrome_156",
+		UserAgent:      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+	}
+	client, err := mimic.NewHTTP3(profile, mimic.WithInsecureTLS())
+	if err != nil {
+		t.Fatalf("NewHTTP3: %v", err)
+	}
+	defer client.Transport.(io.Closer).Close()
+
+	port := pc.LocalAddr().(*net.UDPAddr).Port
+
+	// The page: a document that asks for a subresource later on.
+	resp, err := client.Get(fmt.Sprintf("https://127.0.0.1:%d/", port))
+	if err != nil {
+		t.Fatalf("the request failed: %v", err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if got, want := resp.Header.Get("Content-Type"), "text/html; charset=utf-8"; got != want {
+		t.Errorf("content type = %q, want %q", got, want)
+	}
+	if !strings.Contains(string(body), "canary-1.png") {
+		t.Errorf("the page does not ask for a subresource: %q", body)
+	}
+
+	// The stand closes the connection after the response: that is what
+	// makes the browser open a new one for the subresource.
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) && sniffer.closedCount() == 0 {
+		time.Sleep(50 * time.Millisecond)
+	}
+	if sniffer.closedCount() != 1 {
+		t.Errorf("the stand closed %d connections, want 1", sniffer.closedCount())
+	}
+
+	// The subresource: not the page again, or the browser would keep asking.
+	fresh, err := mimic.NewHTTP3(profile, mimic.WithInsecureTLS())
+	if err != nil {
+		t.Fatalf("NewHTTP3: %v", err)
+	}
+	defer fresh.Transport.(io.Closer).Close()
+	resp, err = fresh.Get(fmt.Sprintf("https://127.0.0.1:%d/canary-1.png", port))
+	if err != nil {
+		t.Fatalf("the request for the subresource failed: %v", err)
+	}
+	body, _ = io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if string(body) != "ok\n" {
+		t.Errorf("the subresource got %q, want %q", body, "ok\n")
+	}
+}
+
 // safeBuffer is a bytes.Buffer the stand and the test can both touch: the
 // stand writes the report from its own goroutine.
 type safeBuffer struct {

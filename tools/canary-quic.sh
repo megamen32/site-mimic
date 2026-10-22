@@ -97,11 +97,20 @@ mkdir -p "$WORK"
 # --ignore-certificate-errors when it speaks QUIC, so the browser has to
 # trust the CA that signed the stand's certificate. The CA is a test one,
 # named as such, and it is added to the login keychain once.
-if [ ! -f "$WORK/srv.pem" ] || [ ! -f "$WORK/srv.key" ]; then
-    step "generating a certificate for $IP"
+#
+# The server certificate names the address of this machine, and the address
+# changes with the network the machine is on. A certificate that names the
+# old address makes the browser refuse to speak QUIC — so it is reissued
+# when the address changes. The CA stays: it is the one the keychain
+# trusts.
+if [ ! -f "$WORK/ca.pem" ] || [ ! -f "$WORK/ca.key" ]; then
+    step "generating the CA"
     openssl req -x509 -newkey rsa:2048 -nodes -days 30 \
         -keyout "$WORK/ca.key" -out "$WORK/ca.pem" \
         -subj "/CN=site-mimic canary CA" >/dev/null 2>&1 || die "openssl: the CA"
+fi
+if [ ! -f "$WORK/srv.pem" ] || [ ! -f "$WORK/srv.key" ] || [ "$(cat "$WORK/srv.ip" 2>/dev/null)" != "$IP" ]; then
+    step "generating a certificate for $IP"
     openssl req -newkey rsa:2048 -nodes \
         -keyout "$WORK/srv.key" -out "$WORK/srv.csr" \
         -subj "/CN=$IP" >/dev/null 2>&1 || die "openssl: the request"
@@ -109,14 +118,22 @@ if [ ! -f "$WORK/srv.pem" ] || [ ! -f "$WORK/srv.key" ]; then
     openssl x509 -req -in "$WORK/srv.csr" -CA "$WORK/ca.pem" -CAkey "$WORK/ca.key" \
         -CAcreateserial -out "$WORK/srv.pem" -days 30 -extfile "$WORK/ext.cnf" \
         >/dev/null 2>&1 || die "openssl: the certificate"
+    printf '%s' "$IP" > "$WORK/srv.ip"
 fi
 
 # Trust the CA, so the browser speaks QUIC to the stand. Chrome refuses to
 # speak QUIC to a certificate it does not trust, and it refuses loopback
 # addresses, so this is the only way to put a real browser on the wire.
+#
+# The trust is checked by the fingerprint of the CA on disk, not by its
+# name: a name in the keychain says nothing about which CA it is, and a
+# reissued CA with the same name is not the one that is trusted.
 if [ "$(uname -s)" = "Darwin" ]; then
     KEYCHAIN=~/Library/Keychains/login.keychain-db
-    if ! security find-certificate -c "site-mimic canary CA" "$KEYCHAIN" >/dev/null 2>&1; then
+    CA_FP=$(openssl x509 -in "$WORK/ca.pem" -noout -fingerprint -sha256 2>/dev/null | cut -d= -f2)
+    KEYCHAIN_FP=$(security find-certificate -c "site-mimic canary CA" -p "$KEYCHAIN" 2>/dev/null \
+        | openssl x509 -noout -fingerprint -sha256 2>/dev/null | cut -d= -f2)
+    if [ "$CA_FP" != "$KEYCHAIN_FP" ]; then
         if [ "${CANARY_NO_KEYCHAIN:-0}" = "1" ]; then
             step "WARN: the canary CA is not trusted and CANARY_NO_KEYCHAIN=1;"
             step "      the browser will not speak QUIC, so the canary cannot run"
@@ -132,8 +149,12 @@ step "building the stand"
 go build -o "$WORK/h3sniff" ./cmd/h3sniff || die "build cmd/h3sniff"
 
 rm -f "$WORK/browser.jsonl" "$WORK/ours.jsonl"
+# The browser's stand runs in the browser mode: the page it serves asks for a
+# subresource twice, and every connection is closed after its response. The
+# browser therefore opens three connections - the first one full, the next
+# two with the ticket of the first - and the canary sees all three hellos.
 "$WORK/h3sniff" -addr "$IP:$PORT" -cert "$WORK/srv.pem" -key "$WORK/srv.key" \
-    -wait 90s -out "$WORK/browser.jsonl" >"$WORK/browser.log" 2>&1 &
+    -wait 90s -browser -out "$WORK/browser.jsonl" >"$WORK/browser.log" 2>&1 &
 BROWSER_STAND=$!
 OURS_PORT=$((PORT + 1))
 "$WORK/h3sniff" -addr "$IP:$OURS_PORT" -cert "$WORK/srv.pem" -key "$WORK/srv.key" \
@@ -213,8 +234,36 @@ if not ours_reports:
     print("CANARY FAIL: our client never reached the stand")
     sys.exit(2)
 
-browser = browser_reports[0]
-ours = ours_reports[0]
+
+def is_resumed(report):
+    """A hello that offered a ticket: it carries the pre_shared_key."""
+    return "0x0029" in (report.get("extension_ids") or [])
+
+
+def full_report(reports):
+    """The report of the handshake that offered no ticket.
+
+    The stand reports the newest hello it saw for a client address, so the
+    first report of a client that resumes can carry the hello of its
+    second connection. The reference is the shape of the full handshake, so
+    the comparison has to take the report without the pre_shared_key.
+    """
+    for report in reports:
+        if not is_resumed(report):
+            return report
+    return reports[0]
+
+
+def resumed_report(reports):
+    """The report of the handshake that offered a ticket, if there was one."""
+    for report in reports:
+        if is_resumed(report):
+            return report
+    return None
+
+
+browser = full_report(browser_reports)
+ours = full_report(ours_reports)
 
 # The resumption: a browser that has a ticket for an origin offers it on the
 # next connection, and the hello then carries the pre_shared_key. Both sides
@@ -313,6 +362,26 @@ def captured_tp_ids(path):
 
 compare("transport parameters", tp_set(ours_tp), captured_tp_ids(ref_tp_path),
         tp_set(browser_tp))
+
+# The resumed shape: the hello of a connection that offered a ticket. The
+# browser goes by the address and we go by a name, so the first part of the
+# JA4 differs; the rest — the cipher list and the extension list — has to
+# be the same, or a server that counts resumptions sees two different
+# clients.
+browser_resumed = resumed_report(browser_reports)
+ours_resumed = resumed_report(ours_reports)
+if browser_resumed and ours_resumed:
+    if bc_of(browser_resumed) != bc_of(ours_resumed):
+        print("DRIFT the resumed hello: ours=%s the browser sends %s"
+              % (bc_of(ours_resumed), bc_of(browser_resumed)))
+        bad += 1
+    else:
+        print("the resumed hello: ours and the browser send the same shape (%s)"
+              % bc_of(ours_resumed))
+else:
+    print("the resumed hello: %s" % (
+        "the browser offered no ticket" if not browser_resumed
+        else "we offered no ticket"))
 
 print(f"real browser: ja4={browser['ja4']} extensions={len(browser_ext)} "
       f"agent={browser.get('user_agent', '')[:56]}")

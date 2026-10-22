@@ -64,6 +64,23 @@ type report struct {
 // verbose makes the server log what happens on every connection.
 var verbose bool
 
+// browserMode makes the stand drive a real browser through a resumption.
+//
+// A browser that loads one page opens one connection and keeps it, so
+// there is no second hello to look at — and a second hello is the whole
+// point: the one that carries the ticket. The stand answers the page with
+// a document that asks for a subresource a second and a half later, and
+// closes every connection once its response is out. The browser has to
+// open a new connection for the subresource, and this time it offers the
+// ticket the first handshake left it.
+var browserMode bool
+
+// browserCloseDelay is how long the stand waits before closing a
+// connection in the browser mode: the response has to reach the browser
+// first, and the page has to start running before the connection goes
+// away.
+const browserCloseDelay = 500 * time.Millisecond
+
 func main() {
 	addr := flag.String("addr", "127.0.0.1:8443", "UDP address to listen on")
 	certFile := flag.String("cert", "", "TLS certificate (PEM)")
@@ -71,6 +88,7 @@ func main() {
 	out := flag.String("out", "-", "where the reports go (- is stdout)")
 	wait := flag.Duration("wait", 0, "stop after this long (0 = until interrupted)")
 	flag.BoolVar(&verbose, "v", false, "log what happens on every connection")
+	flag.BoolVar(&browserMode, "browser", false, "drive a real browser through a resumption")
 	flag.Parse()
 
 	cert, err := utls.LoadX509KeyPair(*certFile, *keyFile)
@@ -115,7 +133,12 @@ func main() {
 
 // serve runs the stand until the context is cancelled.
 func serve(ctx context.Context, pc net.PacketConn, tlsConf *utls.Config, sink io.Writer) error {
-	sniffer := newSniffer(sink)
+	return serveSniffer(ctx, pc, tlsConf, newSniffer(sink))
+}
+
+// serveSniffer runs the stand on a sniffer the caller keeps: a test needs
+// to see what the stand did, not only what it reported.
+func serveSniffer(ctx context.Context, pc net.PacketConn, tlsConf *utls.Config, sniffer *sniffer) error {
 	ln, err := h3quic.Listen(&sniffConn{PacketConn: pc, sniffer: sniffer}, tlsConf, &h3quic.Config{})
 	if err != nil {
 		return err
@@ -134,10 +157,20 @@ func serve(ctx context.Context, pc net.PacketConn, tlsConf *utls.Config, sink io
 }
 
 // handle serves one connection: the client's control stream (its SETTINGS),
-// its request (its headers), and the response that keeps the browser happy.
+// its requests (their headers), and the responses that keep the browser
+// happy.
 func handle(conn *h3quic.Conn, sniffer *sniffer) {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	// The context of the connection: it lives as long as the connection
+	// does. The loop that accepts the streams has to outlive the first
+	// request — a stand that stops there answers one request per
+	// connection, and the second request of a client waits for the idle
+	// timeout.
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	go func() {
+		<-conn.Context().Done()
+		cancel()
+	}()
 
 	// The server's own control stream: the SETTINGS frame has to be the
 	// first frame of it.
@@ -191,10 +224,26 @@ func handle(conn *h3quic.Conn, sniffer *sniffer) {
 				case headers <- got:
 				default:
 				}
-				writeResponse(str)
+				writeResponse(str, responseBody(got))
+				if browserMode {
+					// The connection goes away once the response is out,
+					// so the next request of the browser opens a new one.
+					// The graceful code is the one a browser reconnects
+					// from without a backoff.
+					time.AfterFunc(browserCloseDelay, func() {
+						_ = conn.CloseWithError(h3quic.ApplicationErrorCode(0), "canary")
+						sniffer.noteClosed()
+					})
+				}
 			}()
 		}
 	}()
+
+	// The report is about the first request, and it must not wait for
+	// ever: a client that opens a connection and says nothing gets no
+	// report.
+	first, cancelFirst := context.WithTimeout(ctx, 60*time.Second)
+	defer cancelFirst()
 
 	var gotHeaders map[string]string
 	select {
@@ -204,7 +253,7 @@ func handle(conn *h3quic.Conn, sniffer *sniffer) {
 		case gotHeaders = <-headers:
 		case <-time.After(5 * time.Second):
 		}
-	case <-ctx.Done():
+	case <-first.Done():
 		return
 	}
 
@@ -214,7 +263,7 @@ func handle(conn *h3quic.Conn, sniffer *sniffer) {
 	case <-settingsDone:
 	case <-time.After(3 * time.Second):
 		logf("the client sent no settings")
-	case <-ctx.Done():
+	case <-first.Done():
 		return
 	}
 
@@ -226,6 +275,10 @@ func handle(conn *h3quic.Conn, sniffer *sniffer) {
 	rep.Settings = settings
 	settingsMu.Unlock()
 	sniffer.publish(rep)
+
+	// The connection stays served until it is closed: a client may send
+	// more requests over it, and the stand has to answer them.
+	<-ctx.Done()
 }
 
 // readControlStream reads the client's control stream and hands the
@@ -325,17 +378,57 @@ func serverControlStream() []byte {
 	return append(out, payload...)
 }
 
-// writeResponse answers the request with a static-table :status 200 and a
-// short body.
-func writeResponse(str *h3quic.Stream) {
-	// HEADERS frame: the QPACK block is the header block prefix (the
-	// required insert count and the delta base, both zero — the static
-	// table is enough) and then the indexed field line for the static
-	// table entry 25, which is ":status: 200".
-	if _, err := str.Write([]byte{0x01, 0x03, 0x00, 0x00, 0xd9}); err != nil {
+// browserPage is the document the stand serves to a real browser. It asks
+// for a subresource twice, and the stand closes the connection between the
+// requests, so each of them is a connection of its own — the second and
+// the third with the ticket of the first.
+//
+// The response names itself: the stand sends the content type
+// "text/html; charset=utf-8" with the page, so the browser runs the
+// script and asks for the subresources.
+const browserPage = `<!DOCTYPE html><title>site-mimic canary</title>
+<script>
+setTimeout(function(){var i=new Image();i.src="/canary-1.png"},1500);
+setTimeout(function(){var i=new Image();i.src="/canary-2.png"},3000);
+</script>
+`
+
+// responseBody is what the stand answers with: the driving page for the
+// root, a short answer for everything else. The subresources of the page
+// must not get the page back, or the browser would keep asking for more
+// of them.
+func responseBody(headers map[string]string) string {
+	if !browserMode {
+		return "ok\n"
+	}
+	if path := headers[":path"]; path != "" && path != "/" {
+		return "ok\n"
+	}
+	return browserPage
+}
+
+// The HEADERS frames of the stand's answer.
+//
+// The payload of a frame is the header block prefix (the required insert
+// count and the delta base, both zero — the static table is enough) and
+// then the indexed field lines: the static table entry 25, which is
+// ":status: 200", and, in the browser mode, the entry 52, which is
+// "content-type: text/html; charset=utf-8".
+var (
+	responseHeaders        = []byte{0x01, 0x03, 0x00, 0x00, 0xd9}
+	browserResponseHeaders = []byte{0x01, 0x04, 0x00, 0x00, 0xd9, 0xf4}
+)
+
+// writeResponse answers the request with a static-table :status 200 and the
+// given body.
+func writeResponse(str *h3quic.Stream, body string) {
+	headers := responseHeaders
+	if browserMode {
+		headers = browserResponseHeaders
+	}
+	if _, err := str.Write(headers); err != nil {
 		return
 	}
-	body := []byte("ok\n")
 	frame := []byte{0x00, byte(len(body))}
 	frame = append(frame, body...)
 	str.Write(frame)
@@ -368,6 +461,8 @@ type sniffer struct {
 	conns map[string]*quicwire.Connection
 	// hellos holds the hellos of one address in the order they arrived.
 	hellos map[string][]*mimic.ClientHello
+	// closed counts the connections the stand closed on its own.
+	closed int
 	sink   io.Writer
 }
 
@@ -474,6 +569,20 @@ func (s *sniffer) report(client string) report {
 		rep.TransportParameters[fmt.Sprintf("%d", id)] = hex.EncodeToString(value)
 	}
 	return rep
+}
+
+// noteClosed counts a connection the stand closed on its own.
+func (s *sniffer) noteClosed() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.closed++
+}
+
+// closedCount is how many connections the stand closed on its own.
+func (s *sniffer) closedCount() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.closed
 }
 
 // publish prints one report.
