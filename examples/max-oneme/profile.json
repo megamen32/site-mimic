@@ -1,0 +1,18 @@
+{
+  "name": "max-oneme-linux-chrome152",
+  "tls_client_hello": "chrome_152",
+  "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+  "accept_language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+  "ip_ttl": 0,
+  "header_order": [
+    "user-agent",
+    "accept",
+    "accept-encoding",
+    "accept-language",
+    "cookie"
+  ],
+  "headers": {
+    "accept": "*/*",
+    "accept-encoding": "gzip, deflate, br, zstd"
+  }
+}
