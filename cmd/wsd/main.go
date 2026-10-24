@@ -108,11 +108,12 @@ type wsConn struct {
 	waiters chan struct{} // closed whenever state changes
 }
 
+// notify wakes a pending long-poll recv, if any. Called with c.mu held.
 func (c *wsConn) notify() {
 	if c.waiters != nil {
 		close(c.waiters)
+		c.waiters = nil
 	}
-	c.waiters = make(chan struct{})
 }
 
 // readLoop drains the upstream connection into the queue until it closes.
@@ -324,11 +325,17 @@ func (d *daemon) handleRecv(w http.ResponseWriter, r *http.Request) {
 			})
 			return
 		}
+		// Register the wake-up channel while holding the lock so a frame
+		// arriving right now cannot fall between the queue check and the
+		// select below (the frame's notify() closes this exact channel).
+		if wc.waiters == nil {
+			wc.waiters = make(chan struct{})
+		}
 		wait := wc.waiters
 		wc.mu.Unlock()
 
 		select {
-		case <-wait:
+		case <-wait: // state changed; loop re-checks the queue
 		case <-deadline:
 			writeJSON(w, 200, map[string]any{"timeout": true, "closed": false})
 			return

@@ -8,6 +8,7 @@ __pycache__/
 
 # compiled daemon binary — build locally: go build -o fetchd ./cmd/fetchd
 /fetchd
+/wsd
 
 # the QUIC stand, built by tools/canary-quic.sh
 /h3sniff
