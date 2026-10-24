@@ -172,16 +172,39 @@ func profileAcceptLanguage(p Profile) string {
 // The extension object is replaced, never mutated: the spec objects are
 // shared with the next connection, and a mutated ALPN list would silently
 // change the fingerprint of every later handshake.
+//
+// When the narrowed list has no "h2", the ALPS application-settings
+// extensions go too: they advertise HTTP/2 settings, a real Chrome drops
+// them from a hello that negotiates http/1.1 only (the captured WebSocket
+// hello has 16 extensions, the HTTP/2 one 17 — the difference is ALPS).
+// Both uTLS ALPS types are filtered, old (17513) and new (17613).
 func narrowALPN(uc *utls.UConn, protos []string) {
 	exts := make([]utls.TLSExtension, len(uc.Extensions))
 	copy(exts, uc.Extensions)
-	for i, ext := range exts {
-		if _, ok := ext.(*utls.ALPNExtension); ok {
-			exts[i] = &utls.ALPNExtension{AlpnProtocols: protos}
-			uc.Extensions = exts
-			return
+	h2 := false
+	for _, proto := range protos {
+		if proto == "h2" {
+			h2 = true
+			break
 		}
 	}
+	w := 0
+	for _, ext := range exts {
+		if _, ok := ext.(*utls.ALPNExtension); ok {
+			exts[w] = &utls.ALPNExtension{AlpnProtocols: protos}
+			w++
+			continue
+		}
+		if !h2 {
+			switch ext.(type) {
+			case *utls.ApplicationSettingsExtension, *utls.ApplicationSettingsExtensionNew:
+				continue
+			}
+		}
+		exts[w] = ext
+		w++
+	}
+	uc.Extensions = exts[:w]
 	// A spec without an ALPN extension (the Conscrypt shape of the native
 	// app) offers nothing: the server then assumes HTTP/1.1, which is what
 	// the upgrade request needs.

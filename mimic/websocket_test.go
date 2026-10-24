@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/megamen32/headless-client/websocket"
+	utls "github.com/refraction-networking/utls"
 )
 
 // wsGUID is the magic value of RFC 6455 that the server mixes into the
@@ -201,6 +202,143 @@ func TestDialWebSocket_RoundTrip(t *testing.T) {
 	}
 	if negotiated != "http/1.1" {
 		t.Errorf("negotiated protocol: got %q, want http/1.1", negotiated)
+	}
+}
+
+// wireWSJA4 is the JA4 of the captured Chrome 152 WebSocket hello —
+// SNI api.oneme.ru, ALPN http/1.1 — as tools/ja4_from_pcap.py read it off
+// the ws reference capture (frame 23).
+const wireWSJA4 = "t13d1516h1_8daaf6152771_5b37b36a67c0"
+
+// TestWebSocketHello_MatchesWireReference proves the ClientHello the
+// WebSocket dialer puts on the wire is the captured Chrome one: ALPN
+// narrowed to http/1.1 and the ALPS application-settings extensions gone
+// with it. A real browser negotiating http/1.1 sends no ALPS — a hello
+// that keeps it is one extension too many and hashes to a different JA4.
+func TestWebSocketHello_MatchesWireReference(t *testing.T) {
+	conn := &deadConn{}
+	cfg := &utls.Config{
+		ServerName: "api.oneme.ru",
+		// A fresh cache keeps the hello in the captured full-handshake
+		// form: no ticket, no pre_shared_key extension.
+		ClientSessionCache:                 utls.NewLRUClientSessionCache(0),
+		OmitEmptyPsk:                       true,
+		PreferSkipResumptionOnNilExtension: true,
+	}
+	uc, err := newUConn(conn, cfg, "chrome_152")
+	if err != nil {
+		t.Fatalf("newUConn: %v", err)
+	}
+	narrowALPN(uc, []string{"http/1.1"})
+	_ = uc.Handshake()
+	if len(conn.written) == 0 {
+		t.Fatalf("no ClientHello written")
+	}
+	hello, err := ParseClientHello(conn.written)
+	if err != nil {
+		t.Fatalf("parse client hello: %v", err)
+	}
+
+	if len(hello.ALPN) != 1 || hello.ALPN[0] != "http/1.1" {
+		t.Errorf("ALPN: got %v, want [http/1.1]", hello.ALPN)
+	}
+	for _, id := range []uint16{17513, 17613} {
+		if slices.Contains(hello.Extensions, id) {
+			t.Errorf("hello keeps the ALPS extension %#06x on the http/1.1 path; Chrome drops it", id)
+		}
+	}
+	if got := len(stripGREASE(hello.Extensions)); got != 16 {
+		t.Errorf("extension count: got %d, want 16 (the captured WS hello); extensions: %v",
+			got, hello.Extensions)
+	}
+	if got := hello.JA4(); got != wireWSJA4 {
+		t.Errorf("JA4: got %s, want %s (the captured WS hello)", got, wireWSJA4)
+	}
+}
+
+// wireWSHeaderOrder is the header order of the captured Chrome 152 upgrade
+// request to api.oneme.ru (2026-10-22 wire capture, decrypted via the
+// Chrome keylog): the request line aside, this is the exact wire sequence.
+var wireWSHeaderOrder = []string{
+	"Host",
+	"Connection", // "Upgrade"
+	"Pragma",     // no-cache
+	"Cache-Control",
+	"User-Agent",
+	"Upgrade", // websocket
+	"Origin",  // https://web.max.ru
+	"Sec-WebSocket-Version",
+	"Accept-Encoding",
+	"Accept-Language",
+	"Sec-WebSocket-Key",
+	"Sec-WebSocket-Extensions",
+}
+
+// TestDialWebSocket_WireHeaderOrder proves the upgrade request the dialer
+// writes matches the captured Chrome order byte for byte. A sorted or
+// otherwise reordered upgrade is a different client even with the right
+// header set, so the order is part of the identity.
+//
+// The dial goes to a local TLS listener with InsecureTLS and no pinned
+// resolve — the server records the request as plaintext after the TLS
+// layer, so no keylog is needed.
+func TestDialWebSocket_WireHeaderOrder(t *testing.T) {
+	capture := &upgradeCapture{headerValues: map[string]string{}}
+	addr, stop := rawTLSServer(t, capture, acceptKey)
+	defer stop()
+
+	profile := Profile{
+		Name:           "chrome152-ws-wire",
+		TLSClientHello: "chrome_152",
+		UserAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " +
+			"(KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+		AcceptLanguage: "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	conn, err := DialWebSocket(ctx, profile, "wss://"+addr+"/websocket",
+		WithInsecureTLS(),
+		WithWebSocketHeader(http.Header{"Origin": []string{"https://web.max.ru"}}))
+	if err != nil {
+		t.Fatalf("DialWebSocket: %v", err)
+	}
+	_ = conn.Close()
+
+	if got := capture.headerValues["Origin"]; got != "https://web.max.ru" {
+		t.Errorf("Origin: got %q, want https://web.max.ru", got)
+	}
+	if got := capture.headerValues["Sec-WebSocket-Extensions"]; got != "permessage-deflate; client_max_window_bits" {
+		t.Errorf("Sec-WebSocket-Extensions: got %q, want the Chrome permessage-deflate offer", got)
+	}
+	if got := capture.headerValues["Accept-Encoding"]; got != "gzip, deflate, br, zstd" {
+		t.Errorf("Accept-Encoding: got %q, want the Chrome value", got)
+	}
+	if _, ok := capture.headerValues["Sec-Ch-Ua"]; ok {
+		t.Errorf("upgrade carries sec-ch-ua; the captured Chrome sends none")
+	}
+
+	// The wire order: every captured header in exactly the captured
+	// sequence. Host/Connection/Upgrade/Key/Version are written by the
+	// websocket client itself — ChromeHTTP1's ordered writer interleaves
+	// them in the captured places.
+	names := make([]string, 0, len(capture.headerNames))
+	for _, n := range capture.headerNames {
+		if len(names) == 0 || !strings.EqualFold(n, names[len(names)-1]) {
+			names = append(names, n)
+		}
+	}
+	// Monotonic: the captured order must appear in the written order.
+	last := -1
+	for i, want := range wireWSHeaderOrder {
+		idx := indexOfFold(names, want)
+		if idx < 0 {
+			t.Fatalf("upgrade is missing %s; headers: %v", want, names)
+		}
+		if idx <= last {
+			t.Errorf("header %s (captured position %d) is out of order; wire: %v",
+				want, i, names)
+		}
+		last = idx
 	}
 }
 
