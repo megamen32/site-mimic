@@ -188,7 +188,7 @@ func (d *daemon) handleDial(w http.ResponseWriter, r *http.Request) {
 		opts = append(opts, mimic.WithResolve(req.Resolve))
 	}
 	if req.TimeoutS > 0 {
-		opts = append(opts, mimic.WithDialTimeout(time.Duration(req.TimeoutS * float64(time.Second))))
+		opts = append(opts, mimic.WithDialTimeout(time.Duration(req.TimeoutS*float64(time.Second))))
 	}
 
 	ctx := r.Context()
