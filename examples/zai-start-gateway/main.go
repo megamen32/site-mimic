@@ -27,9 +27,11 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/megamen32/site-mimic/mimic"
@@ -39,6 +41,10 @@ const (
 	endpoint  = "https://zcode.z.ai/api/v1/zcode-plan/anthropic/v1/messages"
 	deviceID  = "bf54fb16-d645-43df-8dc8-d75582dae084"
 	sessionID = "e6138b80-c041-4ac5-98fe-c61242db67cb"
+
+	// upstreamHeaderTimeout bounds how long a forward waits for the upstream
+	// response headers before giving up with 504.
+	upstreamHeaderTimeout = 45 * time.Second
 )
 
 // The ZCode CLI stores the shared OAuth JWT in ~/.zcode/v2/credentials.json,
@@ -107,6 +113,66 @@ type chatMessage struct {
 	Content string `json:"content"`
 }
 
+// withFreshSessionID rewrites metadata.user_id.session_id in the request
+// body to a new session. The captured body belongs to an earlier turn, and
+// the upstream rejects a reused session_id with "parameter error" (3001).
+// A body that does not carry that field is passed through untouched.
+func withFreshSessionID(body []byte) []byte {
+	var doc map[string]json.RawMessage
+	if err := json.Unmarshal(body, &doc); err != nil {
+		return body
+	}
+	rawMeta, ok := doc["metadata"]
+	if !ok {
+		return body
+	}
+	var meta map[string]json.RawMessage
+	if err := json.Unmarshal(rawMeta, &meta); err != nil {
+		return body
+	}
+	rawUser, ok := meta["user_id"]
+	if !ok {
+		return body
+	}
+	// metadata.user_id is a JSON-encoded string in the captured traffic, but
+	// accept a plain object too.
+	var user map[string]any
+	var encodedUser bool
+	var userID string
+	if err := json.Unmarshal(rawUser, &userID); err == nil {
+		if err := json.Unmarshal([]byte(userID), &user); err != nil {
+			return body
+		}
+		encodedUser = true
+	} else if err := json.Unmarshal(rawUser, &user); err != nil {
+		return body
+	}
+	user["session_id"] = "sess_" + uuid.NewString()
+	patched, err := json.Marshal(user)
+	if err != nil {
+		return body
+	}
+	if encodedUser {
+		encoded, err := json.Marshal(string(patched))
+		if err != nil {
+			return body
+		}
+		meta["user_id"] = encoded
+	} else {
+		meta["user_id"] = patched
+	}
+	newMeta, err := json.Marshal(meta)
+	if err != nil {
+		return body
+	}
+	doc["metadata"] = newMeta
+	out, err := json.Marshal(doc)
+	if err != nil {
+		return body
+	}
+	return out
+}
+
 func main() {
 	prompt := flag.String("prompt", "Reply with exactly: OK", "user message")
 	model := flag.String("model", "GLM-5.3-Flash", "model id")
@@ -138,9 +204,9 @@ func main() {
 	}
 
 	userID, _ := json.Marshal(map[string]string{
-		"device_id":  deviceID,
+		"device_id":    deviceID,
 		"account_uuid": "",
-		"session_id": sessionID,
+		"session_id":   sessionID,
 	})
 	userID = []byte(fmt.Sprintf(`{"device_id":"%s","account_uuid":"","session_id":"%s"}`, deviceID, sessionID))
 	payload := map[string]any{
@@ -153,14 +219,122 @@ func main() {
 	}
 	raw, _ := json.Marshal(payload)
 
+	if os.Getenv("SERVE") != "" {
+		http.HandleFunc("/forward", func(w http.ResponseWriter, r *http.Request) {
+			var env struct {
+				Target  string            `json:"target"`
+				Headers map[string]string `json:"headers"`
+				BodyB64 string            `json:"body_b64"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&env); err != nil {
+				http.Error(w, "bad envelope: "+err.Error(), 400)
+				return
+			}
+			jwt, err := readZcodeJWT()
+			if err != nil {
+				http.Error(w, "jwt: "+err.Error(), 500)
+				return
+			}
+			profile := mimic.MustLoadProfile("profile.json")
+			client, err := mimic.New(profile)
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			target := env.Target
+			if target == "" {
+				target = endpoint
+			}
+			body, err := base64.StdEncoding.DecodeString(env.BodyB64)
+			if err != nil {
+				http.Error(w, "bad body b64: "+err.Error(), 400)
+				return
+			}
+			hdrs := env.Headers
+			if hdrs == nil {
+				hdrs = map[string]string{}
+			}
+			hdrs["authorization"] = "Bearer " + jwt
+			hdrs["x-api-key"] = jwt
+			// The upstream binds a request to a fresh session: a replayed
+			// request-id/query-id/trace-id or session_id is rejected with
+			// "parameter error" (code 3001). The captured desktop request
+			// carries the ids of the original turn, so every forward gets new
+			// ones.
+			hdrs["x-request-id"] = uuid.NewString()
+			hdrs["x-query-id"] = uuid.NewString()
+			hdrs["x-zcode-trace-id"] = strings.ReplaceAll(uuid.NewString(), "-", "")
+			hdrs["x-session-id"] = uuid.NewString()
+			body = withFreshSessionID(body)
+			req, err := profile.Request("POST", target, bytes.NewReader(body))
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			for k, v := range hdrs {
+				req.Header.Set(k, v)
+			}
+			// Bound the wait for response headers: the upstream occasionally
+			// accepts the connection and then never answers, which would
+			// otherwise pin this handler forever.
+			respCh := make(chan *http.Response, 1)
+			errCh := make(chan error, 1)
+			go func() {
+				resp, err := client.Do(req)
+				if err != nil {
+					errCh <- err
+					return
+				}
+				respCh <- resp
+			}()
+			var resp *http.Response
+			select {
+			case resp = <-respCh:
+			case err := <-errCh:
+				http.Error(w, err.Error(), 502)
+				return
+			case <-time.After(upstreamHeaderTimeout):
+				http.Error(w, "upstream header timeout", 504)
+				return
+			}
+			defer resp.Body.Close()
+			for k, vv := range resp.Header {
+				for _, v := range vv {
+					w.Header().Add(k, v)
+				}
+			}
+			w.WriteHeader(resp.StatusCode)
+			flusher, _ := w.(http.Flusher)
+			buf := make([]byte, 32*1024)
+			for {
+				n, err := resp.Body.Read(buf)
+				if n > 0 {
+					w.Write(buf[:n])
+					if flusher != nil {
+						flusher.Flush()
+					}
+				}
+				if err != nil {
+					break
+				}
+			}
+		})
+		log.Fatal(http.ListenAndServe(os.Getenv("SERVE"), nil))
+	}
 	if os.Getenv("FP_GET") != "" {
 		profile2 := mimic.MustLoadProfile("profile.json")
 		client2, err := mimic.New(profile2)
-		if err != nil { log.Fatal(err) }
+		if err != nil {
+			log.Fatal(err)
+		}
 		req2, err := profile2.Request("GET", os.Getenv("FP_GET"), nil)
-		if err != nil { log.Fatal(err) }
+		if err != nil {
+			log.Fatal(err)
+		}
 		resp2, err := client2.Do(req2)
-		if err != nil { log.Fatal(err) }
+		if err != nil {
+			log.Fatal(err)
+		}
 		defer resp2.Body.Close()
 		b2, _ := io.ReadAll(io.LimitReader(resp2.Body, 200))
 		fmt.Println("FP:", resp2.Status, string(b2))
