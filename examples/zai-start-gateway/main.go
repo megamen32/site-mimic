@@ -164,6 +164,54 @@ func readZcodeJWT() (string, error) {
 
 const HOME_DIR = "/home/roomhacker"
 
+// harvestJWTs pulls the freshest desktop-session tokens from the capture
+// stream: the desktop rotates its session jwt in memory, and the proxy sees
+// every live request. Returns (authorization, x-api-key, ok).
+func harvestJWTs() (string, string, bool) {
+	f, err := os.Open(HOME_DIR + "/zai-fix/mitm/capture.log")
+	if err != nil {
+		return "", "", false
+	}
+	defer f.Close()
+	st, _ := f.Stat()
+	start := int64(0)
+	if st.Size() > 512*1024 {
+		start = st.Size() - 512*1024
+	}
+	f.Seek(start, 0)
+	sc := bufio.NewScanner(f)
+	sc.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+	bestT := int64(0)
+	auth, apikey := "", ""
+	for sc.Scan() {
+		line := sc.Bytes()
+		var e struct {
+			T       int64             `json:"t"`
+			Headers map[string]string `json:"headers"`
+		}
+		if json.Unmarshal(line, &e) != nil || e.T == 0 {
+			continue
+		}
+		a := strings.TrimSpace(e.Headers["authorization"])
+		k := strings.TrimSpace(e.Headers["x-api-key"])
+		if !strings.HasPrefix(a, "Bearer eyJ") || !strings.HasPrefix(k, "eyJ") {
+			continue
+		}
+		if e.T > bestT {
+			bestT = e.T
+			auth = strings.TrimPrefix(a, "Bearer ")
+			apikey = k
+		}
+	}
+	if bestT == 0 || auth == "" || apikey == "" {
+		return "", "", false
+	}
+	if time.Since(time.UnixMilli(bestT)) > 30*time.Minute {
+		return "", "", false
+	}
+	return auth, apikey, true
+}
+
 func mustJSON(v any) []byte { b, _ := json.Marshal(v); return b }
 
 type chatMessage struct {
@@ -288,11 +336,17 @@ func main() {
 				http.Error(w, "bad envelope: "+err.Error(), 400)
 				return
 			}
-			jwt, err := readZcodeJWT()
-			if err != nil {
-				http.Error(w, "jwt: "+err.Error(), 500)
-				return
+			hAuth, hKey, fresh := harvestJWTs()
+			jwt := hAuth
+			if !fresh {
+				var err error
+				jwt, err = readZcodeJWT()
+				if err != nil {
+					http.Error(w, "jwt: "+err.Error(), 500)
+					return
+				}
 			}
+			_ = hKey
 			profile := mimic.MustLoadProfile("profile.json")
 			client, err := mimic.New(profile)
 			if err != nil {
