@@ -18,11 +18,13 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -46,6 +48,62 @@ const (
 	// response headers before giving up with 504.
 	upstreamHeaderTimeout = 45 * time.Second
 )
+
+var errUpstreamHeaderTimeout = errors.New("upstream header timeout")
+
+// awaitResponseHeaders bounds the header wait without cancelling a successful
+// response stream. The returned cancel must be called after its body is closed.
+// If a timeout or caller cancellation wins, a late response is still closed.
+func awaitResponseHeaders(ctx context.Context, client *http.Client, req *http.Request, timeout time.Duration) (*http.Response, context.CancelFunc, error) {
+	upstreamCtx, cancel := context.WithCancel(ctx)
+	req = req.WithContext(upstreamCtx)
+	type outcome struct {
+		resp *http.Response
+		err  error
+	}
+	result := make(chan outcome)
+	go func() {
+		resp, err := client.Do(req)
+		select {
+		case result <- outcome{resp: resp, err: err}:
+		case <-upstreamCtx.Done():
+			if resp != nil && resp.Body != nil {
+				_ = resp.Body.Close()
+			}
+		}
+	}()
+
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+	select {
+	case done := <-result:
+		if err := upstreamCtx.Err(); err != nil {
+			if done.resp != nil && done.resp.Body != nil {
+				_ = done.resp.Body.Close()
+			}
+			cancel()
+			return nil, nil, err
+		}
+		if done.err != nil || done.resp == nil || done.resp.Body == nil {
+			if done.resp != nil && done.resp.Body != nil {
+				_ = done.resp.Body.Close()
+			}
+			cancel()
+			if done.err != nil {
+				return nil, nil, done.err
+			}
+			return nil, nil, errors.New("upstream returned no response body")
+		}
+		return done.resp, cancel, nil
+	case <-timer.C:
+		cancel()
+		return nil, nil, errUpstreamHeaderTimeout
+	case <-upstreamCtx.Done():
+		err := upstreamCtx.Err()
+		cancel()
+		return nil, nil, err
+	}
+}
 
 // The ZCode CLI stores the shared OAuth JWT in ~/.zcode/v2/credentials.json,
 // AES-256-GCM with a machine-derived key (enc:v1:iv.tag.data, base64url).
@@ -241,6 +299,8 @@ func main() {
 				http.Error(w, err.Error(), 500)
 				return
 			}
+			// One client is built per forward: do not retain idle H1/H2 sockets.
+			defer client.CloseIdleConnections()
 			target := env.Target
 			if target == "" {
 				target = endpoint
@@ -274,29 +334,19 @@ func main() {
 			for k, v := range hdrs {
 				req.Header.Set(k, v)
 			}
-			// Bound the wait for response headers: the upstream occasionally
-			// accepts the connection and then never answers, which would
-			// otherwise pin this handler forever.
-			respCh := make(chan *http.Response, 1)
-			errCh := make(chan error, 1)
-			go func() {
-				resp, err := client.Do(req)
-				if err != nil {
-					errCh <- err
+			resp, cancelUpstream, err := awaitResponseHeaders(r.Context(), client, req, upstreamHeaderTimeout)
+			if err != nil {
+				if r.Context().Err() != nil {
 					return
 				}
-				respCh <- resp
-			}()
-			var resp *http.Response
-			select {
-			case resp = <-respCh:
-			case err := <-errCh:
-				http.Error(w, err.Error(), 502)
-				return
-			case <-time.After(upstreamHeaderTimeout):
-				http.Error(w, "upstream header timeout", 504)
+				if errors.Is(err, errUpstreamHeaderTimeout) {
+					http.Error(w, "upstream header timeout", http.StatusGatewayTimeout)
+				} else {
+					http.Error(w, err.Error(), http.StatusBadGateway)
+				}
 				return
 			}
+			defer cancelUpstream()
 			defer resp.Body.Close()
 			for k, vv := range resp.Header {
 				for _, v := range vv {
@@ -309,7 +359,9 @@ func main() {
 			for {
 				n, err := resp.Body.Read(buf)
 				if n > 0 {
-					w.Write(buf[:n])
+					if _, writeErr := w.Write(buf[:n]); writeErr != nil {
+						return
+					}
 					if flusher != nil {
 						flusher.Flush()
 					}
