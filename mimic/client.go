@@ -275,6 +275,16 @@ func (rt *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	return resp, err
 }
 
+// CloseIdleConnections releases idle sockets from both underlying transports.
+// http.Client.CloseIdleConnections only reaches a wrapper if it implements
+// this method itself.
+func (rt *roundTripper) CloseIdleConnections() {
+	rt.h1.CloseIdleConnections()
+	if closer, ok := rt.h2.(interface{ CloseIdleConnections() }); ok {
+		closer.CloseIdleConnections()
+	}
+}
+
 func (rt *roundTripper) isH1Only(host string) bool {
 	rt.mu.Lock()
 	defer rt.mu.Unlock()

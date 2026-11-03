@@ -18,11 +18,13 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -46,6 +48,62 @@ const (
 	// response headers before giving up with 504.
 	upstreamHeaderTimeout = 45 * time.Second
 )
+
+var errUpstreamHeaderTimeout = errors.New("upstream header timeout")
+
+// awaitResponseHeaders bounds the header wait without cancelling a successful
+// response stream. The returned cancel must be called after its body is closed.
+// If a timeout or caller cancellation wins, a late response is still closed.
+func awaitResponseHeaders(ctx context.Context, client *http.Client, req *http.Request, timeout time.Duration) (*http.Response, context.CancelFunc, error) {
+	upstreamCtx, cancel := context.WithCancel(ctx)
+	req = req.WithContext(upstreamCtx)
+	type outcome struct {
+		resp *http.Response
+		err  error
+	}
+	result := make(chan outcome)
+	go func() {
+		resp, err := client.Do(req)
+		select {
+		case result <- outcome{resp: resp, err: err}:
+		case <-upstreamCtx.Done():
+			if resp != nil && resp.Body != nil {
+				_ = resp.Body.Close()
+			}
+		}
+	}()
+
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+	select {
+	case done := <-result:
+		if err := upstreamCtx.Err(); err != nil {
+			if done.resp != nil && done.resp.Body != nil {
+				_ = done.resp.Body.Close()
+			}
+			cancel()
+			return nil, nil, err
+		}
+		if done.err != nil || done.resp == nil || done.resp.Body == nil {
+			if done.resp != nil && done.resp.Body != nil {
+				_ = done.resp.Body.Close()
+			}
+			cancel()
+			if done.err != nil {
+				return nil, nil, done.err
+			}
+			return nil, nil, errors.New("upstream returned no response body")
+		}
+		return done.resp, cancel, nil
+	case <-timer.C:
+		cancel()
+		return nil, nil, errUpstreamHeaderTimeout
+	case <-upstreamCtx.Done():
+		err := upstreamCtx.Err()
+		cancel()
+		return nil, nil, err
+	}
+}
 
 // The ZCode CLI stores the shared OAuth JWT in ~/.zcode/v2/credentials.json,
 // AES-256-GCM with a machine-derived key (enc:v1:iv.tag.data, base64url).
@@ -105,6 +163,54 @@ func readZcodeJWT() (string, error) {
 }
 
 const HOME_DIR = "/home/roomhacker"
+
+// harvestJWTs pulls the freshest desktop-session tokens from the capture
+// stream: the desktop rotates its session jwt in memory, and the proxy sees
+// every live request. Returns (authorization, x-api-key, ok).
+func harvestJWTs() (string, string, bool) {
+	f, err := os.Open(HOME_DIR + "/zai-fix/mitm/capture.log")
+	if err != nil {
+		return "", "", false
+	}
+	defer f.Close()
+	st, _ := f.Stat()
+	start := int64(0)
+	if st.Size() > 512*1024 {
+		start = st.Size() - 512*1024
+	}
+	f.Seek(start, 0)
+	sc := bufio.NewScanner(f)
+	sc.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+	bestT := int64(0)
+	auth, apikey := "", ""
+	for sc.Scan() {
+		line := sc.Bytes()
+		var e struct {
+			T       int64             `json:"t"`
+			Headers map[string]string `json:"headers"`
+		}
+		if json.Unmarshal(line, &e) != nil || e.T == 0 {
+			continue
+		}
+		a := strings.TrimSpace(e.Headers["authorization"])
+		k := strings.TrimSpace(e.Headers["x-api-key"])
+		if !strings.HasPrefix(a, "Bearer eyJ") || !strings.HasPrefix(k, "eyJ") {
+			continue
+		}
+		if e.T > bestT {
+			bestT = e.T
+			auth = strings.TrimPrefix(a, "Bearer ")
+			apikey = k
+		}
+	}
+	if bestT == 0 || auth == "" || apikey == "" {
+		return "", "", false
+	}
+	if time.Since(time.UnixMilli(bestT)) > 30*time.Minute {
+		return "", "", false
+	}
+	return auth, apikey, true
+}
 
 func mustJSON(v any) []byte { b, _ := json.Marshal(v); return b }
 
@@ -230,17 +336,25 @@ func main() {
 				http.Error(w, "bad envelope: "+err.Error(), 400)
 				return
 			}
-			jwt, err := readZcodeJWT()
-			if err != nil {
-				http.Error(w, "jwt: "+err.Error(), 500)
-				return
+			hAuth, hKey, fresh := harvestJWTs()
+			jwt := hAuth
+			if !fresh {
+				var err error
+				jwt, err = readZcodeJWT()
+				if err != nil {
+					http.Error(w, "jwt: "+err.Error(), 500)
+					return
+				}
 			}
+			_ = hKey
 			profile := mimic.MustLoadProfile("profile.json")
 			client, err := mimic.New(profile)
 			if err != nil {
 				http.Error(w, err.Error(), 500)
 				return
 			}
+			// One client is built per forward: do not retain idle H1/H2 sockets.
+			defer client.CloseIdleConnections()
 			target := env.Target
 			if target == "" {
 				target = endpoint
@@ -274,29 +388,19 @@ func main() {
 			for k, v := range hdrs {
 				req.Header.Set(k, v)
 			}
-			// Bound the wait for response headers: the upstream occasionally
-			// accepts the connection and then never answers, which would
-			// otherwise pin this handler forever.
-			respCh := make(chan *http.Response, 1)
-			errCh := make(chan error, 1)
-			go func() {
-				resp, err := client.Do(req)
-				if err != nil {
-					errCh <- err
+			resp, cancelUpstream, err := awaitResponseHeaders(r.Context(), client, req, upstreamHeaderTimeout)
+			if err != nil {
+				if r.Context().Err() != nil {
 					return
 				}
-				respCh <- resp
-			}()
-			var resp *http.Response
-			select {
-			case resp = <-respCh:
-			case err := <-errCh:
-				http.Error(w, err.Error(), 502)
-				return
-			case <-time.After(upstreamHeaderTimeout):
-				http.Error(w, "upstream header timeout", 504)
+				if errors.Is(err, errUpstreamHeaderTimeout) {
+					http.Error(w, "upstream header timeout", http.StatusGatewayTimeout)
+				} else {
+					http.Error(w, err.Error(), http.StatusBadGateway)
+				}
 				return
 			}
+			defer cancelUpstream()
 			defer resp.Body.Close()
 			for k, vv := range resp.Header {
 				for _, v := range vv {
@@ -309,7 +413,9 @@ func main() {
 			for {
 				n, err := resp.Body.Read(buf)
 				if n > 0 {
-					w.Write(buf[:n])
+					if _, writeErr := w.Write(buf[:n]); writeErr != nil {
+						return
+					}
 					if flusher != nil {
 						flusher.Flush()
 					}
